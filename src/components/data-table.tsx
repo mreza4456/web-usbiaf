@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Columns3Cog, Loader2 } from "lucide-react" // Loader icon
+import { Card } from "./ui/card"
 
 type DataTableProps<TData, TValue> = {
   columns: ColumnDef<TData, TValue>[]
@@ -70,6 +71,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4">
+      <Card className="p-4">
       <div className="flex justify-end items-center gap-4">
         {/* Filter */}
         {filterColumn && (
@@ -176,6 +178,7 @@ export function DataTable<TData, TValue>({
           Next
         </Button>
       </div>
+      </Card>
     </div>
   )
 }

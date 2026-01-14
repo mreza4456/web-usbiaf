@@ -16,6 +16,7 @@ import {
   IconReport,
   IconSearch,
   IconSettings,
+  IconTicket,
   IconUsers,
 } from "@tabler/icons-react"
 
@@ -64,6 +65,11 @@ const data = {
       title: "Order",
       url: "/admin/order",
       icon: IconFolder,
+    },
+    {
+      title: "Voucher",
+      url: "/admin/voucher",
+      icon: IconTicket,
     },
     {
       title: "News",

@@ -219,11 +219,11 @@ export default function Register(): React.ReactElement {
     if (isVerified) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e] flex items-center justify-center p-4">
-                <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="w-full max-w-md bg-background border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-4">
                         <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto" />
-                        <h2 className="text-2xl font-bold text-white">Email Verified!</h2>
-                        <p className="text-gray-300">Your email has been verified successfully. Redirecting to home...</p>
+                        <h2 className="text-2xl font-bold text-primary">Email Verified!</h2>
+                        <p className="text-gray-500">Your email has been verified successfully. Redirecting to home...</p>
                         <div className="flex justify-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9B5DE0]"></div>
                         </div>
@@ -237,23 +237,19 @@ export default function Register(): React.ReactElement {
     if (showOtpInput && user && !isVerified) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e] flex items-center justify-center p-4">
-                {/* Animated Background */}
-                <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-[#9B5DE0] rounded-full blur-[120px] opacity-30 animate-pulse"></div>
-                    <div className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#D78FEE] rounded-full blur-[100px] opacity-25 animate-pulse" style={{ animationDelay: '2s' }}></div>
-                </div>
+                
 
-                <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="relative z-10 w-full max-w-md bg-background border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-6">
                         <div className="flex justify-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-[#9B5DE0] to-[#D78FEE] rounded-full flex items-center justify-center">
-                                <Shield className="w-8 h-8 text-white" />
+                                <Shield className="w-8 h-8 text-primary" />
                             </div>
                         </div>
                         
                         <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Verify Your Email</h2>
-                            <p className="text-gray-300">
+                            <h2 className="text-2xl font-bold text-primary">Verify Your Email</h2>
+                            <p className="text-gray-500">
                                 We've sent a 6-digit code to<br />
                                 <span className="font-semibold text-[#D78FEE]">{userEmail}</span>
                             </p>
@@ -286,7 +282,7 @@ export default function Register(): React.ReactElement {
                                     value={digit}
                                     onChange={(e) => handleOtpChange(index, e.target.value)}
                                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                                    className="w-12 h-14 text-center text-2xl font-bold bg-white/5 border-2 border-[#9B5DE0]/30 rounded-lg text-white focus:outline-none focus:border-[#D78FEE] transition-all"
+                                    className="w-12 h-14 text-center text-2xl font-bold bg-white/5 border-2 border-[#9B5DE0]/30 rounded-lg text-primary focus:outline-none focus:border-[#D78FEE] transition-all"
                                 />
                             ))}
                         </div>
@@ -295,7 +291,7 @@ export default function Register(): React.ReactElement {
                         <Button
                             onClick={handleVerifyOtp}
                             disabled={isVerifying || otp.join('').length !== 6}
-                            className="w-full bg-gradient-to-r from-[#9B5DE0] to-[#D78FEE] hover:from-[#8B4DD0] hover:to-[#C77FDE] text-white py-3 disabled:opacity-50"
+                            className="w-full bg-primary text-white py-3 disabled:opacity-50"
                         >
                             {isVerifying ? 'Verifying...' : 'Verify Email'}
                         </Button>
@@ -327,21 +323,16 @@ export default function Register(): React.ReactElement {
 
     return (
         <>
-            <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2d1b4e] to-[#1a1a2e] text-white flex items-center justify-center p-4">
-                {/* Animated Background */}
-                <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                    <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-[#9B5DE0] rounded-full blur-[120px] opacity-30 animate-pulse"></div>
-                    <div className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#D78FEE] rounded-full blur-[100px] opacity-25 animate-pulse" style={{ animationDelay: '2s' }}></div>
-                    <div className="absolute top-[50%] left-[50%] w-[350px] h-[350px] bg-[#4E56C0] rounded-full blur-[90px] opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
-                </div>
+            <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2d1b4e] to-[#1a1a2e] text-primary flex items-center justify-center p-4">
+               
 
                 <div className="relative z-10 w-full max-w-md">
-                    <Card className="bg-white/5 backdrop-blur-sm border-[#9B5DE0]/30">
+                    <Card className="bg-background border-[#9B5DE0]/30">
                         <CardHeader className="space-y-1 pb-4">
-                            <CardTitle className="text-2xl text-white">
+                            <CardTitle className="text-2xl text-primary">
                                 Create New Account
                             </CardTitle>
-                            <CardDescription className="text-gray-400">
+                            <CardDescription className="text-gray-500">
                                 Fill in the information below to get started
                             </CardDescription>
                         </CardHeader>
@@ -365,7 +356,7 @@ export default function Register(): React.ReactElement {
                             <div className="space-y-4">
                                 {/* Full Name Field */}
                                 <div className="space-y-2">
-                                    <label className="text-sm text-gray-300 flex items-center">
+                                    <label className="text-sm text-gray-500 flex items-center">
                                         <User className="w-4 h-4 mr-2" />
                                         Full Name
                                     </label>
@@ -376,7 +367,7 @@ export default function Register(): React.ReactElement {
                                             required: 'Full name is required',
                                             minLength: { value: 3, message: 'Name must be at least 3 characters' }
                                         })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
+                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
                                     />
                                     {registerForm.formState.errors.fullName && (
                                         <p className="text-sm text-red-400 flex items-center mt-1">
@@ -388,7 +379,7 @@ export default function Register(): React.ReactElement {
 
                                 {/* Email Field */}
                                 <div className="space-y-2">
-                                    <label className="text-sm text-gray-300 flex items-center">
+                                    <label className="text-sm text-gray-500 flex items-center">
                                         <Mail className="w-4 h-4 mr-2" />
                                         Email
                                     </label>
@@ -399,7 +390,7 @@ export default function Register(): React.ReactElement {
                                             required: 'Email is required',
                                             pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' }
                                         })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
+                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
                                     />
                                     {registerForm.formState.errors.email && (
                                         <p className="text-sm text-red-400 flex items-center mt-1">
@@ -411,7 +402,7 @@ export default function Register(): React.ReactElement {
 
                                 {/* Password Field */}
                                 <div className="space-y-2">
-                                    <label className="text-sm text-gray-300 flex items-center">
+                                    <label className="text-sm text-gray-500 flex items-center">
                                         <Lock className="w-4 h-4 mr-2" />
                                         Password
                                     </label>
@@ -424,12 +415,12 @@ export default function Register(): React.ReactElement {
                                                 minLength: { value: 8, message: 'Password must be at least 8 characters' },
                                                 pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Password must contain uppercase, lowercase and number' }
                                             })}
-                                            className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                            className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
                                         >
                                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
@@ -444,7 +435,7 @@ export default function Register(): React.ReactElement {
 
                                 {/* Confirm Password Field */}
                                 <div className="space-y-2">
-                                    <label className="text-sm text-gray-300 flex items-center">
+                                    <label className="text-sm text-gray-500 flex items-center">
                                         <Lock className="w-4 h-4 mr-2" />
                                         Confirm Password
                                     </label>
@@ -453,12 +444,12 @@ export default function Register(): React.ReactElement {
                                             type={showConfirmPassword ? 'text' : 'password'}
                                             placeholder="••••••••"
                                             {...registerForm.register('confirmPassword', { required: 'Please confirm your password' })}
-                                            className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                            className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
                                         />
                                         <button
                                             type="button"
                                             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
                                         >
                                             {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                         </button>
@@ -478,7 +469,7 @@ export default function Register(): React.ReactElement {
                                         {...registerForm.register('agreeTerms', { required: 'You must agree to the terms' })}
                                         className="w-4 h-4 mt-0.5 rounded border-[#9B5DE0]/30 bg-white/5 text-[#D78FEE] focus:ring-[#D78FEE] focus:ring-offset-0"
                                     />
-                                    <span className="text-sm text-gray-300">
+                                    <span className="text-sm text-gray-500">
                                         I agree to the{' '}
                                         <a href="#" className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors">Terms of Service</a>{' '}
                                         and{' '}
@@ -490,7 +481,7 @@ export default function Register(): React.ReactElement {
                                 <Button
                                     onClick={() => void registerForm.handleSubmit(handleRegister)()}
                                     disabled={isSubmitting}
-                                    className="w-full bg-gradient-to-r from-[#9B5DE0] to-[#D78FEE] hover:from-[#8B4DD0] hover:to-[#C77FDE] text-white py-6"
+                                    className="w-full bg-primary hover:from-[#8B4DD0] hover:to-[#C77FDE] text-white py-6"
                                 >
                                     {isSubmitting ? 'Creating account...' : 'Create Account'}
                                 </Button>

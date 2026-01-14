@@ -22,7 +22,7 @@ export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname
 
   // 🔐 Protect /order
-  if (!session && pathname.startsWith('/order')) {
+  if (!session && (pathname.startsWith('/order') || pathname.startsWith('/myorder') || pathname.startsWith('/profile')||pathname.startsWith('/voucher'))) {
     return NextResponse.redirect(new URL('/auth/login', req.url))
   }
 

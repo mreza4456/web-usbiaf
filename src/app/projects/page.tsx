@@ -93,7 +93,7 @@ export default function Projects() {
               <span className="text-sm font-semibold text-[#50398e]">✨ {products.length}+ Premium Projects</span>
             </Badge>
             <h1 className="text-4xl sm:text-5xl md:text-6xl text-primary font-bold mb-6 leading-tight ">
-              Our <span className="text-primary relative">Projects <div className="absolute -bottom-2 left-0 w-full h-3  opacity-50 -rotate-2 -z-5"><img src="curve.png" alt="" /></div> </span>
+              Our Recent <span className="text-primary relative">Projects <div className="absolute -bottom-2 left-0 w-full h-3  opacity-50 -rotate-2 -z-5"><img src="curve.png" alt="" /></div> </span>
             </h1>
             <p className="text-lg sm:text-xl text-black mb-8 max-w-3xl mx-auto">
               Explore koleksi lengkap stream widgets, overlays, dan animasi premium kami
@@ -162,7 +162,7 @@ export default function Projects() {
                 <p className="text-gray-500">Try adjusting your search or filter</p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ">
                 {filteredProjects.map((project) => {
                   // Get the first image (main image)
                   const mainImage = project.main_image?.image_url ||
@@ -177,14 +177,14 @@ export default function Projects() {
                   }).format(project.price || 0);
 
                   return (
-                    <Card key={project.id} className="bg-white  border-primary/30 shadow-lg hover:border-primary transition-all duration-300 hover:transform hover:scale-105 group overflow-hidden">
+                    <Card key={project.id} className="bg-white p-0 m-0  border-primary/30 shadow-lg hover:border-primary transition-all duration-300 hover:transform hover:scale-105  overflow-hidden">
                       <CardHeader className="pb-3">
-                        <div className="relative aspect-video bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 rounded-lg flex items-center justify-center overflow-hidden">
+                        <div className="relative  bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 rounded-lg flex items-center justify-center overflow-hidden">
                           {mainImage ? (
                             <img
                               src={mainImage}
                               alt={project.name}
-                              className="w-full h-full object-cover"
+                              className=" h-[70%] w-full object-cover"
                               onError={(e) => {
                                 console.error('Image failed to load:', mainImage);
                                 e.currentTarget.style.display = 'none';

@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { IProduct } from "@/interface";
 import { getProductById } from "@/action/product";
 import ProductFormPage from "@/components/product-form";
+import { SiteHeader } from "@/components/site-header";
 // pastikan ini ada
 
 export default function EditMoviePage() {
@@ -40,9 +41,11 @@ export default function EditMoviePage() {
   }
 
   return (
+    <div className="w-full"><SiteHeader title="Edit Project" />
     <div className="p-6">
-      <h1 className="text-2xl font-semibold mb-4">Edit Movie</h1>
+     
       <ProductFormPage formType="edit" initialValues={product} />
+    </div>
     </div>
   );
 }

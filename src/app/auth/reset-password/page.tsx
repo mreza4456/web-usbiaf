@@ -114,12 +114,12 @@ export default function ResetPassword(): React.ReactElement {
     if (isValidToken === null) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e] flex items-center justify-center p-4">
-                <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="w-full max-w-md bg-background  border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-4">
                         <div className="flex justify-center">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9B5DE0]"></div>
                         </div>
-                        <p className="text-gray-300">Verifying reset link...</p>
+                        <p className="text-gray-600">Verifying reset link...</p>
                     </div>
                 </div>
             </div>
@@ -136,24 +136,24 @@ export default function ResetPassword(): React.ReactElement {
                     <div className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#D78FEE] rounded-full blur-[100px] opacity-25 animate-pulse" style={{ animationDelay: '2s' }}></div>
                 </div>
 
-                <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="relative z-10 w-full max-w-md bg-background  border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-6">
                         <div className="flex justify-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-rose-600 rounded-full flex items-center justify-center">
-                                <AlertCircle className="w-8 h-8 text-white" />
+                                <AlertCircle className="w-8 h-8 text-primary" />
                             </div>
                         </div>
                         
                         <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Link Expired</h2>
-                            <p className="text-gray-300">
+                            <h2 className="text-2xl font-bold text-primary">Link Expired</h2>
+                            <p className="text-gray-600">
                                 {error || 'This password reset link is invalid or has expired.'}
                             </p>
                         </div>
 
                         <Button
                             onClick={() => router.push('/auth/forgot-password')}
-                            className="w-full bg-gradient-to-r from-[#9B5DE0] to-[#D78FEE] hover:from-[#8B4DD0] hover:to-[#C77FDE] text-white py-3"
+                            className="w-full bg-gradient-to-r from-[#9B5DE0] to-[#D78FEE] hover:from-[#8B4DD0] hover:to-[#C77FDE] text-primary py-3"
                         >
                             Request New Link
                         </Button>
@@ -177,13 +177,13 @@ export default function ResetPassword(): React.ReactElement {
                     <div className="text-center space-y-6">
                         <div className="flex justify-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
-                                <CheckCircle2 className="w-8 h-8 text-white" />
+                                <CheckCircle2 className="w-8 h-8 text-primary" />
                             </div>
                         </div>
                         
                         <div className="space-y-2">
-                            <h2 className="text-2xl font-bold text-white">Password Reset Successfully!</h2>
-                            <p className="text-gray-300">{success}</p>
+                            <h2 className="text-2xl font-bold text-primary">Password Reset Successfully!</h2>
+                            <p className="text-gray-600">{success}</p>
                         </div>
 
                         <div className="flex justify-center">
@@ -196,26 +196,21 @@ export default function ResetPassword(): React.ReactElement {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2d1b4e] to-[#1a1a2e] text-white flex items-center justify-center p-4">
-            {/* Animated Background */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-[#9B5DE0] rounded-full blur-[120px] opacity-30 animate-pulse"></div>
-                <div className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#D78FEE] rounded-full blur-[100px] opacity-25 animate-pulse" style={{ animationDelay: '2s' }}></div>
-                <div className="absolute top-[50%] left-[50%] w-[350px] h-[350px] bg-[#4E56C0] rounded-full blur-[90px] opacity-20 animate-pulse" style={{ animationDelay: '4s' }}></div>
-            </div>
+        <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2d1b4e] to-[#1a1a2e] text-primary flex items-center justify-center p-4">
+          
 
             <div className="relative z-10 w-full max-w-md">
                 <Card className="bg-white/5 backdrop-blur-sm border-[#9B5DE0]/30">
                     <CardHeader className="space-y-1 pb-4">
                         <div className="flex justify-center mb-4">
                             <div className="w-16 h-16 bg-gradient-to-br from-[#9B5DE0] to-[#D78FEE] rounded-full flex items-center justify-center">
-                                <Shield className="w-8 h-8 text-white" />
+                                <Shield className="w-8 h-8 text-primary" />
                             </div>
                         </div>
-                        <CardTitle className="text-2xl text-white text-center">
+                        <CardTitle className="text-2xl text-primary text-center">
                             Reset Your Password
                         </CardTitle>
-                        <CardDescription className="text-gray-400 text-center">
+                        <CardDescription className="text-gray-500 text-center">
                             Enter your new password below
                         </CardDescription>
                     </CardHeader>
@@ -231,7 +226,7 @@ export default function ResetPassword(): React.ReactElement {
                         <div className="space-y-4">
                             {/* Password Field */}
                             <div className="space-y-2">
-                                <label className="text-sm text-gray-300 flex items-center">
+                                <label className="text-sm text-gray-600 flex items-center">
                                     <Lock className="w-4 h-4 mr-2" />
                                     New Password
                                 </label>
@@ -247,12 +242,12 @@ export default function ResetPassword(): React.ReactElement {
                                                 message: 'Password must contain uppercase, lowercase and number' 
                                             }
                                         })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary transition-colors"
                                     >
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
@@ -267,7 +262,7 @@ export default function ResetPassword(): React.ReactElement {
 
                             {/* Confirm Password Field */}
                             <div className="space-y-2">
-                                <label className="text-sm text-gray-300 flex items-center">
+                                <label className="text-sm text-gray-600 flex items-center">
                                     <Lock className="w-4 h-4 mr-2" />
                                     Confirm New Password
                                 </label>
@@ -278,12 +273,12 @@ export default function ResetPassword(): React.ReactElement {
                                         {...resetForm.register('confirmPassword', { 
                                             required: 'Please confirm your password' 
                                         })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-primary transition-colors"
                                     >
                                         {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
@@ -298,8 +293,8 @@ export default function ResetPassword(): React.ReactElement {
 
                             {/* Password Requirements */}
                             <div className="bg-white/5 border border-[#9B5DE0]/20 rounded-lg p-3">
-                                <p className="text-xs text-gray-400 mb-2">Password must contain:</p>
-                                <ul className="text-xs text-gray-400 space-y-1">
+                                <p className="text-xs text-gray-500 mb-2">Password must contain:</p>
+                                <ul className="text-xs text-gray-500 space-y-1">
                                     <li className="flex items-center">
                                         <span className="w-1 h-1 bg-[#D78FEE] rounded-full mr-2"></span>
                                         At least 8 characters
@@ -323,7 +318,7 @@ export default function ResetPassword(): React.ReactElement {
                             <Button
                                 onClick={() => void resetForm.handleSubmit(handleResetPassword)()}
                                 disabled={isSubmitting}
-                                className="w-full bg-gradient-to-r from-[#9B5DE0] to-[#D78FEE] hover:from-[#8B4DD0] hover:to-[#C77FDE] text-white py-6"
+                                className="w-full bg-primary text-white py-6"
                             >
                                 {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
                             </Button>
@@ -335,7 +330,7 @@ export default function ResetPassword(): React.ReactElement {
                 <div className="mt-6 text-center">
                     <button
                         onClick={() => router.push('/auth/login')}
-                        className="text-sm text-gray-400 hover:text-[#D78FEE] transition-colors"
+                        className="text-sm text-gray-500 hover:text-[#D78FEE] transition-colors"
                     >
                         ← Back to Login
                     </button>

@@ -25,8 +25,9 @@ import {
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { IOrder, ICategory } from '@/interface';
-import { getAllOrder, updateOrder } from '@/action/order';
+import { IOrderWithItems, ICategory } from '@/interface';
+import { updateOrder } from '@/action/order';
+import { getOrderWithItems } from '@/action/order';
 import { useAuthStore } from '@/store/auth';
 import { useRouter, useParams } from 'next/navigation';
 
@@ -40,14 +41,13 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
     const params = useParams();
     const orderId = params?.id as string;
 
-    const [editingOrder, setEditingOrder] = useState<IOrder | null>(null);
+    const [editingOrder, setEditingOrder] = useState<IOrderWithItems | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
         discord: '',
-        categories_id: '',
         purpose: '',
         project_overview: '',
         hasReferences: '',
@@ -56,7 +56,8 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
         usage_type: '',
         additional_notes: ''
     });
-      const getDisplayName = () => {
+
+    const getDisplayName = () => {
         if (!user) return null
         if (user.user_metadata?.full_name) return user.user_metadata.full_name
         if (user.user_metadata?.name) return user.user_metadata.name
@@ -83,29 +84,20 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
 
             try {
                 setLoading(true);
-                const response = await getAllOrder();
-                console.log('📦 All orders response:', response);
-                console.log('📋 All order IDs:', response.data?.map((o: IOrder) => ({ id: o.id, type: typeof o.id })));
-                console.log('🔑 Looking for orderId:', orderId, 'type:', typeof orderId);
-
-                if (!response?.success) {
-                    throw new Error(response?.message || 'Failed to fetch orders');
-                }
-
-                // Find the specific order - try both string and direct comparison
-                const order = response.data.find((o: IOrder) => {
-                    console.log('Comparing:', o.id, '===', orderId, '?', o.id === orderId);
-                    console.log('String compare:', String(o.id), '===', String(orderId), '?', String(o.id) === String(orderId));
-                    return String(o.id) === String(orderId);
-                });
-                console.log('🎯 Found order:', order);
                 
-                if (!order) {
-                    console.log('❌ Order not found');
-                    toast.error('Order not found');
+                // Use getOrderWithItems from checkout action
+                const response = await getOrderWithItems(orderId, user.id);
+                console.log('📦 Order response:', response);
+
+                if (!response?.success || !response.data) {
+                    console.log('❌ Order not found or error');
+                    toast.error(response?.message || 'Order not found');
                     router.push('/myorder');
                     return;
                 }
+
+                const order = response.data;
+                console.log('✅ Order loaded:', order);
 
                 // Check if user owns this order
                 if (order.user_id !== user.id) {
@@ -115,13 +107,17 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                     return;
                 }
 
-                // Check if order can be edited (removed the status check for testing)
-                console.log('✅ Order can be edited, status:', order.status);
+                // Check if order can be edited
+                if (order.status === 'completed' || order.status === 'cancelled') {
+                    console.log('⚠️ Order cannot be edited, status:', order.status);
+                    toast.warning('This order cannot be edited');
+                    router.push('/myorder');
+                    return;
+                }
 
                 setEditingOrder(order);
                 setFormData({
                     discord: order.discord || '',
-                    categories_id: order.categories_id,
                     purpose: order.purpose,
                     project_overview: order.project_overview,
                     hasReferences: order.references_link ? 'yes' : 'no',
@@ -131,7 +127,7 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                     additional_notes: order.additional_notes || ''
                 });
                 
-                console.log('✅ Order loaded successfully');
+                console.log('✅ Form data initialized');
             } catch (error: any) {
                 console.error('❌ Error fetching order:', error);
                 toast.error(error.message || 'Failed to load order');
@@ -166,11 +162,6 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                 className: "bg-red-500/10 text-red-600 border-red-500/30",
                 label: "Cancelled"
             },
-            rejected: {
-                icon: AlertCircle,
-                className: "bg-gray-500/10 text-gray-600 border-gray-500/30",
-                label: "Rejected"
-            },
         };
 
         const config = statusConfig[status] || statusConfig.pending;
@@ -184,11 +175,19 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
         );
     };
 
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(amount);
+    };
+
     const handleSubmit = async () => {
         if (!editingOrder) return;
 
         // Validation
-        if (!formData.categories_id || !formData.purpose || !formData.project_overview || 
+        if (!formData.purpose || !formData.project_overview || 
             !formData.usage_type || formData.platforms.length === 0) {
             setError('Please fill in all required fields');
             return;
@@ -200,7 +199,6 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
         try {
             const orderData = {
                 discord: formData.discord || '',
-                categories_id: formData.categories_id,
                 purpose: formData.purpose,
                 project_overview: formData.project_overview,
                 references_link: formData.references_link || '',
@@ -210,7 +208,7 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
             };
 
             console.log('💾 Saving order:', orderData);
-            const result = await updateOrder(editingOrder.id, orderData);
+            const result = await updateOrder(editingOrder.id, orderData as any);
             console.log('📨 Update result:', result);
 
             if (result.success) {
@@ -238,11 +236,10 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
 
     if (loading) {
         return (
-            <div className="min-h-screen  flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="w-12 h-12 text-[#D78FEE] animate-spin mx-auto mb-4" />
                     <p className="text-primary">Loading order...</p>
-                   
                 </div>
             </div>
         );
@@ -250,13 +247,13 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
 
     if (!editingOrder) {
         return (
-            <div className="min-h-screen  flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                     <p className="text-gray-500">Order not found or you don't have permission</p>
                     <Button 
                         onClick={() => router.push('/myorder')}
-                        className="mt-4 bg-primaery text-black rounded-full flex items-center justify-center"
+                        className="mt-4 bg-primary text-black rounded-full"
                     >
                         Back to Orders
                     </Button>
@@ -266,9 +263,7 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
     }
 
     return (
-        <div className="min-h-screen  text-black py-12 px-4 mt-30">
-       
-
+        <div className="min-h-screen text-black py-12 px-4 mt-30">
             <div className="relative z-10 w-full max-w-7xl mx-auto">
                 {/* Header */}
                 <div className="mb-8">
@@ -287,7 +282,7 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                         </h1>
                     </div>
                     <p className="text-gray-500">Update your commission order details</p>
-                    <p className="text-gray-600 text-sm mt-1">Order ID: {editingOrder.id}</p>
+                    <p className="text-gray-600 text-sm mt-1">Order Code: {editingOrder.code_order}</p>
                 </div>
 
                 {/* Error Alert */}
@@ -298,21 +293,55 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                     </Alert>
                 )}
 
+                {/* Order Items Summary */}
+                <div className="mb-6 bg-muted/10 border border-[#9B5DE0]/30 rounded-lg p-6">
+                    <h3 className="font-semibold text-lg mb-4">Order Items</h3>
+                    <div className="space-y-3">
+                        {editingOrder.order_items?.map((item, idx) => (
+                            <div key={item.id} className="flex justify-between items-start p-3 bg-white/5 rounded-lg">
+                                <div className="space-y-1">
+                                    <p className="font-medium text-primary">{item.category_name}</p>
+                                    <p className="text-sm text-gray-600">
+                                        {item.package_name} ({item.package_type})
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        Quantity: {item.quantity}
+                                    </p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm text-gray-600">
+                                        {formatCurrency(item.price)} × {item.quantity}
+                                    </p>
+                                    <p className="font-semibold text-primary">
+                                        {formatCurrency(item.total)}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="flex justify-between items-center pt-4 mt-4 border-t border-[#9B5DE0]/30">
+                        <span className="font-semibold text-lg">Total:</span>
+                        <span className="font-bold text-xl text-primary">
+                            {formatCurrency(editingOrder.total)}
+                        </span>
+                    </div>
+                </div>
+
                 {/* Edit Form */}
                 <div className="bg-muted/10 border border-[#9B5DE0]/30 rounded-lg p-6">
                     <div className="space-y-6">
                         {/* Read-only fields */}
-                        <div className="space-y-4 p-4  rounded-lg bg-muted/50">
+                        <div className="space-y-4 p-4 rounded-lg bg-muted/50">
                             <div>
-                                <Label className="text-gray-500 text-sm">Status </Label>
+                                <Label className="text-gray-500 text-sm">Status</Label>
                                 <div className="mt-2">{getStatusBadge(editingOrder.status)}</div>
                             </div>
                             <div>
-                                <Label className="text-gray-500 text-sm">Email </Label>
+                                <Label className="text-gray-500 text-sm">Email</Label>
                                 <p className="text-black mt-1">{editingOrder.users?.email}</p>
                             </div>
                             <div>
-                                <Label className="text-gray-500 text-sm">Name </Label>
+                                <Label className="text-gray-500 text-sm">Name</Label>
                                 <p className="text-black mt-1">{editingOrder.users?.full_name || displayName}</p>
                             </div>
                         </div>
@@ -326,33 +355,6 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                                 onChange={(e) => setFormData(prev => ({ ...prev, discord: e.target.value }))}
                                 className="bg-white/5 border-[#9B5DE0]/30 text-black placeholder-gray-500"
                             />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-primary">Service Type *</Label>
-                            <Select
-                                value={String(formData.categories_id)}
-                                onValueChange={(value) => setFormData(prev => ({ ...prev, categories_id: value }))}
-                            >
-                                <SelectTrigger className="bg-white/5 border-[#9B5DE0]/30 text-black">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border-[#9B5DE0]/30">
-                                    <SelectGroup>
-                                        {Array.isArray(categories) && categories.length > 0 ? (
-                                            categories.map((cat) => (
-                                                <SelectItem key={cat.id} value={String(cat.id)} className="text-primary focus:bg-[#9B5DE0]/20">
-                                                    {cat.name}
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <SelectItem value="loading" disabled className="text-gray-500">
-                                                Loading categories...
-                                            </SelectItem>
-                                        )}
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
                         </div>
 
                         <div className="space-y-2">

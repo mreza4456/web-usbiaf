@@ -10,6 +10,7 @@ import { deleteProducts, getAllProducts } from "@/action/product"
 import { Card } from "@/components/ui/card"
 import { getAllImages } from "@/action/image"
 import { useRouter } from "next/navigation"
+import { SiteHeader } from "@/components/site-header"
 
 export default function ProductPage() {
   const router = useRouter()
@@ -107,6 +108,9 @@ export default function ProductPage() {
   ]
 
   return (
+    <div className="w-full">
+      <SiteHeader title="Projects" />
+    
     <div className="p-6 space-y-6">
       <Card className="p-6">
         <div className="flex justify-between items-center mb-6">
@@ -123,6 +127,7 @@ export default function ProductPage() {
           <DataTable columns={columns} data={products} filterColumn="name" />
         )}
       </Card>
+    </div>
     </div>
   )
 }

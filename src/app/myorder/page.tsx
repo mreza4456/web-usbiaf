@@ -3,83 +3,56 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+    Package,
+    Edit,
+    Clock,
+    CheckCircle2,
+    XCircle,
+    AlertCircle,
+    Loader2,
+    Eye
+} from 'lucide-react';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    Package,
-    Edit,
-    Trash2,
-    Clock,
-    CheckCircle2,
-    XCircle,
-    AlertCircle,
-    Loader2
-} from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { IOrder, ICategory } from '@/interface';
-import { getAllOrder, updateOrder, deleteOrder } from '@/action/order';
+import { IOrderWithItems } from '@/interface';
+import { updateOrder } from '@/action/order';
+import { getUserOrders } from '@/action/order';
 import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'next/navigation';
 
-interface UserOrdersPageProps {
-    categories: ICategory[];
-}
-
-export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
+export default function UserOrdersPage() {
     const user = useAuthStore((s) => s.user);
-    const [orders, setOrders] = useState<IOrder[]>([]);
+    const [orders, setOrders] = useState<IOrderWithItems[]>([]);
     const [loading, setLoading] = useState(true);
-    const [editingOrder, setEditingOrder] = useState<IOrder | null>(null);
-    const [open, setOpen] = useState(false);
-    const [error, setError] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState<IOrderWithItems | null>(null);
+    const [detailOpen, setDetailOpen] = useState(false);
     const router = useRouter();
-
-    const [formData, setFormData] = useState({
-        discord: '',
-        categories_id: '',
-        purpose: '',
-        project_overview: '',
-        hasReferences: '',
-        references_link: '',
-        platforms: [] as string[],
-        usage_type: '',
-        additional_notes: ''
-    });
 
     const fetchOrders = useCallback(async () => {
         if (!user?.id) return;
 
         try {
             setLoading(true);
-            const response = await getAllOrder();
+            console.log('🔍 Fetching orders for user:', user.id);
+            
+            const response = await getUserOrders(user.id);
+            console.log('📦 Orders response:', response);
 
             if (!response?.success) {
                 throw new Error(response?.message || 'Failed to fetch orders');
             }
 
-            // Filter orders by current user
-            const userOrders = response.data.filter((order: IOrder) => order.user_id === user.id);
-            setOrders(userOrders);
+            console.log('✅ Orders loaded:', response.data);
+            setOrders(response.data as IOrderWithItems[]);
         } catch (error: any) {
+            console.error('❌ Error:', error);
             toast.error(error.message || 'Failed to load orders');
         } finally {
             setLoading(false);
@@ -112,11 +85,6 @@ export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
                 className: "bg-red-500/10 text-red-600 border-red-500/30",
                 label: "Cancelled"
             },
-            rejected: {
-                icon: AlertCircle,
-                className: "bg-gray-500/10 text-gray-600 border-gray-500/30",
-                label: "Rejected"
-            },
         };
 
         const config = statusConfig[status] || statusConfig.pending;
@@ -130,59 +98,15 @@ export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
         );
     };
 
-    const handleEdit = (order: IOrder) => {
-        setEditingOrder(order);
-        setFormData({
-            discord: order.discord || '',
-            categories_id: order.categories_id,
-            purpose: order.purpose,
-            project_overview: order.project_overview,
-            hasReferences: order.references_link ? 'yes' : 'no',
-            references_link: order.references_link || '',
-            platforms: order.platform || [],
-            usage_type: order.usage_type,
-            additional_notes: order.additional_notes || ''
-        });
-        setOpen(true);
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(amount);
     };
 
-    const handleSubmit = async () => {
-        if (!editingOrder) return;
-
-        setError('');
-        setIsSubmitting(true);
-
-        try {
-            const orderData = {
-                discord: formData.discord || '',
-                categories_id: formData.categories_id,
-                purpose: formData.purpose,
-                project_overview: formData.project_overview,
-                references_link: formData.references_link || '',
-                platform: formData.platforms,
-                usage_type: formData.usage_type,
-                additional_notes: formData.additional_notes || ''
-            };
-
-            const result = await updateOrder(editingOrder.id, orderData);
-
-            if (result.success) {
-                toast.success('Order updated successfully!');
-                setOpen(false);
-                setEditingOrder(null);
-                fetchOrders();
-            } else {
-                setError(result.message || 'Failed to update order');
-            }
-        } catch (err: any) {
-            setError(err.message || 'Failed to update order');
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-
-    const handleCancel = async (order: IOrder) => {
+    const handleCancel = async (order: IOrderWithItems) => {
         if (!confirm('Are you sure you want to cancel this order?')) return;
 
         try {
@@ -195,18 +119,14 @@ export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
         }
     };
 
-    const togglePlatform = (platform: string) => {
-        setFormData(prev => ({
-            ...prev,
-            platforms: prev.platforms.includes(platform)
-                ? prev.platforms.filter(p => p !== platform)
-                : [...prev.platforms, platform]
-        }));
+    const viewOrderDetails = (order: IOrderWithItems) => {
+        setSelectedOrder(order);
+        setDetailOpen(true);
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen  flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <Loader2 className="w-12 h-12 text-[#D78FEE] animate-spin mx-auto mb-4" />
                     <p className="text-gray-500">Loading your orders...</p>
@@ -217,9 +137,7 @@ export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
 
     return (
         <div>
-
-
-            <div className="relative z-10 w-full max-w-7xl mx-auto  mt-25">
+            <div className="relative z-10 w-full max-w-7xl mx-auto mt-25">
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-4">
@@ -239,7 +157,7 @@ export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
                             <h3 className="text-xl font-semibold text-white mb-2">No Orders Yet</h3>
                             <p className="text-gray-500 mb-6">You haven't placed any orders yet.</p>
                             <Button
-                                onClick={() => window.location.href = '/order'}
+                                onClick={() => router.push('/order')}
                                 className="bg-primary text-white"
                             >
                                 Place Your First Order
@@ -255,7 +173,7 @@ export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
                                         <div>
                                             <div className="flex items-center gap-3 mb-2">
                                                 <CardTitle className="text-xl text-primary">
-                                                    {order.categories?.name || 'Service'}
+                                                    Order #{order.code_order}
                                                 </CardTitle>
                                                 {getStatusBadge(order.status)}
                                             </div>
@@ -268,35 +186,72 @@ export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
                                             </CardDescription>
                                         </div>
                                         <div className="flex gap-2">
-                                            {order.status === 'pending' && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => handleCancel(order)}
-                                                    className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
-                                                >
-                                                    <XCircle className="w-4 h-4 mr-1" />
-                                                    Cancel Order
-                                                </Button>
-                                            )}
                                             <Button
                                                 variant="outline"
-                                                size="icon"
-                                                onClick={() => router.push(`/myorder/edit/${order.id}`)}
+                                                size="sm"
+                                                onClick={() => viewOrderDetails(order)}
                                                 className="bg-white/5 border-[#9B5DE0]/30 hover:bg-[#9B5DE0]/20"
-                                                disabled={order.status === 'completed' || order.status === 'cancelled'}
                                             >
-                                                <Edit className="w-4 h-4 text-primary" />
+                                                <Eye className="w-4 h-4 mr-1" />
+                                                View Details
                                             </Button>
-
+                                            {(order.status === 'pending' || order.status === 'in_progress') && (
+                                                <>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => router.push(`/myorder/edit/${order.id}`)}
+                                                        className="bg-white/5 border-[#9B5DE0]/30 hover:bg-[#9B5DE0]/20"
+                                                    >
+                                                        <Edit className="w-4 h-4 mr-1" />
+                                                        Edit
+                                                    </Button>
+                                                    {order.status === 'pending' && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleCancel(order)}
+                                                            className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
+                                                        >
+                                                            <XCircle className="w-4 h-4 mr-1" />
+                                                            Cancel
+                                                        </Button>
+                                                    )}
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="grid md:grid-cols-2 gap-4">
+                                    {/* Order Items Summary */}
+                                    <div className="mb-4">
+                                        <Label className="text-gray-600 text-sm mb-2 block">Order Items</Label>
+                                        <div className="space-y-2">
+                                            {order.order_items?.slice(0, 2).map((item) => (
+                                                <div key={item.id} className="flex justify-between items-center p-2 bg-white/5 rounded">
+                                                    <div>
+                                                        <p className="text-sm font-medium text-primary">{item.category_name}</p>
+                                                        <p className="text-xs text-gray-500">
+                                                            {item.package_name} ({item.package_type}) × {item.quantity}
+                                                        </p>
+                                                    </div>
+                                                    <p className="text-sm font-semibold text-primary">
+                                                        {formatCurrency(item.total)}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                            {order.order_items && order.order_items.length > 2 && (
+                                                <p className="text-xs text-gray-500 text-center">
+                                                    +{order.order_items.length - 2} more item(s)
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 gap-4 border-t pt-4">
                                         <div>
                                             <Label className="text-gray-600 text-sm">Purpose</Label>
-                                            <p className="text-primary capitalize">{order.purpose.replace('_', ' ').replace('-', ' ')}</p>
+                                            <p className="text-primary capitalize">{order.purpose.replace(/_/g, ' ').replace(/-/g, ' ')}</p>
                                         </div>
                                         <div>
                                             <Label className="text-gray-600 text-sm">Usage Type</Label>
@@ -312,15 +267,9 @@ export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
                                                 ))}
                                             </div>
                                         </div>
-                                        {order.discord && (
-                                            <div>
-                                                <Label className="text-gray-600 text-sm">Discord</Label>
-                                                <p className="text-primary">{order.discord}</p>
-                                            </div>
-                                        )}
-                                        <div className="md:col-span-2">
-                                            <Label className="text-gray-600 text-sm">Project Overview</Label>
-                                            <p className="text-primary mt-1">{order.project_overview}</p>
+                                        <div>
+                                            <Label className="text-gray-600 text-sm">Total Amount</Label>
+                                            <p className="text-xl font-bold text-primary">{formatCurrency(order.total)}</p>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -329,8 +278,125 @@ export default function UserOrdersPage({ categories }: UserOrdersPageProps) {
                     </div>
                 )}
 
-                {/* Edit Dialog */}
+                {/* Order Details Dialog */}
+                <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+                    <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Order Details</DialogTitle>
+                        </DialogHeader>
 
+                        {selectedOrder && (
+                            <div className="space-y-6">
+                                {/* Order Info */}
+                                <div className="space-y-3">
+                                    <h3 className="font-semibold text-lg">Order Information</h3>
+                                    <div className="grid grid-cols-2 gap-3 text-sm">
+                                        <div>
+                                            <span className="text-gray-500">Order Code:</span>
+                                            <p className="font-mono font-medium">{selectedOrder.code_order}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Status:</span>
+                                            <div className="mt-1">{getStatusBadge(selectedOrder.status)}</div>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Order Date:</span>
+                                            <p className="font-medium">
+                                                {new Date(selectedOrder.created_at).toLocaleDateString('id-ID', {
+                                                    day: '2-digit',
+                                                    month: 'long',
+                                                    year: 'numeric'
+                                                })}
+                                            </p>
+                                        </div>
+                                        {selectedOrder.discord && (
+                                            <div>
+                                                <span className="text-gray-500">Discord:</span>
+                                                <p className="font-medium">{selectedOrder.discord}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Project Details */}
+                                <div className="space-y-3 border-t pt-4">
+                                    <h3 className="font-semibold text-lg">Project Details</h3>
+                                    <div className="space-y-3 text-sm">
+                                        <div>
+                                            <span className="text-gray-500">Purpose:</span>
+                                            <p className="font-medium capitalize">
+                                                {selectedOrder.purpose.replace(/_/g, ' ').replace(/-/g, ' ')}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Project Overview:</span>
+                                            <p className="mt-1 text-gray-700">{selectedOrder.project_overview}</p>
+                                        </div>
+                                        {selectedOrder.references_link && (
+                                            <div>
+                                                <span className="text-gray-500">References:</span>
+                                                <a 
+                                                    href={selectedOrder.references_link} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    className="text-blue-600 hover:underline block mt-1"
+                                                >
+                                                    {selectedOrder.references_link}
+                                                </a>
+                                            </div>
+                                        )}
+                                        <div>
+                                            <span className="text-gray-500">Platform:</span>
+                                            <p className="mt-1">{selectedOrder.platform.join(", ")}</p>
+                                        </div>
+                                        <div>
+                                            <span className="text-gray-500">Usage Type:</span>
+                                            <p className="mt-1 capitalize">{selectedOrder.usage_type.replace(/_/g, ' ')}</p>
+                                        </div>
+                                        {selectedOrder.additional_notes && (
+                                            <div>
+                                                <span className="text-gray-500">Additional Notes:</span>
+                                                <p className="mt-1 text-gray-700">{selectedOrder.additional_notes}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Order Items */}
+                                <div className="space-y-3 border-t pt-4">
+                                    <h3 className="font-semibold text-lg">Order Items</h3>
+                                    <div className="space-y-2">
+                                        {selectedOrder.order_items?.map((item) => (
+                                            <div key={item.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
+                                                <div className="space-y-1">
+                                                    <p className="font-medium">{item.category_name}</p>
+                                                    <p className="text-sm text-gray-600">
+                                                        {item.package_name} ({item.package_type})
+                                                    </p>
+                                                    <p className="text-sm text-gray-500">
+                                                        Quantity: {item.quantity}
+                                                    </p>
+                                                </div>
+                                                <div className="text-right space-y-1">
+                                                    <p className="text-sm text-gray-600">
+                                                        {formatCurrency(item.price)} × {item.quantity}
+                                                    </p>
+                                                    <p className="font-semibold">
+                                                        {formatCurrency(item.total)}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="flex justify-between items-center pt-3 border-t font-semibold text-lg">
+                                        <span>Total:</span>
+                                        <span>{formatCurrency(selectedOrder.total)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
     );

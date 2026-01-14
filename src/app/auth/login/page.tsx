@@ -147,27 +147,17 @@ export default function Login(): React.ReactElement {
     /* ------------------------------------------------------------------------ */
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2d1b4e] to-[#1a1a2e] text-white flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2d1b4e] to-[#1a1a2e] text-primary flex items-center justify-center p-4">
             {/* Animated Background */}
-            <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-[#9B5DE0] rounded-full blur-[120px] opacity-30 animate-pulse" />
-                <div
-                    className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#D78FEE] rounded-full blur-[100px] opacity-25 animate-pulse"
-                    style={{ animationDelay: "2s" }}
-                />
-                <div
-                    className="absolute top-[50%] left-[50%] w-[350px] h-[350px] bg-[#4E56C0] rounded-full blur-[90px] opacity-20 animate-pulse"
-                    style={{ animationDelay: "4s" }}
-                />
-            </div> 
+           
 
             <div className="relative z-10 w-full max-w-md">
-                <Card className="bg-white/5 backdrop-blur-sm border-[#9B5DE0]/30">
+                <Card className="bg-background border-[#9B5DE0]/30">
                     <CardHeader>
-                        <CardTitle className="text-2xl text-white">
+                        <CardTitle className="text-2xl text-primary">
                             Sign In
                         </CardTitle>
-                        <CardDescription className="text-gray-400">
+                        <CardDescription className="text-gray-500">
                             Enter your credentials to access your account
                         </CardDescription>
                     </CardHeader>
@@ -189,7 +179,7 @@ export default function Login(): React.ReactElement {
 
                         {/* Email */}
                         <div className="space-y-2">
-                            <label className="flex items-center text-sm text-gray-300">
+                            <label className="flex items-center text-sm text-gray-400">
                                 <Mail className="w-4 h-4 mr-2" />
                                 Email
                             </label>
@@ -198,13 +188,13 @@ export default function Login(): React.ReactElement {
                                 placeholder="hello@example.com"
                                 {...loginForm.register("email")}
                                 onKeyPress={handleKeyPress}
-                                className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-white placeholder-gray-500 focus:outline-none"
+                                className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none"
                             />
                         </div>
 
                         {/* Password */}
                         <div className="space-y-2">
-                            <label className="flex items-center text-sm text-gray-300">
+                            <label className="flex items-center text-sm text-gray-400">
                                 <Lock className="w-4 h-4 mr-2" />
                                 Password
                             </label>
@@ -215,7 +205,7 @@ export default function Login(): React.ReactElement {
                                     placeholder="••••••••"
                                     {...loginForm.register("password")}
                                     onKeyPress={handleKeyPress}
-                                    className="w-full px-4 py-3 pr-12 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-white"
+                                    className="w-full px-4 py-3 pr-12 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary"
                                 />
                                 <button
                                     type="button"
@@ -234,7 +224,7 @@ export default function Login(): React.ReactElement {
                         <Button
                             onClick={handleLogin}
                             disabled={isSubmitting}
-                            className="w-full bg-gradient-to-r from-[#9B5DE0] to-[#D78FEE]"
+                            className="w-full bg-primary"
                         >
                             {isSubmitting ? "Signing in..." : "Sign In"}
                         </Button>
@@ -242,14 +232,14 @@ export default function Login(): React.ReactElement {
                         <div className="grid grid-cols-2 gap-3">
                             <Button
                                 onClick={() => handleOAuthLogin("twitch")}
-                                className="bg-white/5 border border-[#9B5DE0]/30"
+                                className="bg-white/5 border border-primary border-2 text-primary"
                             >
                                 <Twitch className="w-5 h-5 mr-2" />
                                 Twitch
                             </Button>
                             <Button
                                 onClick={() => handleOAuthLogin("google")}
-                                className="bg-white/5 border border-[#9B5DE0]/30"
+                                className="bg-white/5 border border-primary border-2 text-primary"
                             >
                                 <Chrome className="w-5 h-5 mr-2" />
                                 Google

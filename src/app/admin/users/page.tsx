@@ -44,6 +44,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import { SiteHeader } from "@/components/site-header"
 
 const usersSchema = z.object({
     role: z.string().min(1, "Role wajib diisi"),
@@ -173,7 +174,7 @@ export default function UsersPage() {
     ]
 
     return (
-
+<div className="w-full"><SiteHeader title="Users" />
         <div className="w-full max-w-6xl mx-auto">
             <div className="items-center my-7">
                 <Dialog open={open} onOpenChange={setOpen}>
@@ -227,6 +228,6 @@ export default function UsersPage() {
                 <DataTable columns={columns} data={Users} filterColumn="email" />
             )}
         </div>
-
+</div>
     )
 }
