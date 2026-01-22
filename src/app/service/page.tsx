@@ -7,6 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Zap, Shield, Star, Clock, ImageIcon } from 'lucide-react';
 import { getAllCategories } from '@/action/categories';
 import type { ICategory, IImageCategories } from '@/interface';
+import SkeletonGrid from '@/components/skeleton-card';
+import { Spinner } from '@/components/ui/spinner';
 
 interface ICategoryWithImages extends ICategory {
     images?: IImageCategories[]
@@ -17,6 +19,7 @@ export default function ServicesPage() {
     const [categories, setCategories] = useState<ICategoryWithImages[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [skeletonCount, setSkeletonCount] = useState(6);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -24,6 +27,7 @@ export default function ServicesPage() {
                 const result = await getAllCategories();
 
                 if (result.success && Array.isArray(result.data)) {
+                    setSkeletonCount(result.data.length || 6);
                     setCategories(result.data);
                 } else {
                     console.error('Failed to fetch categories:', result.message);
@@ -38,7 +42,6 @@ export default function ServicesPage() {
                 setLoading(false);
             }
         };
-
         fetchCategories();
     }, []);
 
@@ -69,6 +72,16 @@ export default function ServicesPage() {
         router.push(`/service/detail/${categoryId}`);
     };
 
+    
+     if (loading) {
+        return (
+          <div className="min-h-screen flex items-center justify-center">
+         
+          <Spinner className='w-10 h-10 text-primary'/>
+       
+          </div>
+        );
+      }
     return (
         <div className="min-h-screen">
             {/* Hero Section */}
@@ -90,10 +103,9 @@ export default function ServicesPage() {
             <section className="pb-12 sm:pb-16 px-4 sm:px-6">
                 <div className="container mx-auto">
                     {loading ? (
-                        <div className="text-center py-12">
-                            <div className="inline-block w-12 h-12 border-4 border-[#9B5DE0]/30 border-t-[#D78FEE] rounded-full animate-spin"></div>
-                            <p className="text-gray-800 mt-4">Loading Services...</p>
-                        </div>
+                        <div className="flex justify-center items-center">
+                           <Spinner className='w-10 h-10 text-primary'/>
+                           </div>
                     ) : error ? (
                         <Card className="bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30">
                             <CardContent className="py-12 text-center">
@@ -116,29 +128,23 @@ export default function ServicesPage() {
                                 return (
                                     <Card
                                         key={category.id}
-                                        className="bg-muted/50 grid grid-cols-1 lg:grid-cols-2 p-0 m-0 overflow-hidden shadow-lg border-[#9B5DE0]/30 hover:border-[#D78FEE]/50  hover:transform  "
-                                        
+                                        className="bg-white grid grid-cols-1 lg:grid-cols-2 p-0 m-0 overflow-hidden shadow-lg border-primary/30 hover:border-primary/50  hover:transform  "
+
                                     >
                                         {/* Image Section dengan Badge Counter */}
                                         <div className="relative h-full min-h-[250px]">
                                             {primaryImage ? (
                                                 <>
-                                                    <img 
-                                                        className='w-full h-full object-cover hover:scale-105 transition-all duration-300' 
-                                                        src={primaryImage} 
+                                                    <img
+                                                        className='w-full h-full object-cover hover:scale-105 transition-all duration-300'
+                                                        src={primaryImage}
                                                         alt={category.name}
                                                         onError={(e) => {
                                                             e.currentTarget.src = "/placeholder-image.svg"
                                                         }}
                                                     />
-                                                    
-                                                    {/* Image Counter Badge */}
-                                                    {imageCount > 1 && (
-                                                        <Badge className="absolute top-3 right-3 bg-black/70 text-white border-0">
-                                                            <ImageIcon className="w-3 h-3 mr-1" />
-                                                            {imageCount} Photos
-                                                        </Badge>
-                                                    )}
+
+
                                                 </>
                                             ) : (
                                                 <div className="w-full h-full bg-gray-200 flex items-center justify-center">
@@ -162,22 +168,24 @@ export default function ServicesPage() {
                                                             </CardDescription>
                                                         )}
                                                         {category.start_price && (
-                                                            <Badge className="mt-8 bg-primary text-white">
+                                                            <p className='text-secondary mt-5'>
                                                                 Start From {category.start_price}$
-                                                            </Badge>
+                                                            </p>
+
+
                                                         )}
                                                     </div>
                                                 </div>
                                             </CardHeader>
                                             <CardContent>
                                                 <Button
-                                                    className="w-full bg-primary cursor-pointer hover:from-[#8049c7] hover:to-[#c576e0] text-white"
+                                                    className="w-full bg-primary rounded-full cursor-pointer hover:from-[#8049c7] hover:to-[#c576e0] text-white"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleCategoryClick(category.id);
                                                     }}
                                                 >
-                                                    View Packages
+                                                    View
                                                     <ArrowRight className="w-4 h-4 ml-2" />
                                                 </Button>
                                             </CardContent>

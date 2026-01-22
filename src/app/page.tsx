@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, Zap, Palette, Users, Star, ArrowRight, Check, Package, Shield, Headphones, Award } from 'lucide-react';
 import Link from 'next/link';
+import BlogCarousel from '@/components/carousel-blog';
 
 export default function NemunekoStudio() {
   const services = [
@@ -147,7 +148,7 @@ export default function NemunekoStudio() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {services.map((service, i) => {
-             
+
               return (
                 <Card key={i} className={`border-3 border-primary rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:transform hover:-translate-y-2 overflow-hidden bg-white`}>
 
@@ -183,6 +184,17 @@ export default function NemunekoStudio() {
               </Button>
             </Link>
           </div>
+        </div>
+      </section>
+
+      <section id='blog' className='py-20 px-6 relative'>
+        <BlogCarousel />
+        <div className="text-center ">
+        <Link href="/blog">
+          <Button className="bg-white cursor-pointer hover:bg-gray-50 text-[#50398e] px-10 py-6 rounded-full shadow-md border-2 border-[#50398e]">
+            Show More
+          </Button>
+        </Link>
         </div>
       </section>
 
@@ -269,7 +281,7 @@ export default function NemunekoStudio() {
         </div>
       </section>
 
-  
+
       <section className="pb-20 px-4 sm:px-6">
         <div className="container mx-auto">
           <Card className="bg-muted/50 border-primary/30">
@@ -281,16 +293,16 @@ export default function NemunekoStudio() {
                 Bergabunglah dengan ribuan content creator yang telah mempercayai Nemuneko Studio untuk meningkatkan kualitas stream mereka.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link href="/order">
-                <Button size="lg" className="bg-primary text-white rounded-full px-10 py-7 ">
-                  Start Your Journey
-                </Button>
-              </Link>
-              <Link href="/contact">
-                <Button size="lg" className="bg-background border-3 border-primary text-primary hover:bg-primary hover:text-white rounded-full px-10 py-7">
-                  Contact Us
-                </Button>
-              </Link>
+                <Link href="/order">
+                  <Button size="lg" className="bg-primary text-white rounded-full px-10 py-7 ">
+                    Start Your Journey
+                  </Button>
+                </Link>
+                <Link href="/contact">
+                  <Button size="lg" className="bg-background border-3 border-primary text-primary hover:bg-primary hover:text-white rounded-full px-10 py-7">
+                    Contact Us
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

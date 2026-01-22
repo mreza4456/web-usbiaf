@@ -33,7 +33,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import z from "zod"
 
 import { IOrderWithItems } from "@/interface"
-import { deleteOrder, updateOrder, getAllOrdersWithItems } from "@/action/order"
+import { deleteOrder, updateOrder, getAllOrdersWithItems, updateOrderStatus } from "@/action/order"
 import { SiteHeader } from "@/components/site-header"
 
 const orderSchema = z.object({
@@ -101,7 +101,7 @@ export default function OrderAdminPage() {
         if (!editingOrder) return
 
         try {
-            const res = await updateOrder(editingOrder.id, values)
+            const res = await updateOrderStatus(editingOrder.id, values)
 
             if (!res.success) throw new Error(res.message)
 

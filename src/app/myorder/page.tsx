@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { IOrderWithItems } from '@/interface';
-import { updateOrder } from '@/action/order';
+import { updateOrder, updateOrderStatus } from '@/action/order';
 import { getUserOrders } from '@/action/order';
 import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'next/navigation';
@@ -110,7 +110,7 @@ export default function UserOrdersPage() {
         if (!confirm('Are you sure you want to cancel this order?')) return;
 
         try {
-            const response = await updateOrder(order.id, { status: 'cancelled' });
+            const response = await updateOrderStatus(order.id, { status: 'cancelled' });
             if (!response.success) throw new Error(response.message);
             toast.success('Order cancelled successfully');
             fetchOrders();

@@ -2,7 +2,7 @@
 
 export interface IProduct {
   id: string;
-  category_id: string;
+  categories_id: string;
   image_id: string;
   name: string;
   description?: string;
@@ -144,7 +144,7 @@ export interface IVoucherEvents {
 
 }
 export interface IPackageCategories {
-  id: number;
+  id: string;
   categories_id: string;
   name: string;
   price: number;
@@ -169,7 +169,7 @@ export interface ICategory {
 
 export interface IImageCategories {
   id: number;
-  image_url: string
+  image_url: string;
 
   categories_id?: string // NEW
   created_at?: string
@@ -229,10 +229,6 @@ export interface IUpdateCartQuantityRequest {
   user_id: string;
 }
 
-// ============================================
-// Response Types
-// ============================================
-
 export interface ICartResponse {
   success: boolean;
   message?: string;
@@ -255,4 +251,62 @@ export interface ICartCountResponse {
   success: boolean;
   message?: string;
   count: number;
+}
+export interface IMilestoneReward {
+  id: string;
+  milestone_step: number;
+  voucher_value: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+// @/interface/chat.ts
+
+export interface IChatRoom {
+  id: string;
+  user_id: string;
+  admin_id: string | null;
+  status: 'open' | 'closed';
+  last_message_at: string;
+  created_at: string;
+  user?: {
+    id: string;
+    email: string;
+    full_name: string;
+    avatar_url: string;
+  };
+  admin?: {
+    id: string;
+    email: string;
+    full_name: string;
+    avatar_url: string;
+  };
+  unread_count?: number;
+  last_message?: string;
+}
+
+export interface IChatMessage {
+  id: string;
+  chat_room_id: string;
+  sender_id: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  sender?: {
+    id: string;
+    email: string;
+    full_name: string;
+    avatar_url: string;
+  };
+}
+
+// Tambahkan interface berikut ke file interface.ts yang sudah ada
+
+export interface IBlogPost {
+  id: string;
+  title: string;
+  description?: string;
+  image?: string;
+  created_at: string;
+  updated_at: string;
 }

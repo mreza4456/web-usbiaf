@@ -57,12 +57,11 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
         additional_notes: ''
     });
 
-    const getDisplayName = () => {
-        if (!user) return null
-        if (user.user_metadata?.full_name) return user.user_metadata.full_name
-        if (user.user_metadata?.name) return user.user_metadata.name
-        return user.email?.split("@")[0]
-    }
+ const getDisplayName = () => {
+  if (!user) return null;
+  if (user.full_name) return user.full_name;
+  return user.email?.split("@")[0];
+};
 
     const displayName = getDisplayName()
 

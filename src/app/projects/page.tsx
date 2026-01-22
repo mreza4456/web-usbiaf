@@ -10,6 +10,8 @@ import { getAllProducts } from '@/action/product';
 import { getAllCategories } from '@/action/categories';
 import { IProduct, ICategory } from '@/interface';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Spinner } from '@/components/ui/spinner';
 
 export default function Projects() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -18,6 +20,7 @@ export default function Projects() {
   const [products, setProducts] = useState<IProduct[]>([]);
   const [categories, setCategories] = useState<ICategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,7 +31,7 @@ export default function Projects() {
         const productsResult = await getAllProducts();
         console.log('Products Result:', productsResult); // Debug log
         if (productsResult.success) {
-          setProducts(productsResult.data);
+          setProducts(productsResult.data as any);
         }
 
         // Fetch all categories
@@ -54,9 +57,12 @@ export default function Projects() {
         : [...prev, productId]
     );
   };
+    const handleClick = () => {
+    router.push("/project/detail")
+  };
 
   const filteredProjects = products.filter(product => {
-    const matchesCategory = selectedCategory === 'all' || product.category_id === selectedCategory;
+    const matchesCategory = selectedCategory === 'all' || product.categories_id === selectedCategory;
     const matchesSearch =
       product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
@@ -69,16 +75,17 @@ export default function Projects() {
     ...categories
   ];
 
+
   if (loading) {
     return (
-      <div className="min-h-screen  flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-black">Loading projects...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+
+        <Spinner className='w-10 h-10 text-primary' />
+
       </div>
     );
   }
+
 
   return (
     <div >
@@ -88,7 +95,7 @@ export default function Projects() {
         {/* Hero Section */}
         <section className="pt-16 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6">
           <div className="container mx-auto text-center">
-            
+
             <Badge className="inline-block mb-6 px-4 py-2 bg-muted rounded-full shadow-sm border-2 border-[#dbc8fb]">
               <span className="text-sm font-semibold text-[#50398e]">✨ {products.length}+ Premium Projects</span>
             </Badge>
@@ -125,10 +132,10 @@ export default function Projects() {
         <section className="pb-8 px-4 sm:px-6">
           <div className="container mx-auto">
             <div className="flex items-center justify-between mb-6">
-               <h3 className="text-3xl md:text-5xl font-bold mb-4 text-[#50398e] relative inline-block">
-              Browse Projects
-              <span className="absolute -top-6 -right-8 text-4xl">✦</span>
-            </h3>
+              <h3 className="text-3xl md:text-5xl font-bold mb-4 text-[#50398e] relative inline-block">
+                Browse Projects
+                <span className="absolute -top-6 -right-8 text-4xl">✦</span>
+              </h3>
               <span className="text-gray-400 text-sm sm:text-base">
                 {filteredProjects.length} projects found
               </span>
@@ -177,54 +184,56 @@ export default function Projects() {
                   }).format(project.price || 0);
 
                   return (
-                    <Card key={project.id} className="bg-white p-0 m-0  border-primary/30 shadow-lg hover:border-primary transition-all duration-300 hover:transform hover:scale-105  overflow-hidden">
-                      <CardHeader className="pb-3">
-                        <div className="relative  bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 rounded-lg flex items-center justify-center overflow-hidden">
+                    <Card key={project.id} onClick={handleClick} className="bg-white p-0 m-0 border-0 shadow-lg hover:shadow-xl hover:scale-105 cursor-pointer transition-all duration-300 overflow-hidden">
+                      <CardContent className="p-0">
+                        {/* Instagram-style header */}
+                        <div className="flex items-center gap-3 px-4 py-3 border-b">
+                          <img src="/avatarnemuneko.jpg" className='w-8 h-8 rounded-full' alt="" />
+                          <span className="font-semibold text-sm">{project.name}</span>
+                        </div>
+
+                        {/* Main image with overlay text */}
+                        <div className="relative aspect-square bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f0f1e] flex items-center justify-center overflow-hidden">
                           {mainImage ? (
                             <img
                               src={mainImage}
                               alt={project.name}
-                              className=" h-[70%] w-full object-cover"
+                              className="w-full h-full object-cover"
                               onError={(e) => {
                                 console.error('Image failed to load:', mainImage);
                                 e.currentTarget.style.display = 'none';
                               }}
                             />
                           ) : (
-                            <div className="text-6xl">🎨</div>
+                            /* Stylized overlay text */
+                            <div className="absolute inset-0 flex items-center justify-center p-8">
+                              <div className="relative w-full h-full flex items-center justify-center">
+                                {/* Diagonal lines background */}
+                                <div className="absolute inset-0 opacity-10">
+                                  {[...Array(8)].map((_, i) => (
+                                    <div
+                                      key={i}
+                                      className="absolute h-px bg-white transform -rotate-45"
+                                      style={{
+                                        width: '200%',
+                                        top: `${i * 15}%`,
+                                        left: '-50%'
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
                           )}
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center space-x-3">
-                            <Button size="sm" className="bg-white/20 backdrop-blur-sm hover:bg-white/30">
-                              <Play className="w-4 h-4" />
-                            </Button>
-                            <Button size="sm" className="bg-white/20 backdrop-blur-sm hover:bg-white/30">
-                              <ExternalLink className="w-4 h-4" />
-                            </Button>
-                          </div>
                         </div>
-                        <CardTitle className="text-lg text-primary mt-5 line-clamp-1">{project.name}</CardTitle>
-                        <CardDescription className="text-gray-800 text-sm line-clamp-2">
-                          {project.description || 'No description available'}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent className="pb-3">
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                          {project.category && (
-                            <Badge variant="outline" className="text-xs border-primary/30 bg-secondary text-white">
-                              {project.category.name}
-                            </Badge>
-                          )}
-                          {project.image_count !== undefined && project.image_count > 0 && (
-                            <Badge variant="outline" className="text-xs border-primary/30 bg-secondary text-white">
-                              {project.image_count} {project.image_count === 1 ? 'Image' : 'Images'}
-                            </Badge>
-                          )}
+
+                        {/* Instagram-style footer */}
+                        <div className="px-4 py-4">
+                          <h3 className="font-semibold text-sm mb-1 line-clamp-1">
+                                  {project.description || 'No description available'}
+                          </h3>
                         </div>
                       </CardContent>
-                      <CardFooter className="pt-0 flex justify-between items-center">
-                        {/* <span className="text-lg font-bold text-[#D78FEE]">{formattedPrice}</span> */}
-
-                      </CardFooter>
                     </Card>
                   );
                 })}
@@ -245,9 +254,9 @@ export default function Projects() {
                   Hubungi kami untuk custom project sesuai kebutuhan stream Anda
                 </p>
                 <Link href="/order">
-                <Button size="lg" className="bg-primary text-white">
-                  Request Custom Project
-                </Button>
+                  <Button size="lg" className="bg-primary text-white">
+                    Request Custom Project
+                  </Button>
                 </Link>
               </CardContent>
             </Card>

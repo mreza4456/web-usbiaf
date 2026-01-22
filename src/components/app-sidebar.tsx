@@ -16,6 +16,8 @@ import {
   IconReport,
   IconSearch,
   IconSettings,
+  IconTarget,
+  IconTargetArrow,
   IconTicket,
   IconUsers,
 } from "@tabler/icons-react"
@@ -72,8 +74,13 @@ const data = {
       icon: IconTicket,
     },
     {
-      title: "News",
-      url: "admin/news",
+      title: "Milestone Rewards",
+      url: "/admin/milestone",
+      icon: IconTargetArrow,
+    },
+    {
+      title: "Blog",
+      url: "/admin/blog",
       icon: IconFileDescription,
     },
   ],

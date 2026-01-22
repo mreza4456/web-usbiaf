@@ -158,3 +158,47 @@
   font-weight: bolder;
   font-size: 1vw;
 }
+
+
+.tooltip {
+  /* triangle dimension */
+ --b: 0.5em; /* base */
+  --h: 0.3em; /* height */
+
+  --p: 100%; /* triangle position (0%:top 100%:bottom) */
+  --r: 10px; /* the radius */
+  --c: #50398e;
+
+
+  border-radius: var(--r)/var(--r) min(var(--r),var(--p) - var(--b)/2) min(var(--r),100% - var(--p) - var(--b)/2) var(--r);
+  clip-path: polygon(100% 100%,0 100%,0 0,100% 0,
+    100% max(0%  ,var(--p) - var(--b)/2),
+    calc(100% + var(--h)) var(--p),
+    100% min(100%,var(--p) + var(--b)/2));
+  background: var(--c);
+  border-image: conic-gradient(var(--c) 0 0) fill 0/
+    calc(var(--p) - var(--b)/2) 0 calc(100% - var(--p) - var(--b)/2) var(--r)/
+    0 var(--h) 0 0;
+}
+
+
+.tooltipleft {
+  /* triangle dimension */
+  --b: 0.5em; /* base */
+  --h: 0.3em; /* height */
+
+  --p: 100%; /* triangle position (0%:top 100%:bottom) */
+  --r: 10px; /* the radius */
+  --c: #dbc8fb;
+
+
+  border-radius: var(--r)/min(var(--r),var(--p) - var(--b)/2) var(--r) var(--r) min(var(--r),100% - var(--p) - var(--b)/2);
+  clip-path: polygon(0 100%,100% 100%,100% 0,0 0,
+    0 max(0%  ,var(--p) - var(--b)/2),
+    calc(-1*var(--h)) var(--p),
+    0 min(100%,var(--p) + var(--b)/2));
+  background: var(--c);
+  border-image: conic-gradient(var(--c) 0 0) fill 0/
+    calc(var(--p) - var(--b)/2) var(--r) calc(100% - var(--p) - var(--b)/2) 0/
+    0 0 0 var(--h);
+}

@@ -8,16 +8,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setUser = useAuthStore((s) => s.setUser)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setUser(data.session?.user ?? null)
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        // Map auth user ke User interface Anda
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          full_name: session.user.user_metadata?.full_name,
+          avatar_url: session.user.user_metadata?.avatar_url,
+          role: session.user.user_metadata?.role,
+        })
+      } else {
+        setUser(null)
+      }
     })
 
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
+    // Listen to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          full_name: session.user.user_metadata?.full_name,
+          avatar_url: session.user.user_metadata?.avatar_url,
+          role: session.user.user_metadata?.role,
+        })
+      } else {
+        setUser(null)
+      }
     })
 
     return () => {
-      data.subscription.unsubscribe()
+      subscription.unsubscribe()
     }
   }, [setUser])
 

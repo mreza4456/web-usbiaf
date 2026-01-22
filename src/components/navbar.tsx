@@ -6,6 +6,7 @@ import { Button } from "./ui/button"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/config/supabase"
 import { useAuthStore } from "@/store/auth"
+import UserChat from "./user-chat";
 
 interface Voucher {
   id: string;
@@ -30,7 +31,7 @@ export default function Navbar(): React.ReactElement {
 
   /** 🔥 Zustand Auth (INSTAN) */
   const user = useAuthStore((s) => s.user)
-  const isLoading = useAuthStore((s) => s.isLoading)
+  const isLoading = useAuthStore((s) => s.loading)
 
   React.useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50)
@@ -82,13 +83,11 @@ export default function Navbar(): React.ReactElement {
     }
   }
 
-  const getDisplayName = () => {
-    if (!user) return null
-    if (user.user_metadata?.full_name) return user.user_metadata.full_name
-    if (user.user_metadata?.name) return user.user_metadata.name
-    return user.email?.split("@")[0]
-  }
-
+const getDisplayName = () => {
+  if (!user) return null;
+  if (user.full_name) return user.full_name;
+  return user.email?.split("@")[0];
+};
   const displayName = getDisplayName()
 
   React.useEffect(() => {
@@ -114,6 +113,7 @@ export default function Navbar(): React.ReactElement {
     { href: "/", label: "Home" },
     { href: "/projects", label: "Project" },
     { href: "/service", label: "Service" },
+    { href: "/blog", label: "Blog" },
     { href: "/teams", label: "Teams" },
     { href: "/faqs", label: "FAQs" },
     { href: "/contact", label: "Contact" },
@@ -138,7 +138,7 @@ export default function Navbar(): React.ReactElement {
   }
 
   return (
-    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 bg-background`}>
+    <nav className={`fixed top-0 w-full  z-50 transition-all duration-300 bg-background`}>
       <div className="max-w-8xl  sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -166,7 +166,8 @@ export default function Navbar(): React.ReactElement {
           <div>
             {/* Auth Section Desktop */}
             {user ? (
-              <div className="flex items-center space-x-3 ">
+              <div className="flex items-center space-x-3">
+                     <UserChat /> 
                 {/* Voucher Button */}
                 <div className="relative voucher-menu-container">
                   <button

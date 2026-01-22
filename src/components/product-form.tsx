@@ -36,7 +36,7 @@ import { addImage, deleteImage } from "@/action/image"
 
 const productSchema = z.object({
   name: z.string().min(2, "min 2 characters"),
-  category_id: z.string().min(1, "Category is required"),
+  categories_id: z.string().min(1, "Category is required"),
   description: z.string().optional(),
   price: z.string().min(1, "Price is required"),
 })
@@ -68,7 +68,7 @@ export default function ProductFormPage({
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: "",
-      category_id: "",
+      categories_id: "",
       description: "",
       price: "",
     },
@@ -108,7 +108,7 @@ export default function ProductFormPage({
       // Reset form with product data
       form.reset({
         name: product.name,
-        category_id: String(product.category_id),
+        categories_id: String(product.categories_id),
         description: product.description || "",
         price: String(product.price || ""),
       })
@@ -135,128 +135,126 @@ export default function ProductFormPage({
       fetchProduct()
     }
   }, [formType, productId])
+const handleSubmit = async (values: ProductForm) => {
+  console.log("=== SUBMIT STARTED ===")
+  console.log("Form Type:", formType)
+  console.log("Form values:", values)
+  console.log("Image files:", imageFiles.length)
+  console.log("Product ID:", productId)
 
-  const handleSubmit = async (values: ProductForm) => {
-    console.log("=== SUBMIT STARTED ===")
-    console.log("Form Type:", formType)
-    console.log("Form values:", values)
-    console.log("Image files:", imageFiles.length)
-    console.log("Product ID:", productId)
-
-    try {
-      setLoading(true)
-      
-      // Parse and validate values
-      const categoryId = parseInt(values.category_id)
-      const price = parseFloat(values.price)
-      
-      if (isNaN(categoryId)) {
-        throw new Error("Invalid category")
-      }
-      
-      if (isNaN(price) || price <= 0) {
-        throw new Error("Invalid price")
-      }
-
-      const payload = {
-        name: values.name,
-        category_id: categoryId,
-        price: price,
-        description: values.description || "",
-      }
-
-      console.log("Payload:", payload)
-
-      let res
-      let savedProductId = productId
-
-      // Step 1: Save or Update Product
-      if (formType === "edit") {
-        // Edit mode - productId must exist
-        if (!productId) {
-          throw new Error("Product ID is required for edit mode")
-        }
-        console.log("Updating product...")
-        res = await updateProducts(productId, payload as any)
-        console.log("Update response:", res)
-      } else {
-        // Add mode - create new product
-        console.log("Creating new product...")
-        res = await addProducts(payload as any)
-        console.log("Add response:", res)
-        
-        // Get the new product ID from response
-        if (res.success && res.data?.id) {
-          savedProductId = res.data.id
-          console.log("New product ID:", savedProductId)
-        }
-      }
-
-      if (!res || !res.success) {
-        throw new Error(res?.message || "Failed to save product")
-      }
-
-      // Step 2: Delete marked images (only in edit mode)
-      if (formType === "edit" && imagesToDelete.length > 0) {
-        console.log("Deleting images:", imagesToDelete)
-        for (const imageId of imagesToDelete) {
-          try {
-            await deleteImage(imageId)
-          } catch (err) {
-            console.error("Failed to delete image:", imageId, err)
-          }
-        }
-      }
-
-      // Step 3: Upload new images (both add and edit mode)
-      if (imageFiles.length > 0 && savedProductId) {
-        console.log(`Uploading ${imageFiles.length} images to product ${savedProductId}...`)
-        
-        let successCount = 0
-        let failCount = 0
-        
-        for (const file of imageFiles) {
-          try {
-            console.log("Uploading:", file.name)
-            const uploadRes = await addImage({ product_id: savedProductId }, file)
-            
-            if (uploadRes.success) {
-              successCount++
-              console.log("Upload success:", file.name)
-            } else {
-              failCount++
-              console.error("Upload failed:", file.name, uploadRes.message)
-            }
-          } catch (err: any) {
-            failCount++
-            console.error("Upload error:", file.name, err)
-          }
-        }
-        
-        console.log(`Upload complete: ${successCount} success, ${failCount} failed`)
-        
-        if (failCount > 0) {
-          toast.warning(`Product saved, but ${failCount} image(s) failed to upload`)
-        }
-      }
-
-      const successMessage = formType === "edit" 
-        ? "Product updated successfully!" 
-        : "Product created successfully!"
-      toast.success(successMessage)
-      console.log("=== SUBMIT SUCCESS ===")
-      
-      // Redirect to products list
-      router.push("/admin/products")
-      
-    } catch (err: any) {
-      console.error("=== SUBMIT ERROR ===", err)
-      toast.error(err.message || "Something went wrong")
-    } finally {
-      setLoading(false)
-      console.log("=== SUBMIT ENDED ===")
+  try {
+    setLoading(true)
+    
+    // Validate categories_id (remove parseInt, use as string/UUID)
+    if (!values.categories_id || values.categories_id.trim() === '') {
+      throw new Error("Category is required")
     }
+    
+    // Parse and validate price
+    const price = parseFloat(values.price)
+    if (isNaN(price) || price <= 0) {
+      throw new Error("Invalid price")
+    }
+
+    const payload = {
+      name: values.name,
+      categories_id: values.categories_id, // Keep as string (UUID)
+      price: price,
+      description: values.description || "",
+    }
+
+    console.log("Payload:", payload)
+
+    let res
+    let savedProductId = productId
+
+    // Step 1: Save or Update Product
+    if (formType === "edit") {
+      // Edit mode - productId must exist
+      if (!productId) {
+        throw new Error("Product ID is required for edit mode")
+      }
+      console.log("Updating product...")
+      res = await updateProducts(productId, payload as any)
+      console.log("Update response:", res)
+    } else {
+      // Add mode - create new product
+      console.log("Creating new product...")
+      res = await addProducts(payload as any)
+      console.log("Add response:", res)
+      
+      // Get the new product ID from response
+      if (res.success && res.data?.id) {
+        savedProductId = res.data.id
+        console.log("New product ID:", savedProductId)
+      }
+    }
+
+    if (!res || !res.success) {
+      throw new Error(res?.message || "Failed to save product")
+    }
+
+    // Step 2: Delete marked images (only in edit mode)
+    if (formType === "edit" && imagesToDelete.length > 0) {
+      console.log("Deleting images:", imagesToDelete)
+      for (const imageId of imagesToDelete) {
+        try {
+          await deleteImage(imageId)
+        } catch (err) {
+          console.error("Failed to delete image:", imageId, err)
+        }
+      }
+    }
+
+    // Step 3: Upload new images (both add and edit mode)
+    if (imageFiles.length > 0 && savedProductId) {
+      console.log(`Uploading ${imageFiles.length} images to product ${savedProductId}...`)
+      
+      let successCount = 0
+      let failCount = 0
+      
+      for (const file of imageFiles) {
+        try {
+          console.log("Uploading:", file.name)
+          const uploadRes = await addImage({ product_id: savedProductId }, file)
+          
+          if (uploadRes.success) {
+            successCount++
+            console.log("Upload success:", file.name)
+          } else {
+            failCount++
+            console.error("Upload failed:", file.name, uploadRes.message)
+          }
+        } catch (err: any) {
+          failCount++
+          console.error("Upload error:", file.name, err)
+        }
+      }
+      
+      console.log(`Upload complete: ${successCount} success, ${failCount} failed`)
+      
+      if (failCount > 0) {
+        toast.warning(`Product saved, but ${failCount} image(s) failed to upload`)
+      }
+    }
+
+    const successMessage = formType === "edit" 
+      ? "Product updated successfully!" 
+      : "Product created successfully!"
+    toast.success(successMessage)
+    console.log("=== SUBMIT SUCCESS ===")
+    
+    // Redirect to products list
+    router.push("/admin/products")
+    
+  } catch (err: any) {
+    console.error("=== SUBMIT ERROR ===", err)
+    toast.error(err.message || "Something went wrong")
+  } finally {
+    setLoading(false)
+    console.log("=== SUBMIT ENDED ===")
   }
+}
 
   const handleRemoveExistingImage = (imageId: string) => {
     if (!confirm("Remove this image?")) return
@@ -287,7 +285,7 @@ export default function ProductFormPage({
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <FormField
               control={form.control}
-              name="category_id"
+              name="categories_id"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Category</FormLabel>

@@ -102,9 +102,7 @@ export default function VoucherEventsList() {
               className="relative bg-gradient-to-br from-purple-900/30 to-purple-800/20 border-2 border-purple-700/50 rounded-2xl p-6 hover:scale-105 transition-transform"
             >
               {/* Type Badge */}
-              <div className="absolute top-4 right-4 bg-purple-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">
-                {event.type}
-              </div>
+           
 
               {/* Event Name */}
               <h3 className="text-xl font-bold text-primary mb-4 pr-16">

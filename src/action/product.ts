@@ -1,9 +1,13 @@
 "use server";
 
-import { supabase } from '@/config/supabase';
+import { createClient, getAuthenticatedUser, isAdmin } from "@/config/supabase-server";
 import { IProduct } from "@/interface";
 
 export const getAllProducts = async () => {
+ 
+
+    const supabase = await createClient();
+
     const { data, error } = await supabase
         .from("products")
         .select(`
@@ -41,7 +45,7 @@ export const getAllProducts = async () => {
         
         return {
             id: product.id,
-            category_id: product.category_id,
+            categories_id: product.categories_id,
             image_id: product.image_id,
             name: product.name,
             description: product.description,
@@ -64,6 +68,9 @@ export const getAllProducts = async () => {
 };
 
 export const getProductById = async (id: string) => {
+   
+
+    const supabase = await createClient();
     const { data, error } = await supabase
         .from("products")
         .select(`
@@ -95,7 +102,7 @@ export const getProductById = async (id: string) => {
     
     const product = {
         id: data.id,
-        category_id: data.category_id,
+        categories_id: data.categories_id,
         image_id: data.image_id,
         name: data.name,
         description: data.description,
@@ -116,6 +123,14 @@ export const getProductById = async (id: string) => {
 
 export const addProducts = async (product: Partial<IProduct>) => {
     try {
+         const user = await getAuthenticatedUser();
+    const adminCheck = await isAdmin(user.id);
+    
+    if (!adminCheck) {
+      return { success: false, message: "Akses ditolak. Hanya admin yang bisa menambah kategori.", data: null };
+    }
+
+    const supabase = await createClient();
         const { data, error } = await supabase
             .from("products")
             .insert([product])
@@ -142,7 +157,17 @@ export const addProducts = async (product: Partial<IProduct>) => {
 };
 
 export const updateProducts = async (id: string, product: Partial<IProduct>) => {
+    
     try {
+         const user = await getAuthenticatedUser();
+    const adminCheck = await isAdmin(user.id);
+    
+    if (!adminCheck) {
+      return { success: false, message: "Akses ditolak. Hanya admin yang bisa menambah kategori.", data: null };
+    }
+
+    const supabase = await createClient();
+
         const { data, error } = await supabase
             .from("products")
             .update({
@@ -173,7 +198,16 @@ export const updateProducts = async (id: string, product: Partial<IProduct>) => 
 };
 
 export const deleteProducts = async (id: string) => {
+    
     try {
+         const user = await getAuthenticatedUser();
+    const adminCheck = await isAdmin(user.id);
+    
+    if (!adminCheck) {
+      return { success: false, message: "Akses ditolak. Hanya admin yang bisa menambah kategori.", data: null };
+    }
+
+    const supabase = await createClient();
         // With CASCADE delete, images will be automatically deleted
         const { error } = await supabase
             .from("products")

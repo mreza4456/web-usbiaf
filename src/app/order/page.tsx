@@ -11,7 +11,7 @@ import type { ICartItemDetail } from '@/interface';
 export default function CheckoutPageWrapper() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
-  const isLoading = useAuthStore((s) => s.isLoading);
+  const isLoading = useAuthStore((s) => s.loading);
   const [cartItems, setCartItems] = useState<ICartItemDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -101,7 +101,7 @@ export default function CheckoutPageWrapper() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-50 to-white p-4">
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="text-center max-w-md">
           <div className="text-red-500 mb-4">
             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">

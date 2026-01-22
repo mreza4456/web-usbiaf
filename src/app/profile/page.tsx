@@ -25,8 +25,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'next/navigation';
 import { getUsersById, updateUsers } from '@/action/user';
-import { getAllOrder } from '@/action/order';
-import { getUserVouchers } from '@/action/vouchers';
+import { getAllOrdersWithItems } from '@/action/order';
+import { getUserVouchers, getMilestoneRewards } from '@/action/vouchers';
 import { IUser, IOrder, IVoucher } from '@/interface';
 import Link from 'next/link';
 
@@ -37,6 +37,7 @@ export default function ProfilePage() {
   const [userData, setUserData] = useState<IUser | null>(null);
   const [orders, setOrders] = useState<IOrder[]>([]);
   const [vouchers, setVouchers] = useState<IVoucher[]>([]);
+  const [milestoneRewards, setMilestoneRewards] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,6 +54,7 @@ export default function ProfilePage() {
       loadUserData();
       loadUserOrders();
       loadUserVouchers();
+      loadMilestoneRewards();
     }
   }, [user?.id]);
 
@@ -78,7 +80,7 @@ export default function ProfilePage() {
 
   const loadUserOrders = async () => {
     try {
-      const result = await getAllOrder();
+      const result = await getAllOrdersWithItems();
       if (result.success && result.data) {
         const userOrders = result.data.filter(order => order.user_id === user?.id);
         setOrders(userOrders);
@@ -97,6 +99,17 @@ export default function ProfilePage() {
       }
     } catch (error) {
       console.error('Error loading vouchers:', error);
+    }
+  };
+
+  const loadMilestoneRewards = async () => {
+    try {
+      const result = await getMilestoneRewards();
+      if (result.success && result.data) {
+        setMilestoneRewards(result.data);
+      }
+    } catch (error) {
+      console.error('Error loading milestone rewards:', error);
     }
   };
 
@@ -127,23 +140,22 @@ export default function ProfilePage() {
     }
   };
 
-  const getDisplayName = () => {
-    if (!user) return 'Guest';
-    if (userData?.full_name) return userData.full_name;
-    if (user.user_metadata?.full_name) return user.user_metadata.full_name;
-    if (user.user_metadata?.name) return user.user_metadata.name;
-    return user.email?.split("@")[0] || 'User';
-  };
+ const getDisplayName = () => {
+  if (!user) return null;
+  if (user.full_name) return user.full_name;
+  return user.email?.split("@")[0];
+};
 
-  const getInitials = (): string => {
-    const name = getDisplayName();
-    return name
-      .split(' ')
-      .map((n: string) => n.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+const getInitials = (): string => {
+  const name = getDisplayName() || 'User';
+  
+  return name
+    .split(' ')
+    .map((n: string) => n.charAt(0))
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+};
 
   const getOrderStats = () => {
     const total = orders.length;
@@ -153,32 +165,13 @@ export default function ProfilePage() {
     return { total, pending, completed };
   };
 
-  // Calculate current cycle and position
- const getCurrentCycle = (completed: number) => {
-  if (completed === 0) return 1;
-  return Math.floor((completed - 1) / 12) + 1;
-};
-
-const getPositionInCycle = (completed: number) => {
-  if (completed === 0) return 0;
-  return completed % 12 || 12;
-};
-
   const getVoucherValueForStep = (stepNumber: number) => {
-    const posInCycle = stepNumber % 12 || 12;
-    if (posInCycle === 3 || posInCycle === 6 || posInCycle === 9) return '5%';
-    if (posInCycle === 12) return '15%';
-    return '';
+    const reward = milestoneRewards.find(r => r.milestone_step === stepNumber && r.is_active);
+    return reward?.voucher_value || '';
   };
 
   const stats = getOrderStats();
   const displayName = getDisplayName();
-  const currentCycle = getCurrentCycle(stats.completed);
-  const positionInCycle = getPositionInCycle(stats.completed);
-  
-  // Calculate stamps to display (current cycle of 12)
-  const cycleStart = (currentCycle - 1) * 12;
-  const cycleEnd = currentCycle * 12;
 
   if (loading) {
     return (
@@ -204,7 +197,7 @@ const getPositionInCycle = (completed: number) => {
                 <div className="w-32 h-32 rounded-full border-4 border-white shadow-xl">
                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-4xl font-bold text-gray-700">
                     {userData?.avatar_url ? (
-                      <img src={userData.avatar_url} alt={displayName} className="w-full h-full rounded-full object-cover" />
+                      <img src={userData.avatar_url} alt="avatar" className="w-full h-full rounded-full object-cover" />
                     ) : (
                       getInitials()
                     )}
@@ -241,7 +234,7 @@ const getPositionInCycle = (completed: number) => {
                       </Badge>
                       <Badge className="bg-purple-600 flex items-center gap-1">
                         <Gift className="w-3 h-3" />
-                        Cycle {currentCycle}
+                        {stats.completed} Completed
                       </Badge>
                     </div>
                   </>
@@ -414,35 +407,36 @@ const getPositionInCycle = (completed: number) => {
           </div>
         )}
 
-        {/* Stamp Steps System */}
+        {/* Stamp Journey System */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex items-center justify-between mb-6 flex-wrap gap-2">
             <div className="flex items-center gap-3">
               <Award className="w-6 h-6 text-purple-600" />
-              <h2 className="text-xl font-bold text-gray-900">Stamp Journey - Cycle {currentCycle}</h2>
+              <h2 className="text-xl font-bold text-gray-900">Stamp Journey</h2>
             </div>
             <Badge className="bg-purple-600">
-              {stats.completed} Total Completed
+              {stats.completed} Completed Orders
             </Badge>
           </div>
 
-          {/* Progress Bar */}
+          {/* Progress Section */}
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 shadow-sm mb-4 border border-purple-200">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-gray-900">Cycle {currentCycle} Progress</h3>
-              <span className="text-sm text-gray-600">{positionInCycle} of 12 in current cycle</span>
+              <h3 className="font-semibold text-gray-900">Your Progress</h3>
+              <span className="text-sm text-gray-600">Next reward at {Math.ceil(stats.completed / 3) * 3} orders</span>
             </div>
+            
             <div className="w-full bg-gray-200 rounded-full h-3 mb-6">
               <div 
                 className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500"
-                style={{ width: `${(positionInCycle / 12) * 100}%` }}
+                style={{ width: `${((stats.completed % 3) / 3) * 100}%` }}
               ></div>
             </div>
 
-            {/* 12 Steps Grid */}
+            {/* Stamps Display - Show up to next milestone (groups of 12) */}
             <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2 mb-6">
               {[...Array(12)].map((_, index) => {
-                const stepNumber = cycleStart + index + 1;
+                const stepNumber = index + 1;
                 const isCompleted = stats.completed >= stepNumber;
                 const isGoal = (stepNumber % 3 === 0);
                 const voucherValue = getVoucherValueForStep(stepNumber);
@@ -467,10 +461,10 @@ const getPositionInCycle = (completed: number) => {
                           )}
                         </div>
                       ) : (
-                        <span className="text-xs font-bold text-gray-400">{index + 1}</span>
+                        <span className="text-xs font-bold text-gray-400">{stepNumber}</span>
                       )}
                       
-                      {isGoal && (
+                      {isGoal && voucherValue && (
                         <div className="absolute -top-2 -right-2">
                           <div className="bg-yellow-400 text-yellow-900 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold shadow">
                             {voucherValue}
@@ -487,49 +481,50 @@ const getPositionInCycle = (completed: number) => {
               })}
             </div>
 
-            {/* Goals Section */}
+            {/* Milestone Goals */}
             <div className="space-y-3">
-              <h4 className="font-semibold text-gray-900 text-sm">🎯 Cycle {currentCycle} Rewards</h4>
+              <h4 className="font-semibold text-gray-900 text-sm">🎯 Milestone Rewards</h4>
               
-              {[3, 6, 9, 12].map((milestone) => {
-                const actualMilestone = cycleStart + milestone;
-                const isAchieved = stats.completed >= actualMilestone;
-                const voucherValue = getVoucherValueForStep(actualMilestone);
-                
-                return (
-                  <div
-                    key={milestone}
-                    className={`flex items-center justify-between p-3 rounded-lg border-2 ${
-                      isAchieved
-                        ? 'bg-green-50 border-green-500'
-                        : 'bg-white border-gray-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="text-2xl">{isAchieved ? '🏆' : '🎯'}</div>
-                      <div>
-                        <p className="font-medium text-gray-900">Step {milestone} - Order #{actualMilestone}</p>
-                        <p className="text-xs text-gray-600">Voucher {voucherValue} Discount</p>
+              {milestoneRewards
+                .filter(r => r.is_active)
+                .sort((a, b) => a.milestone_step - b.milestone_step)
+                .map((reward) => {
+                  const isAchieved = stats.completed >= reward.milestone_step;
+                  
+                  return (
+                    <div
+                      key={reward.milestone_step}
+                      className={`flex items-center justify-between p-3 rounded-lg border-2 ${
+                        isAchieved
+                          ? 'bg-green-50 border-green-500'
+                          : 'bg-white border-gray-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl">{isAchieved ? '🏆' : '🎯'}</div>
+                        <div>
+                          <p className="font-medium text-gray-900">Step {reward.milestone_step}</p>
+                          <p className="text-xs text-gray-600">Voucher {reward.voucher_value} Discount</p>
+                        </div>
                       </div>
+                      {isAchieved ? (
+                        <Badge className="bg-green-500">Achieved!</Badge>
+                      ) : (
+                        <Badge variant="outline">{stats.completed}/{reward.milestone_step}</Badge>
+                      )}
                     </div>
-                    {isAchieved ? (
-                      <Badge className="bg-green-500">Achieved!</Badge>
-                    ) : (
-                      <Badge variant="outline">{Math.min(positionInCycle, milestone)}/{milestone}</Badge>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
 
-        
           <Alert className="border-purple-300 bg-purple-50">
             <Award className="h-4 w-4 text-purple-600" />
             <AlertDescription className="text-sm text-gray-700">
-              Complete orders to collect stamps! Each cycle has 12 steps. Reach milestones at steps 3, 6, 9 (5% voucher) and 12 (15% voucher) to unlock rewards. Cycles repeat infinitely! 🎁
+              Complete orders to collect stamps! Reach milestones to unlock exclusive voucher rewards. Keep ordering to earn more discounts! 🎁
             </AlertDescription>
           </Alert>
+          
           <Link href="/myorder" className="mt-4 inline-block text-sm font-medium text-purple-600 hover:text-purple-800">
             View All Orders
           </Link>

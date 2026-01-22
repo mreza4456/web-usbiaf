@@ -47,7 +47,7 @@ const voucherEventsSchema = z.object({
     code: z.string().min(2, "min 2 characters"),
     value: z.string().min(1, "value is required"),
     expired_at: z.string().min(1, "expired date is required"),
-    type: z.string().min(1, "type is required"),
+ 
     is_active: z.boolean().default(true),
 })
 
@@ -68,7 +68,7 @@ export default function VoucherEventsPage() {
                 throw new Error(response?.message || 'Gagal mengambil voucher events')
             }
 
-            setVoucherEvents(response.data)
+            setVoucherEvents(response.data as any)
         } catch (error: any) {
             toast.error(error.message || 'Terjadi kesalahan')
         } finally {
@@ -98,7 +98,6 @@ export default function VoucherEventsPage() {
             code: "",
             value: "",
             expired_at: "",
-            type: "",
             is_active: true,
         },
     })
@@ -120,6 +119,7 @@ export default function VoucherEventsPage() {
             fetchVoucherEvents()
         } catch (err: any) {
             toast.error(err.message)
+          
         }
     }
 
@@ -184,7 +184,7 @@ export default function VoucherEventsPage() {
                                     code: voucher.code,
                                     value: voucher.value,
                                     expired_at: voucher.expired_at,
-                                    type: voucher.type,
+                           
                                     is_active: voucher.is_active,
                                 })
                                 setOpen(true)
@@ -208,139 +208,116 @@ export default function VoucherEventsPage() {
 
     return (
         <div className="w-full"><SiteHeader title="Voucher Events" />
-        <div className="w-full max-w-6xl mx-auto">
-            <div className="items-center my-7">
-                <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger asChild className="float-end ml-5">
-                        <Button
-                            onClick={() => {
-                                setEditingVoucherEvents(null)
-                                form.reset()
-                            }}
-                        >
-                            Add <Plus className="ml-2" />
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent aria-describedby={undefined}>
-                        <DialogHeader>
-                            <DialogTitle>
-                                {editingVoucherEvents ? "Edit Voucher Event" : "Add Voucher Event"}
-                            </DialogTitle>
-                        </DialogHeader>
-                        <Form {...form}>
-                            <form
-                                onSubmit={form.handleSubmit(handleSubmit)}
-                                className="space-y-4"
+            <div className="w-full max-w-6xl mx-auto">
+                <div className="items-center my-7">
+                    <Dialog open={open} onOpenChange={setOpen}>
+                        <DialogTrigger asChild className="float-end ml-5">
+                            <Button
+                                onClick={() => {
+                                    setEditingVoucherEvents(null)
+                                    form.reset()
+                                }}
                             >
-                                <FormField
-                                    control={form.control}
-                                    name="name"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Name</FormLabel>
-                                            <FormControl>
-                                                <Input type="text" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="code"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Code</FormLabel>
-                                            <FormControl>
-                                                <Input type="text" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="value"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Value</FormLabel>
-                                            <FormControl>
-                                                <Input type="text" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="type"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Type</FormLabel>
-                                            <Select
-                                                onValueChange={field.onChange}
-                                                defaultValue={field.value}
-                                            >
+                                Add <Plus className="ml-2" />
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent aria-describedby={undefined}>
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {editingVoucherEvents ? "Edit Voucher Event" : "Add Voucher Event"}
+                                </DialogTitle>
+                            </DialogHeader>
+                            <Form {...form}>
+                                <form
+                                    onSubmit={form.handleSubmit(handleSubmit)}
+                                    className="space-y-4"
+                                >
+                                    <FormField
+                                        control={form.control}
+                                        name="name"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Name</FormLabel>
                                                 <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select type" />
-                                                    </SelectTrigger>
+                                                    <Input type="text" {...field} />
                                                 </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="percentage">Percentage</SelectItem>
-                                                    <SelectItem value="fixed">Fixed</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="expired_at"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Expired At</FormLabel>
-                                            <FormControl>
-                                                <Input type="date" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="is_active"
-                                    render={({ field }) => (
-                                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                                            <FormLabel>Active Status</FormLabel>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="code"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Code</FormLabel>
+                                                <FormControl>
+                                                    <Input type="text" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="value"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Value</FormLabel>
+                                                <FormControl>
+                                                    <Input type="text" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                   
+                                    <FormField
+                                        control={form.control}
+                                        name="expired_at"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Expired At</FormLabel>
+                                                <FormControl>
+                                                    <Input type="date" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="is_active"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                                                <FormLabel>Active Status</FormLabel>
 
-                                            <FormControl>
-                                                <Switch
-                                                    checked={!!field.value}
-                                                    onCheckedChange={(val) => field.onChange(val)}
-                                                />
-                                            </FormControl>
+                                                <FormControl>
+                                                    <Switch
+                                                        checked={!!field.value}
+                                                        onCheckedChange={(val) => field.onChange(val)}
+                                                    />
+                                                </FormControl>
 
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
-                                <Button type="submit" className="w-full">
-                                    {editingVoucherEvents ? "Update" : "Create"}
-                                </Button>
-                            </form>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+                                    <Button type="submit" className="w-full">
+                                        {editingVoucherEvents ? "Update" : "Create"}
+                                    </Button>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+                {loading ? (
+                    <p>loading...</p>
+                ) : (
+                    <DataTable columns={columns} data={voucherEvents} filterColumn="name" />
+                )}
             </div>
-            {loading ? (
-                <p>loading...</p>
-            ) : (
-                <DataTable columns={columns} data={voucherEvents} filterColumn="name" />
-            )}
-        </div>
         </div>
     )
 }
