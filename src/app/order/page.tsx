@@ -95,7 +95,9 @@ export default function CheckoutPageWrapper() {
 
   // Not authenticated
   if (!user) {
-    return null; // Will redirect in useEffect
+    return (
+      <div>login Firts</div>
+    ) // Will redirect in useEffect
   }
 
   // Error state

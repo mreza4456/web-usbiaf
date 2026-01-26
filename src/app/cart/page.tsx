@@ -20,7 +20,8 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  X
+  X,
+  LogIn
 } from 'lucide-react';
 import {
   getCartItems,
@@ -49,6 +50,8 @@ export default function CartPage() {
   const [loadingVouchers, setLoadingVouchers] = useState(false);
   const [isVoucherOpen, setIsVoucherOpen] = useState(false);
 
+
+
   useEffect(() => {
     fetchCartData();
     loadVouchers();
@@ -72,11 +75,6 @@ export default function CartPage() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    console.log('User:', user);
-    fetchCartData();
-  }, [user]);
 
   const loadVouchers = async () => {
     if (!user?.id) return;
@@ -185,45 +183,51 @@ export default function CartPage() {
       }, 300);
     }
   };
-const formatCurrency = (amount: number | string): string => {
-  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(numAmount);
-};
+
+  const formatCurrency = (amount: number | string): string => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(numAmount);
+  };
+
   const calculateSubtotal = () => {
-  return cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0);
-};
+    return cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0);
+  };
 
-const calculateDiscount = () => {
-  if (!selectedVoucher) return 0;
+  const calculateDiscount = () => {
+    if (!selectedVoucher) return 0;
 
-  const subtotal = calculateSubtotal();
-  const percentageMatch = selectedVoucher.value.match(/(\d+)%/);
+    const subtotal = calculateSubtotal();
+    const percentageMatch = selectedVoucher.value.match(/(\d+)%/);
 
-  if (percentageMatch) {
-    // Jika ada %, hitung persentase discount
-    const percentage = parseInt(percentageMatch[1]);
-    return (subtotal * percentage) / 100;
-  } else {
-    // Jika tidak ada %, anggap sebagai nilai nominal langsung
-    const nominalValue = parseFloat(selectedVoucher.value.replace(/[^\d.]/g, ''));
-    return isNaN(nominalValue) ? 0 : nominalValue;
-  }
-};
+    if (percentageMatch) {
+      const percentage = parseInt(percentageMatch[1]);
+      return (subtotal * percentage) / 100;
+    } else {
+      const nominalValue = parseFloat(selectedVoucher.value.replace(/[^\d.]/g, ''));
+      return isNaN(nominalValue) ? 0 : nominalValue;
+    }
+  };
 
-const calculateTotal = () => {
-  return calculateSubtotal() - calculateDiscount();
-};
+  const calculateTotal = () => {
+    return calculateSubtotal() - calculateDiscount();
+  };
 
   const getTotalItems = () => {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
   };
 
   const handleCheckout = () => {
+    if (!user?.id) {
+      const currentPath = window.location.pathname;
+      router.push(`/auth/login`);
+      return;
+    }
+
     if (cartItems.length === 0) return;
 
     const queryParams = new URLSearchParams();
@@ -231,23 +235,40 @@ const calculateTotal = () => {
       queryParams.set('voucher_id', selectedVoucher.id);
       queryParams.set('voucher_code', selectedVoucher.code);
       queryParams.set('voucher_value', selectedVoucher.value);
-
-      console.log('🛒 CART PAGE - Passing voucher to checkout:', {
-        voucher_id: selectedVoucher.id,
-        voucher_code: selectedVoucher.code,
-        voucher_value: selectedVoucher.value,
-        full_url: `/order?${queryParams.toString()}`
-      });
-    } else {
-      console.log('🛒 CART PAGE - No voucher selected');
     }
 
     const urlParams = queryParams.toString();
     const checkoutUrl = `/order${urlParams ? `?${urlParams}` : ''}`;
-
-    console.log('🛒 CART PAGE - Navigating to:', checkoutUrl);
     router.push(checkoutUrl);
   };
+
+  // Show login prompt if not authenticated
+  if (!user?.id) {
+    return (
+      <div className="min-h-screen bg-background p-4 sm:p-6 flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardContent className="text-center p-8">
+            <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogIn className="w-10 h-10 text-purple-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Login Required</h2>
+            <p className="text-gray-600 mb-6">Please login to view your cart and continue shopping</p>
+            <Button
+              onClick={() => {
+                const currentPath = window.location.pathname;
+                router.push(`/auth/login`);
+              }}
+              size="lg"
+              className="bg-primary text-white w-full"
+            >
+              <LogIn className="w-5 h-5 mr-2" />
+              Login Now
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading && cartItems.length === 0) {
     return (
@@ -284,7 +305,6 @@ const calculateTotal = () => {
   return (
     <div className="min-h-screen bg-background py-6 sm:py-12 px-4 mt-16 sm:mt-20">
       <div className="max-w-7xl w-full mx-auto">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
           <div className='w-full'>
             <h1 className="text-2xl sm:text-4xl font-bold text-primary mb-1">Order Summary</h1>
@@ -314,7 +334,6 @@ const calculateTotal = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
-          {/* Cart Items */}
           <div className="lg:col-span-2 space-y-3 sm:space-y-4">
             {cartItems.map((item) => {
               const isUpdating = updatingItems.has(item.id!);
@@ -322,7 +341,6 @@ const calculateTotal = () => {
               return (
                 <Card key={item.id} className={`${isUpdating ? 'opacity-50' : ''} transition-opacity bg-white relative`}>
                   <CardContent className="p-3 sm:p-6">
-                    {/* Mobile Layout */}
                     <div className="block sm:hidden">
                       <div className="flex items-start gap-3 mb-3">
                         <div className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-50">
@@ -375,7 +393,6 @@ const calculateTotal = () => {
                       </div>
                     </div>
 
-                    {/* Desktop Layout */}
                     <div className="hidden sm:grid grid-cols-4 items-center gap-4">
                       <div className="flex col-span-2 gap-5 items-center">
                         <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-50">
@@ -435,9 +452,7 @@ const calculateTotal = () => {
             })}
              <Link href="/service" className="text-sm float-end text-secondary">Add More</Link>
           </div>
-         
 
-          {/* Order Summary - Sticky on desktop */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <Card className="bg-white">
               <CardContent className="space-y-4 ">
