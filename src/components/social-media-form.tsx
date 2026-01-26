@@ -38,44 +38,63 @@ export default function SocialMediaModal({ open, onOpenChange }: SocialMediaModa
   const hasAtLeastOneSocialMedia = () => {
     return formData.instagram.trim() || formData.twitch.trim() || formData.x.trim()
   }
+// components/social-media-form.tsx - Update handleSubmit
+const handleSubmit = async () => {
+  if (!hasAtLeastOneSocialMedia()) {
+    toast.error("Please fill in at least one social media account")
+    return
+  }
 
-  const handleSubmit = async () => {
-    // Validasi minimal 1 input terisi
-    if (!hasAtLeastOneSocialMedia()) {
-      toast.error("Please fill in at least one social media account")
+  setIsSubmitting(true)
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      toast.error("You must be logged in")
       return
     }
 
-    setIsSubmitting(true)
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        toast.error("You must be logged in")
-        return
-      }
+    // ✅ Try to update first
+    const { error: updateError } = await supabase
+      .from('users')
+      .update({
+        instagram: formData.instagram.trim() || null,
+        twitch: formData.twitch.trim() || null,
+        x: formData.x.trim() || null,
+        social_media_completed: true
+      })
+      .eq('id', user.id)
 
-      const { error: updateError } = await supabase
+    // ✅ If update fails because row doesn't exist, create it
+    if (updateError && updateError.code === 'PGRST116') {
+      const { error: insertError } = await supabase
         .from('users')
-        .update({
+        .insert({
+          id: user.id,
+          email: user.email,
+          username: user.user_metadata?.full_name || 
+                    user.user_metadata?.name || 
+                    user.email?.split('@')[0],
           instagram: formData.instagram.trim() || null,
           twitch: formData.twitch.trim() || null,
           x: formData.x.trim() || null,
           social_media_completed: true
         })
-        .eq('id', user.id)
 
-      if (updateError) throw updateError
-
-      toast.success("Profile updated successfully!")
-      onOpenChange(false)
-    } catch (error) {
-      console.error('Error updating profile:', error)
-      toast.error("Failed to update profile. Please try again.")
-    } finally {
-      setIsSubmitting(false)
+      if (insertError) throw insertError
+    } else if (updateError) {
+      throw updateError
     }
+
+    toast.success("Profile updated successfully!")
+    onOpenChange(false)
+  } catch (error) {
+    console.error('Error updating profile:', error)
+    toast.error("Failed to update profile. Please try again.")
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   const handleSkip = async () => {
     setIsSubmitting(true)

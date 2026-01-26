@@ -44,14 +44,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [authLayout, isAdminLayout, isAdminChat])
 
+  // app-layout.tsx - Update checkSocialMediaStatus
   const checkSocialMediaStatus = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
 
-      console.log('🔍 Checking user:', user?.id) // Debug log
-
       if (!user) {
-        console.log('❌ No user found')
         setIsLoading(false)
         return
       }
@@ -60,10 +58,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         .from('users')
         .select('social_media_completed')
         .eq('id', user.id)
-        .single()
-
-      console.log('📊 User data:', data) // Debug log
-      console.log('❓ Error:', error) // Debug log
+        .maybeSingle() // ✅ Use maybeSingle
 
       if (error) {
         console.error('Error checking social media status:', error)
@@ -71,10 +66,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         return
       }
 
-      // Show modal if social_media_completed is false or null
-      const shouldShow = !data?.social_media_completed
-      console.log('🎭 Should show modal:', shouldShow) // Debug log
-      
+      // ✅ Show modal if profile doesn't exist OR social_media_completed is false
+      const shouldShow = !data || !data.social_media_completed
+
       if (shouldShow) {
         setShowSocialMediaModal(true)
       }
@@ -123,7 +117,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <LenisScroll />
-   
+
       <div className="min-h-screen background relative overflow-hidden">
         <div className="absolute top-20 left-10 w-32 h-32 bg-[#FFE66D] rounded-full opacity-20 blur-3xl"></div>
         <div className="absolute top-40 right-20 w-40 h-40 bg-[#c09afe] rounded-full opacity-20 blur-3xl"></div>
@@ -140,11 +134,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           </AuthProvider>
         </NoNetwork>
         <Footer />
-        
+
         {/* Render modal OUTSIDE AuthProvider to avoid blocking */}
         {!isLoading && (
-          <SocialMediaModal 
-            open={showSocialMediaModal} 
+          <SocialMediaModal
+            open={showSocialMediaModal}
             onOpenChange={setShowSocialMediaModal}
           />
         )}
