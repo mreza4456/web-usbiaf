@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,24 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export default function ResetPassword(): React.ReactElement {
+// Loading fallback component
+function LoadingState() {
+    return (
+        <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e] flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-background border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="text-center space-y-4">
+                    <div className="flex justify-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9B5DE0]"></div>
+                    </div>
+                    <p className="text-gray-600">Loading...</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Main component that uses useSearchParams
+function ResetPasswordContent(): React.ReactElement {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -114,7 +131,7 @@ export default function ResetPassword(): React.ReactElement {
     if (isValidToken === null) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e] flex items-center justify-center p-4">
-                <div className="w-full max-w-md bg-background  border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="w-full max-w-md bg-background border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-4">
                         <div className="flex justify-center">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9B5DE0]"></div>
@@ -136,7 +153,7 @@ export default function ResetPassword(): React.ReactElement {
                     <div className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#D78FEE] rounded-full blur-[100px] opacity-25 animate-pulse" style={{ animationDelay: '2s' }}></div>
                 </div>
 
-                <div className="relative z-10 w-full max-w-md bg-background  border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="relative z-10 w-full max-w-md bg-background border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-6">
                         <div className="flex justify-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-rose-600 rounded-full flex items-center justify-center">
@@ -197,8 +214,6 @@ export default function ResetPassword(): React.ReactElement {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2d1b4e] to-[#1a1a2e] text-primary flex items-center justify-center p-4">
-          
-
             <div className="relative z-10 w-full max-w-md">
                 <Card className="bg-white/5 backdrop-blur-sm border-[#9B5DE0]/30">
                     <CardHeader className="space-y-1 pb-4">
@@ -337,5 +352,14 @@ export default function ResetPassword(): React.ReactElement {
                 </div>
             </div>
         </div>
+    );
+}
+
+// Wrapper component with Suspense
+export default function ResetPassword(): React.ReactElement {
+    return (
+        <Suspense fallback={<LoadingState />}>
+            <ResetPasswordContent />
+        </Suspense>
     );
 }
