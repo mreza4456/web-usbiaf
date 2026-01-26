@@ -35,6 +35,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/store/auth';
 import type { ICartItemDetail } from '@/interface';
 
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import CheckoutForm from '@/components/checkout-form'; // sesuaikan path
+import { getStripeClientSecret } from '@/action/payment'; // sesuaikan path
+import CustomStripeDialog from '@/components/checkout-form';
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 interface CheckoutPageProps {
   cartItems: ICartItemDetail[];
   userId: string;
@@ -50,16 +57,18 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
   const [success, setSuccess] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const user = useAuthStore((s) => s.user);
+  const [clientSecret, setClientSecret] = useState<string>('');
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
 
   const voucherId = searchParams.get('voucher_id');
   const voucherCode = searchParams.get('voucher_code');
   const voucherValue = searchParams.get('voucher_value');
 
-const getDisplayName = () => {
-  if (!user) return null;
-  if (user.full_name) return user.full_name;
-  return user.email?.split("@")[0];
-};
+  const getDisplayName = () => {
+    if (!user) return null;
+    if (user.full_name) return user.full_name;
+    return user.email?.split("@")[0];
+  };
 
   const displayName = getDisplayName();
 
@@ -77,30 +86,30 @@ const getDisplayName = () => {
   });
 
   const calculateDiscount = () => {
-  if (!voucherValue) return 0;
-  
+    if (!voucherValue) return 0;
+
+    const subtotal = Array.isArray(cartItems)
+      ? cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0)
+      : 0;
+
+    const percentageMatch = voucherValue.match(/(\d+)%/);
+
+    if (percentageMatch) {
+      // Jika ada %, hitung persentase discount
+      const percentage = parseInt(percentageMatch[1]);
+      return (subtotal * percentage) / 100;
+    } else {
+      // Jika tidak ada %, anggap sebagai nilai nominal langsung
+      const nominalValue = parseFloat(voucherValue.replace(/[^\d.]/g, ''));
+      return isNaN(nominalValue) ? 0 : nominalValue;
+    }
+  };
+
   const subtotal = Array.isArray(cartItems)
     ? cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0)
     : 0;
-  
-  const percentageMatch = voucherValue.match(/(\d+)%/);
-  
-  if (percentageMatch) {
-    // Jika ada %, hitung persentase discount
-    const percentage = parseInt(percentageMatch[1]);
-    return (subtotal * percentage) / 100;
-  } else {
-    // Jika tidak ada %, anggap sebagai nilai nominal langsung
-    const nominalValue = parseFloat(voucherValue.replace(/[^\d.]/g, ''));
-    return isNaN(nominalValue) ? 0 : nominalValue;
-  }
-};
-
-const subtotal = Array.isArray(cartItems)
-  ? cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0)
-  : 0;
-const discount = calculateDiscount();
-const total = subtotal - discount;
+  const discount = calculateDiscount();
+  const total = subtotal - discount;
 
   useEffect(() => {
     setFormData(prev => ({
@@ -156,6 +165,27 @@ const total = subtotal - discount;
     setIsSubmitting(true);
 
     try {
+      // Get Stripe client secret
+      const stripeResult = await getStripeClientSecret(total); // total sudah dalam USD
+
+      if (!stripeResult.success || !stripeResult.data) {
+        setError('Failed to initialize payment. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      setClientSecret(stripeResult.data);
+      setShowPaymentDialog(true);
+      setIsSubmitting(false);
+    } catch (err: any) {
+      setError(err.message || 'Failed to initialize payment. Please try again.');
+      setIsSubmitting(false);
+    }
+  };
+  const handlePaymentSuccess = async (paymentId: string) => {
+    setIsSubmitting(true);
+
+    try {
       const orderData = {
         user_id: userId,
         discord: formData.discord,
@@ -167,6 +197,7 @@ const total = subtotal - discount;
         additional_notes: formData.additional_notes || '',
         total: total,
         voucher_id: voucherId || undefined,
+        payment_id: paymentId, // Tambahkan payment ID dari Stripe
         cart_items: cartItems.map(item => ({
           cart_id: item.id,
           categories_id: item.categories_id,
@@ -196,7 +227,6 @@ const total = subtotal - discount;
       setIsSubmitting(false);
     }
   };
-
   const togglePlatform = (platform: string) => {
     setFormData(prev => ({
       ...prev,
@@ -264,7 +294,7 @@ const total = subtotal - discount;
         <div className='w-full mb-8 sm:mb-10 text-center'>
           <h1 className="text-2xl sm:text-4xl font-bold text-primary mb-1">Checkout</h1>
           <p className="text-gray-600 text-sm sm:text-base">Complete Your Order Detail</p>
-       
+
         </div>
 
         {error && (
@@ -609,7 +639,7 @@ const total = subtotal - discount;
             )}
 
             {/* Navigation Buttons Inside Card */}
-            <div className={`flex gap-4 p-6 border-t justify-between  w-full ${currentStep === 1 ? "justify-end":"justify-between" } `}>
+            <div className={`flex gap-4 p-6 border-t justify-between  w-full ${currentStep === 1 ? "justify-end" : "justify-between"} `}>
               {currentStep > 1 && (
                 <Button
                   onClick={handleBack}
@@ -647,6 +677,18 @@ const total = subtotal - discount;
                     </>
                   )}
                 </Button>
+              )}
+              {/* Stripe Payment Dialog */}
+              {clientSecret && (
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                  <CustomStripeDialog
+                    open={showPaymentDialog}
+                    setOpen={setShowPaymentDialog}
+                    clientSecret={clientSecret}
+                    amount={total}
+                    onPaymentSuccess={handlePaymentSuccess}
+                  />
+                </Elements>
               )}
             </div>
           </Card>

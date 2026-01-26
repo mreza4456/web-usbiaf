@@ -31,6 +31,7 @@ import {
 import { getUserVouchers } from '@/action/vouchers';
 import type { ICartItemDetail, IVoucher } from '@/interface';
 import { useAuthStore } from '@/store/auth';
+import Link from 'next/link';
 
 export default function CartPage() {
   const router = useRouter();
@@ -432,7 +433,9 @@ const calculateTotal = () => {
                 </Card>
               );
             })}
+             <Link href="/service" className="text-sm float-end text-secondary">Add More</Link>
           </div>
+         
 
           {/* Order Summary - Sticky on desktop */}
           <div className="lg:sticky lg:top-24 lg:self-start">

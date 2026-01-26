@@ -1,3 +1,4 @@
+// utils/supabase/server.ts
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -12,12 +13,17 @@ export const createClient = async () => {
         get(name: string) {
           return cookieStore.get(name)?.value
         },
+        set(name: string, value: string, options: any) {
+          cookieStore.set({ name, value, ...options })
+        },
+        remove(name: string, options: any) {
+          cookieStore.set({ name, value: '', ...options })
+        },
       },
     }
   )
 }
 
-// Helper function untuk get authenticated user
 export const getAuthenticatedUser = async () => {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -29,7 +35,6 @@ export const getAuthenticatedUser = async () => {
   return user;
 };
 
-// Helper function untuk check admin role
 export const isAdmin = async (userId: string) => {
   const supabase = await createClient();
   const { data, error } = await supabase
