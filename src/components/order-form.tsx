@@ -40,6 +40,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import CheckoutForm from '@/components/checkout-form'; // sesuaikan path
 import { getStripeClientSecret } from '@/action/payment'; // sesuaikan path
 import CustomStripeDialog from '@/components/checkout-form';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 interface CheckoutPageProps {
@@ -59,7 +60,7 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
   const user = useAuthStore((s) => s.user);
   const [clientSecret, setClientSecret] = useState<string>('');
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-
+  const [open, setOpen] = useState(false);
   const voucherId = searchParams.get('voucher_id');
   const voucherCode = searchParams.get('voucher_code');
   const voucherValue = searchParams.get('voucher_value');
@@ -248,47 +249,32 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
     { number: 4, title: 'Review', icon: CreditCard }
   ];
 
-  if (cartItems.length === 0) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-b from-primary/10 to-white">
-        <Card className="max-w-md w-full shadow-lg">
-          <CardContent className="pt-6 text-center">
-            <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Your cart is empty</h2>
-            <p className="text-gray-600 mb-6">Add some items to your cart before checkout</p>
-            <Button onClick={() => router.push('/service')} className="w-full bg-primary hover:bg-primary/90">
-              Browse Services
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (success) setOpen(true);
+  }, [success]);
 
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-white border-2 border-green-200">
-          <CardContent className="p-8">
-            <div className="text-center space-y-4">
-              <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
-              <h2 className="text-2xl font-bold text-gray-900">Order Placed!</h2>
-              <p className="text-gray-600">{success}</p>
-              <Button
-                onClick={() => router.push('/myorder')}
-                className="w-full bg-primary hover:bg-primary/90"
-              >
-                View My Orders
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
+
+
 
   return (
     <div className="min-h-screen py-8 sm:py-12 px-4 mt-15 sm:mt-15">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <div className="text-center space-y-4">
+            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
+            <h2 className="text-2xl font-bold text-gray-900">Order Placed!</h2>
+            <p className="text-gray-600">{success}</p>
+            <Button
+              onClick={() => router.push('/myorder')}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              View My Orders
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className='w-full mb-8 sm:mb-10 text-center'>

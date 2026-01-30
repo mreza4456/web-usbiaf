@@ -15,6 +15,7 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel"
+import { SkeletonBlog } from './skeleton-card';
 
 export default function BlogCarousel() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -78,7 +79,9 @@ export default function BlogCarousel() {
 
                         </div>
 
-                        {filteredPosts.length === 0 ? (
+                        {loading ? (
+                            <SkeletonBlog cardcount={3}/>
+                        ):filteredPosts.length === 0 ? (
                             <div></div>
                         ) : (
                             <Carousel>
@@ -91,10 +94,10 @@ export default function BlogCarousel() {
 
                                                     <Card
 
-                                                        className="bg-white border-primary/30  hover:border-primary transition-all duration-300  overflow-hidden group"
+                                                        className="bg-white border-primary/30 p-0  hover:border-primary transition-all duration-300  overflow-hidden group"
                                                     >
                                                         <CardHeader className=" p-0">
-                                                            <div className="relative h-48 bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 overflow-hidden">
+                                                            <div className="relative h-60 bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 overflow-hidden">
                                                                 {post.image ? (
                                                                     <img
                                                                         src={post.image}
@@ -113,7 +116,7 @@ export default function BlogCarousel() {
                                                             </div>
                                                         </CardHeader>
 
-                                                        <CardContent className="p-5">
+                                                        <CardContent className="p-5 h-full">
                                                             <CardTitle className="text-xl text-primary mb-3 line-clamp-2 group-hover:text-primary/80 transition-colors">
                                                                 {post.title}
                                                             </CardTitle>

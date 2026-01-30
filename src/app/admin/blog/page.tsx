@@ -4,7 +4,8 @@ import React from "react"
 import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/data-table"
 import { Button } from "@/components/ui/button"
-import { Trash, Pencil, Plus } from "lucide-react"
+import { Trash, Pencil, Image as ImageIcon, Loader2 } from "lucide-react"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
     Dialog,
     DialogContent,
@@ -34,20 +35,26 @@ import {
     updateBlogPost,
 } from "@/action/blog"
 import { SiteHeader } from "@/components/site-header"
+import Example from "@/components/skeleton"
 
 const blogPostSchema = z.object({
-    title: z.string().min(2, "min 2 characters"),
-    description: z.string().optional(),
-    image: z.string().url("must be a valid URL").optional().or(z.literal("")),
+    title: z.string().min(2, "Minimum 2 characters required"),
+    description: z.string().min(10, "Minimum 10 characters required"),
 })
 
 type BlogPostForm = z.infer<typeof blogPostSchema>
 
-export default function BlogAdminPage() {
+export default function BlogManagementPage() {
     const [open, setOpen] = React.useState(false)
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false)
     const [editingBlogPost, setEditingBlogPost] = React.useState<IBlogPost | null>(null)
+    const [postToDelete, setPostToDelete] = React.useState<string | null>(null)
     const [blogPosts, setBlogPosts] = React.useState<IBlogPost[]>([])
     const [loading, setLoading] = React.useState<boolean>(true)
+    const [deleteLoading, setDeleteLoading] = React.useState(false)
+    const [submitting, setSubmitting] = React.useState(false)
+    const [imagePreview, setImagePreview] = React.useState<string | null>(null)
+    const [imageFile, setImageFile] = React.useState<File | null>(null)
 
     const fetchBlogPosts = React.useCallback(async () => {
         try {
@@ -58,7 +65,7 @@ export default function BlogAdminPage() {
                 throw new Error(response?.message || 'Failed to fetch blog posts')
             }
 
-            setBlogPosts(response.data)
+            setBlogPosts(response.data as any)
         } catch (error: any) {
             toast.error(error.message || 'An error occurred')
         } finally {
@@ -82,48 +89,126 @@ export default function BlogAdminPage() {
     }, [fetchBlogPosts])
 
     const form = useForm<BlogPostForm>({
-        resolver: zodResolver(blogPostSchema) as any,
+        resolver: zodResolver(blogPostSchema),
         defaultValues: {
             title: "",
             description: "",
-            image: "",
         },
     })
 
-    const handleSubmit = async (values: BlogPostForm) => {
-        console.log("🚀 Submit values:", values)
-        try {
-            let res
-            if (editingBlogPost) {
-                res = await updateBlogPost(editingBlogPost.id, values as any)
-            } else {
-                res = await addBlogPost(values as any)
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (file) {
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                toast.error('Please upload an image file')
+                return
             }
-            if (!res.success) throw new Error(res.message)
-            toast.success(editingBlogPost ? "Updated successfully" : "Created successfully")
-            setOpen(false)
-            setEditingBlogPost(null)
-            form.reset()
-            fetchBlogPosts()
-        } catch (err: any) {
-            toast.error(err.message)
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                toast.error('Image size should be less than 5MB')
+                return
+            }
+
+            setImageFile(file)
+            const reader = new FileReader()
+            reader.onloadend = () => {
+                setImagePreview(reader.result as string)
+            }
+            reader.readAsDataURL(file)
         }
     }
 
-    const handleDelete = async (blogId: string) => {
-        if (!confirm("Are you sure you want to delete this blog post?")) return
+    const handleSubmit = async (values: BlogPostForm) => {
+        console.log("🚀 Form submit triggered")
+        console.log("🚀 Submit values:", values)
+        console.log("🚀 Image file:", imageFile)
+        
+        if (submitting) {
+            console.log("🚀 Already submitting, ignoring...")
+            return
+        }
         
         try {
-            setLoading(true)
-            const response = await deleteBlogPost(blogId)
+            setSubmitting(true)
+            
+            // Validate required fields
+            if (!values.title || !values.description) {
+                toast.error("Please fill in all required fields")
+                return
+            }
+
+            const formData = new FormData()
+            formData.append('title', values.title)
+            formData.append('description', values.description)
+            
+            if (imageFile) {
+                formData.append('image', imageFile)
+                console.log("🚀 Adding image to FormData:", imageFile.name, imageFile.size)
+            }
+
+            console.log("🚀 Submitting to server...")
+            
+            let res
+            if (editingBlogPost) {
+                console.log("🚀 Updating post ID:", editingBlogPost.id)
+                res = await updateBlogPost(editingBlogPost.id, formData as any)
+            } else {
+                console.log("🚀 Creating new post")
+                res = await addBlogPost(formData as any)
+            }
+            
+            console.log("🚀 Server response:", res)
+            
+            if (!res.success) {
+                throw new Error(res.message)
+            }
+            
+            toast.success(editingBlogPost ? "Blog post updated successfully" : "Blog post created successfully")
+            setOpen(false)
+            setEditingBlogPost(null)
+            setImagePreview(null)
+            setImageFile(null)
+            form.reset()
+            await fetchBlogPosts()
+        } catch (err: any) {
+            console.error("🚀 Error:", err)
+            toast.error(err.message || "An error occurred")
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const handleDeleteClick = (postId: string) => {
+        setPostToDelete(postId)
+        setDeleteConfirmOpen(true)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!postToDelete) return
+
+        try {
+            setDeleteLoading(true)
+            const response = await deleteBlogPost(postToDelete)
             if (!response.success) throw new Error(response.message)
             toast.success("Blog post deleted successfully")
+            setDeleteConfirmOpen(false)
+            setPostToDelete(null)
             fetchBlogPosts()
         } catch (error: any) {
             toast.error(error.message)
         } finally {
-            setLoading(false)
+            setDeleteLoading(false)
         }
+    }
+
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        })
     }
 
     const columns: ColumnDef<IBlogPost>[] = [
@@ -131,19 +216,15 @@ export default function BlogAdminPage() {
             accessorKey: "image",
             header: "Image",
             cell: ({ row }) => {
-                const image = row.original.image
-                return image ? (
-                    <img
-                        src={image}
+                return row.original.image ? (
+                    <img 
+                        src={row.original.image} 
                         alt={row.original.title}
                         className="w-16 h-16 object-cover rounded"
-                        onError={(e) => {
-                            e.currentTarget.style.display = 'none'
-                        }}
                     />
                 ) : (
-                    <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center text-2xl">
-                        📝
+                    <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                        <ImageIcon className="w-6 h-6 text-gray-400" />
                     </div>
                 )
             }
@@ -151,39 +232,33 @@ export default function BlogAdminPage() {
         { 
             accessorKey: "title", 
             header: "Title",
-            cell: ({ row }) => (
-                <div className="max-w-md">
-                    <p className="font-medium line-clamp-2">{row.original.title}</p>
-                </div>
-            )
+            cell: ({ row }) => {
+                return <span className="font-medium">{row.original.title}</span>
+            }
         },
-        {
-            accessorKey: "description",
+        { 
+            accessorKey: "description", 
             header: "Description",
-            cell: ({ row }) => (
-                <div className="max-w-md">
-                    <p className="text-sm text-gray-600 line-clamp-2">
-                        {row.original.description || "-"}
-                    </p>
-                </div>
-            )
+            cell: ({ row }) => {
+                return (
+                    <span className="text-sm text-gray-600 line-clamp-2 max-w-xs">
+                        {row.original.description}
+                    </span>
+                )
+            }
         },
         {
             accessorKey: "created_at",
             header: "Created At",
             cell: ({ row }) => {
-                return new Date(row.original.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                })
+                return formatDate(row.original.created_at)
             }
         },
         {
             id: "actions",
             header: "Actions",
             cell: ({ row }) => {
-                const blogPost = row.original
+                const post = row.original
                 return (
                     <div className="flex gap-2">
                         <Button
@@ -191,12 +266,13 @@ export default function BlogAdminPage() {
                             size="icon"
                             className="border-0 cursor-pointer"
                             onClick={() => {
-                                setEditingBlogPost(blogPost)
+                                setEditingBlogPost(post)
                                 form.reset({
-                                    title: blogPost.title,
-                                    description: blogPost.description || "",
-                                    image: blogPost.image || "",
+                                    title: post.title,
+                                    description: post.description || "",
                                 })
+                                setImagePreview(post.image || null)
+                                setImageFile(null)
                                 setOpen(true)
                             }}
                         >
@@ -206,7 +282,7 @@ export default function BlogAdminPage() {
                             variant="outline"
                             size="icon"
                             className="text-red-500 border-0 cursor-pointer"
-                            onClick={() => handleDelete(blogPost.id)}
+                            onClick={() => handleDeleteClick(post.id)}
                         >
                             <Trash />
                         </Button>
@@ -218,21 +294,26 @@ export default function BlogAdminPage() {
 
     return (
         <div className="w-full">
-            <SiteHeader title="Blog Posts" />
-            <div className="w-full max-w-6xl mx-auto">
-                <div className="items-center my-7">
-                    <Dialog open={open} onOpenChange={setOpen}>
+            <SiteHeader title="Blog" />
+            <div className="w-full px-7 pb-10 mx-auto">
+                <div className="my-7">
+                    <h1 className="text-3xl font-bold mb-2">Blog Management</h1>
+                    <p className="text-gray-500">Manage your blog posts and articles</p>
+                </div>
+                
+                <div className="items-center">
+                    <Dialog open={open} onOpenChange={(isOpen) => {
+                        setOpen(isOpen)
+                        if (!isOpen) {
+                            setImagePreview(null)
+                            setImageFile(null)
+                            setEditingBlogPost(null)
+                            form.reset()
+                        }
+                    }}>
                         <DialogTrigger asChild className="float-end ml-5">
-                            <Button
-                                onClick={() => {
-                                    setEditingBlogPost(null)
-                                    form.reset()
-                                }}
-                            >
-                                Add <Plus className="ml-2" />
-                            </Button>
                         </DialogTrigger>
-                        <DialogContent aria-describedby={undefined}>
+                        <DialogContent aria-describedby={undefined} className="max-w-2xl max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                                 <DialogTitle>
                                     {editingBlogPost ? "Edit Blog Post" : "Add Blog Post"}
@@ -240,49 +321,60 @@ export default function BlogAdminPage() {
                             </DialogHeader>
                             <Form {...form}>
                                 <form
-                                    onSubmit={form.handleSubmit(handleSubmit)}
+                                    onSubmit={(e) => {
+                                        console.log("🚀 Form onSubmit event triggered")
+                                        e.preventDefault()
+                                        form.handleSubmit(handleSubmit)(e)
+                                    }}
                                     className="space-y-4"
                                 >
+                                    {/* Image Upload */}
+                                    <FormItem>
+                                        <FormLabel>Image</FormLabel>
+                                        <FormControl>
+                                            <div className="space-y-4">
+                                                <Input 
+                                                    type="file" 
+                                                    accept="image/*"
+                                                    onChange={handleImageChange}
+                                                    className="cursor-pointer"
+                                                />
+                                                {imagePreview && (
+                                                    <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-gray-200">
+                                                        <img 
+                                                            src={imagePreview} 
+                                                            alt="Preview"
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            className="absolute top-2 right-2"
+                                                            onClick={() => {
+                                                                setImagePreview(null)
+                                                                setImageFile(null)
+                                                            }}
+                                                        >
+                                                            Remove
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+
                                     <FormField
                                         control={form.control}
                                         name="title"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Title</FormLabel>
-                                                <FormControl>
-                                                    <Input type="text" placeholder="Enter blog title" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="description"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Description</FormLabel>
-                                                <FormControl>
-                                                    <Textarea 
-                                                        placeholder="Enter blog description" 
-                                                        rows={5}
-                                                        {...field} 
-                                                    />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="image"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Image URL</FormLabel>
+                                                <FormLabel>Title *</FormLabel>
                                                 <FormControl>
                                                     <Input 
-                                                        type="url" 
-                                                        placeholder="https://example.com/image.jpg" 
+                                                        type="text" 
+                                                        placeholder="Enter blog title"
                                                         {...field} 
                                                     />
                                                 </FormControl>
@@ -291,19 +383,78 @@ export default function BlogAdminPage() {
                                         )}
                                     />
 
-                                    <Button type="submit" className="w-full">
-                                        {editingBlogPost ? "Update" : "Create"}
+                                    <FormField
+                                        control={form.control}
+                                        name="description"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Description *</FormLabel>
+                                                <FormControl>
+                                                    <Textarea 
+                                                        {...field} 
+                                                        rows={6}
+                                                        placeholder="Enter blog description or content"
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
+                                    <Button 
+                                        type="submit" 
+                                        className="w-full" 
+                                        disabled={submitting}
+                                        onClick={() => console.log("🚀 Button clicked")}
+                                    >
+                                        {submitting ? (
+                                            <>
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                {editingBlogPost ? "Updating..." : "Creating..."}
+                                            </>
+                                        ) : (
+                                            editingBlogPost ? "Update Blog Post" : "Create Blog Post"
+                                        )}
                                     </Button>
                                 </form>
                             </Form>
                         </DialogContent>
                     </Dialog>
                 </div>
+                
                 {loading ? (
-                    <p>loading...</p>
+                    <div className="flex items-center justify-center ">
+                      <Example/>
+                    </div>
                 ) : (
-                    <DataTable columns={columns} data={blogPosts} filterColumn="title" />
+                    <DataTable 
+                        columns={columns} 
+                        data={blogPosts} 
+                        filterColumn="title" 
+                        title="All Blog Posts"
+                        badgeText={`${blogPosts.length} Posts`}
+                        addButtonText="Add Blog Post"
+                        onAddClick={() => {
+                            console.log("🚀 Add button clicked")
+                            setEditingBlogPost(null)
+                            setImagePreview(null)
+                            setImageFile(null)
+                            form.reset({
+                                title: "",
+                                description: "",
+                            })
+                            setOpen(true)
+                        }} 
+                    />
                 )}
+
+                {/* Delete Confirmation Dialog */}
+                <ConfirmDialog
+                    open={deleteConfirmOpen}
+                    onOpenChange={setDeleteConfirmOpen}
+                    loading={deleteLoading}
+                    onConfirm={handleConfirmDelete}
+                />
             </div>
         </div>
     )

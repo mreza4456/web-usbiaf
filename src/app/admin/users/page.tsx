@@ -5,6 +5,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/data-table"
 import { Button } from "@/components/ui/button"
 import { Trash, Pencil, Plus } from "lucide-react"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
     Dialog,
     DialogContent,
@@ -45,6 +46,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { SiteHeader } from "@/components/site-header"
+import Example from "@/components/skeleton"
 
 const usersSchema = z.object({
     role: z.string().min(1, "Role wajib diisi"),
@@ -59,9 +61,12 @@ export default function UsersPage() {
     const categoryId = Number(params.id)
 
     const [open, setOpen] = React.useState(false)
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false)
     const [editingUsers, setEditingUsers] = React.useState<IUser | null>(null)
+    const [userToDelete, setUserToDelete] = React.useState<string | null>(null)
     const [Users, setUsers] = React.useState<IUser[]>([])
     const [loading, setLoading] = React.useState<boolean>(true)
+    const [deleteLoading, setDeleteLoading] = React.useState(false)
 
     const fetchUsers = React.useCallback(async () => {
         try {
@@ -120,22 +125,31 @@ export default function UsersPage() {
         }
     }
 
-    const handleDelete = async (categoryId: string | number) => {
+    const handleDeleteClick = (userId: string | number) => {
+        setUserToDelete(String(userId))
+        setDeleteConfirmOpen(true)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!userToDelete) return
+
         try {
-            setLoading(true)
-            const response = await deleteUsers(categoryId as string)
+            setDeleteLoading(true)
+            const response = await deleteUsers(userToDelete)
             if (!response.success) throw new Error(response.message)
             toast.success("Users deleted successfully")
+            setDeleteConfirmOpen(false)
+            setUserToDelete(null)
             fetchUsers()
         } catch (error: any) {
             toast.error(error.message)
         } finally {
-            setLoading(false)
+            setDeleteLoading(false)
         }
     }
 
     const columns: ColumnDef<IUser>[] = [
-       
+
         { accessorKey: "email", header: "Email" },
         { accessorKey: "full_name", header: "Name" },
         { accessorKey: "role", header: "Role" },
@@ -163,7 +177,7 @@ export default function UsersPage() {
                             variant="outline"
                             size="icon"
                             className="text-red-500 border-0"
-                            onClick={() => handleDelete(user.id)}
+                            onClick={() => handleDeleteClick(user.id)}
                         >
                             <Trash />
                         </Button>
@@ -174,60 +188,78 @@ export default function UsersPage() {
     ]
 
     return (
-<div className="w-full"><SiteHeader title="Users" />
-        <div className="w-full max-w-6xl mx-auto">
-            <div className="items-center my-7">
-                <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Edit User Role</DialogTitle>
-                        </DialogHeader>
+        <div className="w-full"><SiteHeader title="Users" />
+            <div className="w-full px-7 pb-10 mx-auto">
+                <div className="my-7">
+                    <h1 className="text-3xl font-bold mb-2">Users Management</h1>
+                    <p className="text-gray-500">Manage your Users</p>
+                </div>
 
-                        <Form {...form}>
-                            <form
-                                onSubmit={form.handleSubmit(handleSubmit)}
-                                className="space-y-4"
-                            >
-                                <FormField
-                                    control={form.control}
-                                    name="role"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Role</FormLabel>
-                                            <FormControl>
-                                                <Select
-                                                    value={field.value}
-                                                    onValueChange={field.onChange}
-                                                >
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select role" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="ADMIN">ADMIN</SelectItem>
-                                                        <SelectItem value="USER">USER</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
+                <div className="items-center ">
+                    <Dialog open={open} onOpenChange={setOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Edit User Role</DialogTitle>
+                            </DialogHeader>
 
-                                <Button type="submit" className="w-full">
-                                    Update Role
-                                </Button>
-                            </form>
-                        </Form>
-                    </DialogContent>
-                </Dialog>
+                            <Form {...form}>
+                                <form
+                                    onSubmit={form.handleSubmit(handleSubmit)}
+                                    className="space-y-4"
+                                >
+                                    <FormField
+                                        control={form.control}
+                                        name="role"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Role</FormLabel>
+                                                <FormControl>
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select role" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="ADMIN">ADMIN</SelectItem>
+                                                            <SelectItem value="USER">USER</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
 
+                                    <Button type="submit" className="w-full">
+                                        Update Role
+                                    </Button>
+                                </form>
+                            </Form>
+                        </DialogContent>
+                    </Dialog>
+
+                </div>
+                {loading ? (
+                    <div className="flex justify-center items-center">
+                        <Example />
+                    </div>
+                ) : (
+                    <DataTable columns={columns} data={Users} filterColumn="email" title="All Users"
+                        badgeText={`${Users.length} Users`}
+                        addButtonText="Export User"
+                        onAddClick={() => console.log("exported")} />
+                )}
+
+                {/* Delete Confirmation Dialog */}
+                <ConfirmDialog
+                    open={deleteConfirmOpen}
+                    onOpenChange={setDeleteConfirmOpen}
+                    loading={deleteLoading}
+                    onConfirm={handleConfirmDelete}
+                />
             </div>
-            {loading ? (
-                <p>loading...</p>
-            ) : (
-                <DataTable columns={columns} data={Users} filterColumn="email" />
-            )}
         </div>
-</div>
     )
 }

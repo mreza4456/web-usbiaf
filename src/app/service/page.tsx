@@ -7,8 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Zap, Shield, Star, Clock, ImageIcon } from 'lucide-react';
 import { getAllCategories } from '@/action/categories';
 import type { ICategory, IImageCategories } from '@/interface';
-import SkeletonGrid from '@/components/skeleton-card';
+
 import { Spinner } from '@/components/ui/spinner';
+import SkeletonService from '@/components/skeleton-card';
 
 interface ICategoryWithImages extends ICategory {
     images?: IImageCategories[]
@@ -73,15 +74,15 @@ export default function ServicesPage() {
     };
 
     
-     if (loading) {
-        return (
-          <div className="min-h-screen flex items-center justify-center">
+    //  if (loading) {
+    //     return (
+    //       <div className="min-h-screen flex items-center justify-center">
          
-          <Spinner className='w-10 h-10 text-primary'/>
+    //       <Spinner className='w-10 h-10 text-primary'/>
        
-          </div>
-        );
-      }
+    //       </div>
+    //     );
+    //   }
     return (
         <div className="min-h-screen">
             {/* Hero Section */}
@@ -103,9 +104,7 @@ export default function ServicesPage() {
             <section className="pb-12 sm:pb-16 px-4 sm:px-6">
                 <div className="container mx-auto">
                     {loading ? (
-                        <div className="flex justify-center items-center">
-                           <Spinner className='w-10 h-10 text-primary'/>
-                           </div>
+                      <SkeletonService/>
                     ) : error ? (
                         <Card className="bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30">
                             <CardContent className="py-12 text-center">

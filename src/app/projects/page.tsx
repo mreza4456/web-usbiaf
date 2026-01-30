@@ -12,6 +12,7 @@ import { IProduct, ICategory } from '@/interface';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/spinner';
+import { SkeletonProjects } from '@/components/skeleton-card';
 
 export default function Projects() {
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -57,8 +58,8 @@ export default function Projects() {
         : [...prev, productId]
     );
   };
-    const handleClick = () => {
-    router.push("/project/detail")
+  const handleClick = (productId: string) => {
+    router.push(`/projects/${productId}`)
   };
 
   const filteredProjects = products.filter(product => {
@@ -76,15 +77,15 @@ export default function Projects() {
   ];
 
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+  // if (loading) {
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center">
 
-        <Spinner className='w-10 h-10 text-primary' />
+  //       <Spinner className='w-10 h-10 text-primary' />
 
-      </div>
-    );
-  }
+  //     </div>
+  //   );
+  // }
 
 
   return (
@@ -162,7 +163,10 @@ export default function Projects() {
         {/* All Projects Grid */}
         <section className="pb-20 px-4 sm:px-6">
           <div className="container mx-auto">
-            {filteredProjects.length === 0 ? (
+
+            {loading ? (
+              <SkeletonProjects />
+            ) : filteredProjects.length === 0 ? (
               <div className="text-center py-20">
                 <div className="text-6xl mb-4">🔍</div>
                 <h3 className="text-2xl font-bold text-gray-400 mb-2">No projects found</h3>
@@ -184,7 +188,7 @@ export default function Projects() {
                   }).format(project.price || 0);
 
                   return (
-                    <Card key={project.id} onClick={handleClick} className="bg-white p-0 m-0 border-0 shadow-lg hover:shadow-xl hover:scale-105 cursor-pointer transition-all duration-300 overflow-hidden">
+                    <Card key={project.id} onClick={() => handleClick(project.id)} className="bg-white p-0 m-0 border-0 shadow-lg hover:shadow-xl hover:scale-105 cursor-pointer transition-all duration-300 overflow-hidden">
                       <CardContent className="p-0">
                         {/* Instagram-style header */}
                         <div className="flex items-center gap-3 px-4 py-3 border-b">
@@ -230,7 +234,7 @@ export default function Projects() {
                         {/* Instagram-style footer */}
                         <div className="px-4 py-4">
                           <h3 className="font-semibold text-sm mb-1 line-clamp-1">
-                                  {project.description || 'No description available'}
+                            {project.description || 'No description available'}
                           </h3>
                         </div>
                       </CardContent>

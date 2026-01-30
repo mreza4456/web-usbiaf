@@ -50,7 +50,7 @@ const categorySchema = z.object({
 type CategoryFormValues = z.infer<typeof categorySchema>
 
 interface CategoryFormProps {
-    initialData?: ICategory & { 
+    initialData?: ICategory & {
         packages?: IPackageCategories[]
         images?: IImageCategories[]
     }
@@ -131,12 +131,12 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
 
                 appendImage({
                     image_url: result.url!,
-                  
+
                 })
             }
 
             toast.success('Gambar berhasil diupload')
-            
+
             if (fileInputRef.current) {
                 fileInputRef.current.value = ""
             }
@@ -163,7 +163,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
 
     const handleRemoveImage = async (index: number) => {
         const image = imageFields[index]
-        
+
         if (image.image_url && image.image_url.includes('supabase')) {
             await deleteImage(image.image_url)
         }
@@ -186,9 +186,9 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
             <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
                 console.log("=== VALIDATION ERRORS ===", errors)
                 toast.error("Validasi form gagal. Periksa kembali input Anda.")
-            })} className="space-y-8">
+            })} className="space-y-1 grid lg:grid-cols-2 gap-8">
                 {/* Category Information */}
-                <Card>
+                <Card className="bg-white">
                     <CardHeader>
                         <CardTitle>Category Information</CardTitle>
                     </CardHeader>
@@ -246,13 +246,13 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                 </Card>
 
                 {/* Images Section */}
-                <Card>
+                <Card className="bg-white">
                     <CardHeader>
                         <CardTitle>Category Images *</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <Tabs value={uploadMethod} onValueChange={(v) => setUploadMethod(v as "upload" | "url")}>
-                            <TabsList className="grid w-full grid-cols-2">
+                        <Tabs className="" value={uploadMethod} onValueChange={(v) => setUploadMethod(v as "upload" | "url")}>
+                            <TabsList className="grid w-full grid-cols-2 bg-gray-200">
                                 <TabsTrigger value="upload">Upload Files</TabsTrigger>
                                 <TabsTrigger value="url">Image URL</TabsTrigger>
                             </TabsList>
@@ -290,6 +290,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                         type="button"
                                         onClick={handleAddImageUrl}
                                         disabled={!urlInput.trim()}
+                                        className="bg-slate-800 hover:bg-slate-700"
                                     >
                                         <Plus className="h-4 w-4 mr-2" />
                                         Add
@@ -337,7 +338,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                 </Card>
 
                 {/* Packages Section */}
-                <Card>
+                <Card className="col-span-2 bg-white">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Package Categories</CardTitle>
                         <Button
@@ -350,7 +351,11 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                             Add Package
                         </Button>
                     </CardHeader>
-                    <CardContent className="space-y-6">
+                    <CardContent className={`space-y-1 gap-7 ${packageFields.length === 0 ? '' :
+                            packageFields.length === 1 ? 'grid grid-cols-1' :
+                                packageFields.length === 2 ? 'grid grid-cols-1 md:grid-cols-2' :
+                                    'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+                        }`}>
                         {packageFields.length === 0 ? (
                             <p className="text-sm text-muted-foreground text-center py-8">
                                 Belum ada paket. Klik "Add Package" untuk menambahkan paket.
@@ -358,8 +363,8 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                         ) : (
                             packageFields.map((field, index) => (
                                 <div key={field.id}>
-                                    {index > 0 && <Separator className="my-6" />}
-                                    <div className="space-y-4">
+
+                                    <Card className="space-y-2 p-5 bg-white">
                                         <div className="flex items-center justify-between">
                                             <h4 className="font-medium">Package {index + 1}</h4>
                                             <Button
@@ -403,10 +408,10 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                                 control={form.control}
                                                 name={`packages.${index}.package`}
                                                 render={({ field }) => (
-                                                    <FormItem>
+                                                    <FormItem >
                                                         <FormLabel>Package Type *</FormLabel>
                                                         <Select value={field.value} onValueChange={field.onChange}>
-                                                            <SelectTrigger>
+                                                            <SelectTrigger className="w-full">
                                                                 <SelectValue placeholder="Select a Package" />
                                                             </SelectTrigger>
                                                             <SelectContent>
@@ -433,7 +438,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                                     <FormControl>
                                                         <Input
                                                             type="number"
-                                                            placeholder="0"
+                                                            placeholder="Input Price"
                                                             {...field}
                                                             onChange={(e) => {
                                                                 const value = e.target.value === '' ? 0 : Number(e.target.value)
@@ -463,33 +468,24 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                                 </FormItem>
                                             )}
                                         />
-                                    </div>
+                                    </Card>
                                 </div>
                             ))
                         )}
                     </CardContent>
                 </Card>
 
-                <div className="flex gap-3">
-                    {/* <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                            console.log("=== FORM VALUES ===", form.getValues())
-                            console.log("=== FORM ERRORS ===", form.formState.errors)
-                        }}
-                    >
-                        Debug Form
-                    </Button> */}
+                <div className="col-span-2 flex justify-end">
 
                     <Button
                         type="submit"
-                        className="flex-1"
+                        className="py-7 px-15 rounded-xl cursor-pointer bg-slate-800 hover:bg-slate-700"
                         disabled={isSubmitting || uploading}
                     >
                         {isSubmitting ? "Menyimpan..." : initialData ? "Update Category & Packages" : "Create Category & Packages"}
                     </Button>
                 </div>
+
             </form>
         </Form>
     )

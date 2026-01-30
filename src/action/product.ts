@@ -15,7 +15,7 @@ export const getAllProducts = async () => {
             category:categories(*),
             images(*)
         `)
-        .order("createdAt", { ascending: false });
+        .order("created_at", { ascending: false });
 
     if (error) {
         console.error('Database error:', error);
@@ -197,35 +197,93 @@ export const updateProducts = async (id: string, product: Partial<IProduct>) => 
     }
 };
 
-export const deleteProducts = async (id: string) => {
+// export const deleteProducts = async (id: string) => {
     
-    try {
-         const user = await getAuthenticatedUser();
+//     try {
+//          const user = await getAuthenticatedUser();
+//     const adminCheck = await isAdmin(user.id);
+    
+//     if (!adminCheck) {
+//       return { success: false, message: "Akses ditolak. Hanya admin yang bisa menambah kategori.", data: null };
+//     }
+
+//     const supabase = await createClient();
+//         // With CASCADE delete, images will be automatically deleted
+//         const { error } = await supabase
+//             .from("products")
+//             .delete()
+//             .eq("id", id);
+
+//         if (error) throw error;
+
+//         return {
+//             success: true,
+//             message: "Product deleted successfully",
+//             data: null,
+//         };
+//     } catch (err: any) {
+//         return {
+//             success: false,
+//             message: err.message,
+//             data: null,
+//         };
+//     }
+// };
+export const deleteProducts = async (id: string) => {
+  try {
+    // Verify user is authenticated and is admin
+    const user = await getAuthenticatedUser();
     const adminCheck = await isAdmin(user.id);
     
     if (!adminCheck) {
-      return { success: false, message: "Akses ditolak. Hanya admin yang bisa menambah kategori.", data: null };
+      return { success: false, message: "Akses ditolak. Hanya admin yang bisa menghapus kategori.", data: null };
     }
 
     const supabase = await createClient();
-        // With CASCADE delete, images will be automatically deleted
-        const { error } = await supabase
-            .from("products")
-            .delete()
-            .eq("id", id);
 
-        if (error) throw error;
+    // 1. Hapus semua images terkait
+    const { error: imagesError } = await supabase
+      .from("images")
+      .delete()
+      .eq("product_id", id);
 
-        return {
-            success: true,
-            message: "Product deleted successfully",
-            data: null,
-        };
-    } catch (err: any) {
-        return {
-            success: false,
-            message: err.message,
-            data: null,
-        };
+    if (imagesError) {
+      console.error("Images delete error:", imagesError);
+      return { 
+        success: false, 
+        message: `Gagal menghapus gambar: ${imagesError.message}`, 
+        data: null 
+      };
     }
+
+    // 3. Hapus category itu sendiri
+    const { data, error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Product delete error:", error);
+      return { 
+        success: false, 
+        message: error.message, 
+        data: null 
+      };
+    }
+
+    return { 
+      success: true, 
+      message: "Projects  berhasil dihapus", 
+      data: data as IProduct 
+    };
+  } catch (error: any) {
+    console.error("delete Projects error:", error);
+    return { 
+      success: false, 
+      message: error.message || "Terjadi kesalahan saat menghapus Projects", 
+      data: null 
+    };
+  }
 };

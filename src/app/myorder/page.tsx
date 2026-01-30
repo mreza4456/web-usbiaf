@@ -17,6 +17,7 @@ import {
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -34,6 +35,8 @@ export default function UserOrdersPage() {
     const [selectedOrder, setSelectedOrder] = useState<IOrderWithItems | null>(null);
     const [detailOpen, setDetailOpen] = useState(false);
     const router = useRouter();
+    const [open, setOpen] = useState(false);
+
 
     const fetchOrders = useCallback(async () => {
         if (!user?.id) return;
@@ -41,7 +44,7 @@ export default function UserOrdersPage() {
         try {
             setLoading(true);
             console.log('🔍 Fetching orders for user:', user.id);
-            
+
             const response = await getUserOrders(user.id);
             console.log('📦 Orders response:', response);
 
@@ -106,18 +109,28 @@ export default function UserOrdersPage() {
         }).format(amount);
     };
 
-    const handleCancel = async (order: IOrderWithItems) => {
-        if (!confirm('Are you sure you want to cancel this order?')) return;
+    const handleCancel = async () => {
+        if (!selectedOrder) return;
 
         try {
-            const response = await updateOrderStatus(order.id, { status: 'cancelled' });
+            setLoading(true);
+            const response = await updateOrderStatus(selectedOrder.id, {
+                status: 'cancelled',
+            });
+
             if (!response.success) throw new Error(response.message);
+
             toast.success('Order cancelled successfully');
             fetchOrders();
+            setOpen(false);
+            setSelectedOrder(null);
         } catch (error: any) {
             toast.error(error.message);
+        } finally {
+            setLoading(false);
         }
     };
+
 
     const viewOrderDetails = (order: IOrderWithItems) => {
         setSelectedOrder(order);
@@ -137,6 +150,35 @@ export default function UserOrdersPage() {
 
     return (
         <div>
+            <Dialog open={open} onOpenChange={setOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Cancel Order?</DialogTitle>
+                        <DialogDescription>
+                            This action cannot be undone. Your order will be cancelled permanently.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex justify-end gap-2 mt-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setOpen(false)}
+                            disabled={loading}
+                        >
+                            No, keep order
+                        </Button>
+
+                        <Button
+                            variant="destructive"
+                            onClick={handleCancel}
+                            disabled={loading}
+                        >
+                            {loading ? 'Cancelling...' : 'Yes, cancel order'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             <div className="relative z-10 w-full max-w-7xl mx-auto mt-25">
                 {/* Header */}
                 <div className="mb-8">
@@ -210,12 +252,17 @@ export default function UserOrdersPage() {
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
-                                                            onClick={() => handleCancel(order)}
+                                                            onClick={() => {
+                                                                setSelectedOrder(order);
+                                                                setOpen(true);
+                                                            }}
                                                             className="bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20"
                                                         >
                                                             <XCircle className="w-4 h-4 mr-1" />
                                                             Cancel
                                                         </Button>
+
+
                                                     )}
                                                 </>
                                             )}
@@ -335,9 +382,9 @@ export default function UserOrdersPage() {
                                         {selectedOrder.references_link && (
                                             <div>
                                                 <span className="text-gray-500">References:</span>
-                                                <a 
-                                                    href={selectedOrder.references_link} 
-                                                    target="_blank" 
+                                                <a
+                                                    href={selectedOrder.references_link}
+                                                    target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-blue-600 hover:underline block mt-1"
                                                 >

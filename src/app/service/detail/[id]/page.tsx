@@ -23,6 +23,8 @@ import { addToCart, getCartCount } from '@/action/cart';
 import type { ICategory, IPackageCategories, IImageCategories } from '@/interface';
 import { useAuthStore } from '@/store/auth';
 import { Spinner } from '@/components/ui/spinner';
+import { SkeletonServiceDetail } from '@/components/skeleton-card';
+import CategoryCarousel from '@/components/carousel-categories';
 
 interface CategoryDetailPageProps {
   params: Promise<{ id: string; }>;
@@ -197,9 +199,9 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen max-w-7xl w-full mx-auto mt-30">
 
-        <Spinner className='w-10 h-10 text-primary' />
+       <SkeletonServiceDetail/>
 
       </div>
     );
@@ -490,6 +492,10 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             </div>
           </div>
         )}
+        <div className="mt-20">
+
+        <CategoryCarousel/>
+        </div>
       </div>
 
       {/* Custom Full Screen Modal - Desktop Only */}

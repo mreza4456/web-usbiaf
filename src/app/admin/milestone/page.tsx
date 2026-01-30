@@ -114,7 +114,7 @@ export default function AdminMilestoneRewards() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading rewards...</p>
                 </div>
             </div>
@@ -125,16 +125,12 @@ export default function AdminMilestoneRewards() {
         <div className="w-full">
             <SiteHeader title="Milestone" />
 
-            <div className="min-h-screen bg-gray-50 py-8 px-4">
+            <div className="min-h-screen bg-gray-50 pb-10 px-7">
+                <div className="my-7">
+                    <h1 className="text-3xl font-bold mb-2">Milestone Rewards Management</h1>
+                    <p className="text-gray-500">Configure voucher rewards for customer milestone achievements</p>
+                </div>
                 <div className="w-full mx-auto ">
-                    {/* Header */}
-                    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <div className="flex items-center gap-3 mb-2">
-                            <Award className="w-8 h-8 text-purple-600" />
-                            <h1 className="text-2xl font-bold text-gray-900">Milestone Rewards Management</h1>
-                        </div>
-                        <p className="text-gray-600">Configure voucher rewards for customer milestone achievements</p>
-                    </div>
 
                     {/* Message Alert */}
                     {message.text && (
@@ -168,14 +164,14 @@ export default function AdminMilestoneRewards() {
                                     <div
                                         key={reward.id}
                                         className={`bg-white rounded-lg shadow-md p-6 border-2 transition-all ${reward.is_active
-                                            ? 'border-purple-300'
+                                            ? 'border-slate-300'
                                             : 'border-gray-300 opacity-60'
                                             }`}
                                     >
                                         {/* Header */}
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-bold text-lg">
+                                                <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold text-lg">
                                                     {reward.milestone_step}
                                                 </div>
                                                 <div>
@@ -183,7 +179,7 @@ export default function AdminMilestoneRewards() {
                                                     <p className="text-xs text-gray-500">Milestone Reward</p>
                                                 </div>
                                             </div>
-                                            <Gift className="w-6 h-6 text-purple-600" />
+                                            <Gift className="w-6 h-6 text-slate-500" />
                                         </div>
 
                                         {/* Voucher Value */}
@@ -197,12 +193,12 @@ export default function AdminMilestoneRewards() {
                                                     value={editValue}
                                                     onChange={(e) => setEditValue(e.target.value)}
                                                     placeholder="e.g., 5%, 10%, 15%"
-                                                    className="w-full px-4 py-2 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
+                                                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent outline-none"
                                                     autoFocus
                                                 />
                                             ) : (
-                                                <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg px-4 py-3 border border-purple-200">
-                                                    <span className="text-2xl font-bold text-purple-700">
+                                                <div className="bg-background rounded-lg px-4 py-3 border border-slate-200">
+                                                    <span className="text-2xl font-bold text-slate-700">
                                                         {reward.voucher_value}
                                                     </span>
                                                     <span className="text-sm text-gray-600 ml-2">discount</span>
@@ -217,7 +213,7 @@ export default function AdminMilestoneRewards() {
                                                     <button
                                                         onClick={() => handleSave(reward.milestone_step)}
                                                         disabled={saving}
-                                                        className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                        className="flex-1 bg-slate-600 text-white px-4 py-2 rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                                     >
                                                         <Save className="w-4 h-4" />
                                                         {saving ? 'Saving...' : 'Save'}
@@ -234,7 +230,7 @@ export default function AdminMilestoneRewards() {
                                                 <>
                                                     <button
                                                         onClick={() => handleEdit(reward)}
-                                                        className="flex-1 border border-purple-300 text-purple-600 px-4 py-2 rounded-lg hover:bg-purple-50 transition-colors flex items-center justify-center gap-2"
+                                                        className="flex-1 border border-slate-300 text-slate-500 px-4 py-2 rounded-lg hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
                                                     >
                                                         <Edit2 className="w-4 h-4" />
                                                         Edit
@@ -274,7 +270,7 @@ export default function AdminMilestoneRewards() {
                             </div>
 
                             {/* Info Card */}
-                            
+
                         </>
                     )}
                 </div>

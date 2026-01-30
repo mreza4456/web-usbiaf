@@ -13,6 +13,7 @@ import {
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
+  IconMessage2,
   IconReport,
   IconSearch,
   IconSettings,
@@ -49,12 +50,12 @@ const data = {
       icon: IconDashboard,
     },
     {
-      title: "Product",
+      title: "Projects",
       url: "/admin/products",
       icon: IconListDetails,
     },
     {
-      title: "Categories",
+      title: "Services",
       url: "/admin/categories",
       icon: IconChartBar,
     },
@@ -83,16 +84,21 @@ const data = {
       url: "/admin/blog",
       icon: IconFileDescription,
     },
+    {
+      title: "Chat Customers",
+      url: "/admin/chat",
+      icon: IconMessage2,
+    },
   ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
+    <Sidebar collapsible="offcanvas" {...props} className="bg-white">
+      <SidebarHeader className="bg-white">
+        <SidebarMenu className="bg-white">
+          <SidebarMenuItem className="bg-white">
+            <SidebarMenuButton 
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
@@ -104,8 +110,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
+      <SidebarContent className="bg-white">
+        <NavMain  items={data.navMain} />
 
       </SidebarContent>
   

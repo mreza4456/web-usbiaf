@@ -8,6 +8,7 @@ import { Search, X, Calendar, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { getAllBlogPosts } from '@/action/blog';
 import { IBlogPost } from '@/interface';
+import { SkeletonBlog } from '@/components/skeleton-card';
 
 export default function BlogPage() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -111,12 +112,9 @@ export default function BlogPage() {
                             </span>
                         </div>
 
-                        {loading && (
-                            <div>
-                                loading
-                            </div>
-                        )}
-                        {filteredPosts.length === 0 ? (
+                        {loading ? (
+                          <SkeletonBlog/>
+                        ) : filteredPosts.length === 0 ? (
                             <div className="text-center py-20">
                                 <div className="text-6xl mb-4">📚</div>
                                 <h3 className="text-2xl font-bold text-gray-400 mb-2">No posts found</h3>
@@ -131,10 +129,10 @@ export default function BlogPage() {
                                     return (
                                         <Card
                                             key={post.id}
-                                            className="bg-white border-primary/30 shadow-lg hover:border-primary transition-all duration-300 hover:transform hover:scale-105 overflow-hidden group"
+                                            className="bg-white pt-0  border-primary/30 shadow-lg hover:border-primary transition-all duration-300 hover:transform  overflow-hidden group"
                                         >
-                                            <CardHeader className="pb-3 p-0">
-                                                <div className="relative h-48 bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 overflow-hidden">
+                                         
+                                                <div className="relative h-60 bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 overflow-hidden">
                                                     {post.image ? (
                                                         <img
                                                             src={post.image}
@@ -151,7 +149,7 @@ export default function BlogPage() {
                                                         </div>
                                                     )}
                                                 </div>
-                                            </CardHeader>
+                                          
 
                                             <CardContent className="p-5">
                                                 <CardTitle className="text-xl text-primary mb-3 line-clamp-2 group-hover:text-primary/80 transition-colors">

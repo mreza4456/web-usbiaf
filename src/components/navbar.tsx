@@ -1,22 +1,16 @@
 "use client";
 import * as React from "react"
 import Link from "next/link"
-import { Sparkles, User, LogOut, ChevronDown, Loader2, ArrowRight, Menu, X, Ticket, Gift, Box } from "lucide-react"
+import { Sparkles, User, LogOut, ChevronDown, Loader2, Menu, X, Ticket, Gift, CheckCircle, Calendar, Tag, Bell } from "lucide-react"
 import { Button } from "./ui/button"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/config/supabase"
 import { useAuthStore } from "@/store/auth"
 import UserChat from "./user-chat";
-
-interface Voucher {
-  id: string;
-  code: string;
-  value: string;
-  expired_at: string;
-  is_used: boolean;
-  milestone_order: number;
-  created_at: string;
-}
+import { getActiveVoucherEvents } from "@/action/voucher-events";
+import { checkVoucherEventClaimed, claimVoucherEvent } from "@/action/vouchers";
+import { IVoucherEvents } from "@/interface";
+import { Card } from "./ui/card";
 
 export default function Navbar(): React.ReactElement {
   const [isScrolled, setIsScrolled] = React.useState(false)
@@ -24,9 +18,10 @@ export default function Navbar(): React.ReactElement {
   const [showVoucherMenu, setShowVoucherMenu] = React.useState(false)
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
-  const [vouchers, setVouchers] = React.useState<Voucher[]>([])
-  const [isLoadingVouchers, setIsLoadingVouchers] = React.useState(false)
-
+  const [voucherEvents, setVoucherEvents] = React.useState<IVoucherEvents[]>([]);
+  const [isLoadingVouchers, setIsLoadingVouchers] = React.useState(true);
+  const [claimedVouchers, setClaimedVouchers] = React.useState<Set<string>>(new Set());
+  const [claimingId, setClaimingId] = React.useState<string | null>(null);
   const router = useRouter()
 
   /** 🔥 Zustand Auth (INSTAN) */
@@ -39,35 +34,60 @@ export default function Navbar(): React.ReactElement {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  // Fetch vouchers when user is logged in
   React.useEffect(() => {
     if (user?.id) {
-      fetchVouchers()
+      fetchVoucherEvents();
     }
-  }, [user?.id])
+  }, [user?.id]);
 
-  const fetchVouchers = async () => {
-    if (!user?.id) return
-
-    setIsLoadingVouchers(true)
+  const fetchVoucherEvents = async () => {
+    setIsLoadingVouchers(true);
     try {
-      const { data, error } = await supabase
-        .from("vouchers")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
+      const result = await getActiveVoucherEvents({ search: '' });
+      if (result.success && result.data) {
+        setVoucherEvents(result.data);
 
-      if (error) {
-        console.error("Error fetching vouchers:", error)
-      } else {
-        setVouchers(data || [])
+        // Check which vouchers user has already claimed
+        if (user?.id) {
+          const claimed = new Set<string>();
+          for (const event of result.data) {
+            const check = await checkVoucherEventClaimed(user.id, event.id);
+            if (check.claimed) {
+              claimed.add(event.id);
+            }
+          }
+          setClaimedVouchers(claimed);
+        }
       }
-    } catch (err) {
-      console.error("Unexpected error:", err)
+    } catch (error) {
+      console.error('Error fetching voucher events:', error);
     } finally {
-      setIsLoadingVouchers(false)
+      setIsLoadingVouchers(false);
     }
-  }
+  };
+
+  const handleClaimVoucher = async (voucherEventId: string) => {
+    if (!user?.id) {
+      alert('Silakan login terlebih dahulu');
+      return;
+    }
+
+    setClaimingId(voucherEventId);
+    try {
+      const result = await claimVoucherEvent(user.id, voucherEventId);
+
+      if (result.success) {
+        alert(result.message);
+        setClaimedVouchers(prev => new Set([...prev, voucherEventId]));
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      alert('Terjadi kesalahan saat mengklaim voucher');
+    } finally {
+      setClaimingId(null);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -83,11 +103,11 @@ export default function Navbar(): React.ReactElement {
     }
   }
 
-const getDisplayName = () => {
-  if (!user) return null;
-  if (user.full_name) return user.full_name;
-  return user.email?.split("@")[0];
-};
+  const getDisplayName = () => {
+    if (!user) return null;
+    if (user.full_name) return user.full_name;
+    return user.email?.split("@")[0];
+  };
   const displayName = getDisplayName()
 
   React.useEffect(() => {
@@ -120,9 +140,10 @@ const getDisplayName = () => {
     { href: "/cart", label: "Order" },
   ]
 
-  const availableVouchers = vouchers.filter(v => !v.is_used && new Date(v.expired_at) > new Date())
-  const usedVouchers = vouchers.filter(v => v.is_used)
-  const expiredVouchers = vouchers.filter(v => !v.is_used && new Date(v.expired_at) <= new Date())
+  // Hitung voucher yang belum diklaim dan belum expired
+  const availableVoucherEvents = voucherEvents.filter(
+    event => !claimedVouchers.has(event.id) && new Date(event.expired_at) > new Date()
+  );
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID', {
@@ -132,14 +153,9 @@ const getDisplayName = () => {
     })
   }
 
-  const copyToClipboard = (code: string) => {
-    navigator.clipboard.writeText(code)
-    alert('Kode voucher berhasil disalin!')
-  }
-
   return (
-    <nav className={`fixed top-0 w-full  z-50 transition-all duration-300 bg-background`}>
-      <div className="max-w-8xl  sm:px-6 lg:px-8">
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 bg-background`}>
+      <div className="max-w-8xl sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
@@ -163,139 +179,132 @@ const getDisplayName = () => {
               </Link>
             ))}
           </div>
+
           <div>
             {/* Auth Section Desktop */}
             {user ? (
               <div className="flex items-center space-x-3">
-                     <UserChat /> 
-                {/* Voucher Button */}
+                <UserChat />
+
+                {/* Voucher Notification Button */}
                 <div className="relative voucher-menu-container">
                   <button
                     onClick={() => {
                       setShowVoucherMenu(!showVoucherMenu)
                       setShowUserMenu(false)
                     }}
-                    className="relative flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-all"
+                    className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 transition-all"
                   >
-                    <Ticket className="w-6 h-6 text-primary" />
-                    {availableVouchers.length > 0 && (
-                      <span className="absolute top-0 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        {availableVouchers.length}
+                    <Bell className="w-6 h-6 text-primary" />
+                    {availableVoucherEvents.length > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                        {availableVoucherEvents.length}
                       </span>
                     )}
                   </button>
 
-                  {/* Voucher Dropdown */}
+                  {/* Voucher Notification Dropdown */}
                   {showVoucherMenu && (
-                    <div className="absolute right-0 mt-2 w-96 bg-background border border-gray-800 rounded-lg shadow-2xl overflow-hidden">
-                      <div className="p-4 bg-background">
-                        <h3 className="text-primary font-bold flex items-center gap-2">
-                          <Ticket className="w-5 h-5" />
-                          My Vouchers
+                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow overflow-hidden">
+                      <div className="p-3 bg-muted/50">
+                        <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                          <Bell className="w-5 h-5" />
+                          Notification
                         </h3>
                       </div>
 
-                      <div className="max-h-96 overflow-y-auto">
+                      <div className="max-h-96 overflow-y-auto ">
                         {isLoadingVouchers ? (
-                          <div className="p-8 flex items-center justify-center">
-                            <Loader2 className="w-6 h-6 text-[#D78FEE] animate-spin" />
+                          <div className="p-6 flex items-center justify-center">
+                            <Loader2 className="w-5 h-5 text-[#D78FEE] animate-spin" />
                           </div>
-                        ) : vouchers.length === 0 ? (
-                          <div className="p-8 text-center">
-                            <Gift className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-                            <p className="text-gray-400 text-sm">
-                              Belum ada voucher
+                        ) : voucherEvents.length === 0 ? (
+                          <div className="p-6 text-center">
+                            <Bell className="w-10 h-10 text-gray-600 mx-auto mb-2" />
+                            <p className="text-gray-400 text-xs">
+                              No Notification yet
                             </p>
                             <p className="text-gray-500 text-xs mt-1">
-                              Selesaikan pesanan untuk mendapatkan voucher
+                              Stay tuned for special vouchers
                             </p>
                           </div>
                         ) : (
-                          <>
-                            {/* Available Vouchers */}
-                            {availableVouchers.length > 0 && (
-                              <div className="p-3">
-                                <p className="text-xs text-gray-400 mb-2 font-semibold">TERSEDIA</p>
-                                {availableVouchers.map((voucher) => (
-                                  <div
-                                    key={voucher.id}
-                                    className="mb-2 p-3 bg-gradient-to-r from-green-900/30 to-green-800/30 border border-green-700/50 rounded-lg hover:border-green-600 transition-all cursor-pointer"
-                                    onClick={() => copyToClipboard(voucher.code)}
-                                  >
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <p className="text-primary font-bold text-lg">{voucher.value} OFF</p>
-                                        <p className="text-gray-400 text-xs">from {voucher.milestone_order}th orders</p>
-                                      </div>
-                                      <span className="bg-green-500 text-primary text-xs px-2 py-1 rounded">
-                                        Aktif
-                                      </span>
-                                    </div>
-                                    <div className="bg-gray-800/50  rounded border border-dashed border-gray-600 mb-2">
-                                      <p className="text-primary font-mono text-sm text-center">{voucher.code}</p>
-                                    </div>
-                                    <p className="text-gray-400 text-xs">
-                                      Berlaku hingga: {formatDate(voucher.expired_at)}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                          
+                          <div className="">
+                            <p className="text-center mt-3 text-gray-400 ">Congratulation You Get New Vouchers</p>
+                            <div className="line h-[0.5px] bg-gray-300 w-[90%] mx-auto  mt-3"></div>
+                            {voucherEvents.map((event) => {
+                              const isClaimed = claimedVouchers.has(event.id);
+                              const isClaiming = claimingId === event.id;
+                              const isExpired = new Date(event.expired_at) < new Date();
 
-                            {/* Used Vouchers */}
-                            {usedVouchers.length > 0 && (
-                              <div className="p-3 border-t border-gray-800">
-                                <p className="text-xs text-gray-400 mb-2 font-semibold">TELAH DIGUNAKAN</p>
-                                {usedVouchers.map((voucher) => (
-                                  <div
-                                    key={voucher.id}
-                                    className="mb-2 p-3 bg-gray-800/30 border border-gray-700/50 rounded-lg opacity-60"
-                                  >
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <p className="text-gray-300 font-bold">{voucher.value} OFF</p>
-                                        <p className="text-gray-500 text-xs">Milestone: {voucher.milestone_order} pesanan</p>
+                              return (
+                                <Card
+                                  key={event.id}
+                                  className="p-3 bg-muted/30 hover:bg-muted/50 transition-colors m-3 shadow border-0"
+                                >
+                                  {/* Header with discount */}
+                                  <div className="grid grid-cols-4 items-center">
+                                    <div className="flex items-start justify-between mb-2 col-span-3">
+                                      <div className="flex-1">
+                                        <h4 className="text-sm font-semibold text-primary mb-1">
+                                          {event.name}
+                                        </h4>
+                                        <div className="flex items-baseline gap-1">
+                                          <span className="text-xl font-bold text-[#D78FEE]">{event.value}</span>
+                                          <span className="text-xs text-gray-400">OFF</span>
+                                          <div className="flex items-center gap-1 text-gray-400 text-xs mb-2">
+                                            <Calendar className="w-3 h-3" />
+                                            <span>s/d {formatDate(event.expired_at)}</span>
+                                          </div>
+                                        </div>
                                       </div>
-                                      <span className="bg-gray-600 text-primary text-xs px-2 py-1 rounded">
-                                        Terpakai
-                                      </span>
-                                    </div>
-                                    <p className="text-gray-500 text-xs font-mono">{voucher.code}</p>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
 
-                            {/* Expired Vouchers */}
-                            {expiredVouchers.length > 0 && (
-                              <div className="p-3 border-t border-gray-800">
-                                <p className="text-xs text-gray-400 mb-2 font-semibold">KADALUARSA</p>
-                                {expiredVouchers.map((voucher) => (
-                                  <div
-                                    key={voucher.id}
-                                    className="mb-2 p-3 bg-red-900/20 border border-red-700/50 rounded-lg opacity-60"
-                                  >
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <p className="text-gray-300 font-bold">{voucher.value} OFF</p>
-                                        <p className="text-gray-500 text-xs">Milestone: {voucher.milestone_order} pesanan</p>
-                                      </div>
-                                      <span className="bg-red-600 text-primary text-xs px-2 py-1 rounded">
-                                        Expired
-                                      </span>
                                     </div>
-                                    <p className="text-gray-500 text-xs">
-                                      Expired: {formatDate(voucher.expired_at)}
-                                    </p>
+                                    <button
+                                      onClick={() => handleClaimVoucher(event.id)}
+                                      disabled={isClaimed || isClaiming || isExpired || !user}
+                                      className={`w-full py-2 rounded-full text-xs font-semibold transition-all ${isClaimed
+                                        ? 'bg-gray-200  cursor-not-allowed opacity-50'
+                                        : isExpired
+                                          ? 'bg-gray-500/10 text-gray-400 border border-gray-500/30 cursor-not-allowed'
+                                          : 'bg-primary text-white hover:opacity-90 cursor-pointer'
+                                        }`}
+                                    >
+
+                                      {isClaiming ? (
+                                        <span className="flex items-center justify-center ">
+                                          <Loader2 className="w-3 h-3 animate-spin" />
+                                          Mengklaim...
+                                        </span>
+                                      ) : isClaimed ? (
+                                        'Claimed'
+                                      ) : isExpired ? (
+                                        'Over'
+                                      ) : !user ? (
+                                        'Login'
+                                      ) : (
+                                        'Claim'
+                                      )}
+                                    </button>
                                   </div>
-                                ))}
-                              </div>
-                            )}
-                          </>
+                                </Card>
+                              );
+                            })}
+                          </div>
                         )}
                       </div>
 
-                     
+                      {/* Footer - Link to voucher page */}
+                      {voucherEvents.length > 0 && (
+                        <Link
+                          href="/voucher"
+                          onClick={() => setShowVoucherMenu(false)}
+                          className="block p-3 text-center text-xs text-[#D78FEE] hover:bg-white/5  transition-colors"
+                        >
+                          View All Vouchers
+                        </Link>
+                      )}
                     </div>
                   )}
                 </div>
@@ -317,13 +326,12 @@ const getDisplayName = () => {
                         <User className="w-4 h-4 text-primary" />
                       )}
                     </div>
-                
                     <ChevronDown className="w-4 h-4 text-gray-400" />
                   </button>
 
                   {/* User Dropdown Menu */}
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-64 bg-background border border-muted rounded-lg ">
+                    <div className="absolute right-0 mt-2 w-64 bg-background border border-muted rounded-lg">
                       <div className="p-4 border-b border-gray-800">
                         <p className="text-primary font-semibold">{displayName}</p>
                         <p className="text-secondary text-sm">{user.email}</p>
@@ -332,7 +340,7 @@ const getDisplayName = () => {
                       <div className="p-2">
                         <Link
                           href="/profile"
-                          className="flex items-center space-x-2 px-3 py-2 text-primary  rounded-lg transition-colors"
+                          className="flex items-center space-x-2 px-3 py-2 text-primary rounded-lg transition-colors hover:bg-white/10"
                           onClick={() => setShowUserMenu(false)}
                         >
                           <User className="w-4 h-4" />
@@ -340,19 +348,19 @@ const getDisplayName = () => {
                         </Link>
                         <Link
                           href="/myorder"
-                          className="flex items-center space-x-2 px-3 py-2 text-primary  rounded-lg transition-colors"
+                          className="flex items-center space-x-2 px-3 py-2 text-primary rounded-lg transition-colors hover:bg-white/10"
                           onClick={() => setShowUserMenu(false)}
                         >
-                          <Box className="w-4 h-4" />
+                          <Ticket className="w-4 h-4" />
                           <span>My Order</span>
                         </Link>
                         <Link
                           href="/voucher"
-                          className="flex items-center space-x-2 px-3 py-2 text-primary  rounded-lg transition-colors"
+                          className="flex items-center space-x-2 px-3 py-2 text-primary rounded-lg transition-colors hover:bg-white/10"
                           onClick={() => setShowUserMenu(false)}
                         >
-                          <Ticket className="w-4 h-4" />
-                          <span>Vouchers</span>
+                          <Gift className="w-4 h-4" />
+                          <span>My Vouchers</span>
                         </Link>
                         <button
                           onClick={handleLogout}
@@ -370,8 +378,6 @@ const getDisplayName = () => {
                     </div>
                   )}
                 </div>
-
-               
               </div>
             ) : (
               <>
@@ -380,7 +386,6 @@ const getDisplayName = () => {
                     Login
                   </Button>
                 </Link>
-            
               </>
             )}
           </div>
@@ -433,12 +438,12 @@ const getDisplayName = () => {
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   <div className="flex items-center gap-2">
-                    <Ticket className="w-5 h-5 text-primary" />
-                    <span className="text-primary">My Voucher</span>
+                    <Bell className="w-5 h-5 text-primary" />
+                    <span className="text-primary">Notifikasi Voucher</span>
                   </div>
-                  {availableVouchers.length > 0 && (
-                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                      {availableVouchers.length}
+                  {availableVoucherEvents.length > 0 && (
+                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
+                      {availableVoucherEvents.length}
                     </span>
                   )}
                 </Link>
@@ -462,7 +467,7 @@ const getDisplayName = () => {
                   className="block text-primary hover:text-[#D78FEE] transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
-                  Vouchers
+                  My Vouchers
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -476,7 +481,6 @@ const getDisplayName = () => {
                   )}
                   <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
                 </button>
-              
               </div>
             ) : (
               <>
@@ -485,7 +489,6 @@ const getDisplayName = () => {
                     Login
                   </Button>
                 </Link>
-               
               </>
             )}
           </div>

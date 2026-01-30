@@ -5,6 +5,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/data-table"
 import { Button } from "@/components/ui/button"
 import { Trash, Pencil, Eye } from "lucide-react"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import {
     Dialog,
     DialogContent,
@@ -35,6 +36,7 @@ import z from "zod"
 import { IOrderWithItems } from "@/interface"
 import { deleteOrder, updateOrder, getAllOrdersWithItems, updateOrderStatus } from "@/action/order"
 import { SiteHeader } from "@/components/site-header"
+import Example from "@/components/skeleton"
 
 const orderSchema = z.object({
     status: z.string().min(1, "Status is required"),
@@ -45,10 +47,13 @@ type OrderForm = z.infer<typeof orderSchema>
 export default function OrderAdminPage() {
     const [open, setOpen] = React.useState(false)
     const [detailOpen, setDetailOpen] = React.useState(false)
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = React.useState(false)
     const [editingOrder, setEditingOrder] = React.useState<IOrderWithItems | null>(null)
     const [selectedOrder, setSelectedOrder] = React.useState<IOrderWithItems | null>(null)
+    const [orderToDelete, setOrderToDelete] = React.useState<string | null>(null)
     const [orders, setOrders] = React.useState<IOrderWithItems[]>([])
     const [loading, setLoading] = React.useState<boolean>(true)
+    const [deleteLoading, setDeleteLoading] = React.useState(false)
 
     const fetchOrders = React.useCallback(async () => {
         try {
@@ -57,7 +62,7 @@ export default function OrderAdminPage() {
 
             // Import getAllOrdersWithItems from action/order
             const response = await getAllOrdersWithItems()
-            
+
             console.log('📦 Response:', response)
 
             if (!response?.success) {
@@ -115,19 +120,26 @@ export default function OrderAdminPage() {
         }
     }
 
-    const handleDelete = async (orderId: string) => {
-        if (!confirm("Are you sure you want to delete this order?")) return
+    const handleDeleteClick = (orderId: string) => {
+        setOrderToDelete(orderId)
+        setDeleteConfirmOpen(true)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (!orderToDelete) return
 
         try {
-            setLoading(true)
-            const response = await deleteOrder(orderId)
+            setDeleteLoading(true)
+            const response = await deleteOrder(orderToDelete)
             if (!response.success) throw new Error(response.message)
             toast.success("Order deleted successfully")
+            setDeleteConfirmOpen(false)
+            setOrderToDelete(null)
             fetchOrders()
         } catch (error: any) {
             toast.error(error.message)
         } finally {
-            setLoading(false)
+            setDeleteLoading(false)
         }
     }
 
@@ -148,39 +160,41 @@ export default function OrderAdminPage() {
         )
     }
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('id-ID', {
+    const formatCurrency = (amount: number | string): string => {
+        const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+        return new Intl.NumberFormat('en-US', {
             style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-        }).format(amount)
-    }
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(numAmount);
+    };
 
     const columns: ColumnDef<IOrderWithItems>[] = [
-        { 
-            accessorKey: "code_order", 
+        {
+            accessorKey: "code_order",
             header: "Order Code",
             cell: ({ row }) => (
                 <span className="font-mono text-sm">{row.original.code_order}</span>
             )
         },
-        { 
-            accessorKey: "users.email", 
+        {
+            accessorKey: "users.email",
             header: "Client Email",
             cell: ({ row }) => row.original.users?.email || "-"
         },
-        { 
-            accessorKey: "users.full_name", 
+        {
+            accessorKey: "users.full_name",
             header: "Client Name",
             cell: ({ row }) => row.original.users?.full_name || "-"
         },
-        { 
-            accessorKey: "order_items", 
+        {
+            accessorKey: "order_items",
             header: "Items",
             cell: ({ row }) => {
                 const itemCount = row.original.order_items?.length || 0
                 const categories = [...new Set(row.original.order_items?.map(item => item.category_name))]
-                
+
                 return (
                     <div className="space-y-1">
                         <div className="text-sm font-medium">{itemCount} item(s)</div>
@@ -191,8 +205,8 @@ export default function OrderAdminPage() {
                 )
             }
         },
-        { 
-            accessorKey: "purpose", 
+        {
+            accessorKey: "purpose",
             header: "Purpose",
             cell: ({ row }) => (
                 <span className="capitalize text-sm">
@@ -200,20 +214,20 @@ export default function OrderAdminPage() {
                 </span>
             )
         },
-        { 
-            accessorKey: "total", 
+        {
+            accessorKey: "total",
             header: "Total",
             cell: ({ row }) => (
                 <span className="font-semibold">{formatCurrency(row.original.total)}</span>
             )
         },
-        { 
-            accessorKey: "status", 
+        {
+            accessorKey: "status",
             header: "Status",
             cell: ({ row }) => getStatusBadge(row.original.status)
         },
-        { 
-            accessorKey: "created_at", 
+        {
+            accessorKey: "created_at",
             header: "Date",
             cell: ({ row }) => new Date(row.original.created_at).toLocaleDateString('id-ID', {
                 day: '2-digit',
@@ -257,7 +271,7 @@ export default function OrderAdminPage() {
                             variant="outline"
                             size="icon"
                             className="text-red-500 border-0"
-                            onClick={() => handleDelete(order.id)}
+                            onClick={() => handleDeleteClick(order.id)}
                         >
                             <Trash className="h-4 w-4" />
                         </Button>
@@ -268,10 +282,10 @@ export default function OrderAdminPage() {
     ]
 
     return (
-        <div className="w-full"> 
+        <div className="w-full">
             <SiteHeader title="Order Management" />
-            <div className="w-full max-w-7xl mx-auto px-4">
-                
+            <div className="w-full pb-10 mx-auto px-7">
+
                 <div className="my-7">
                     <h1 className="text-3xl font-bold mb-2">Order Management</h1>
                     <p className="text-gray-500">Manage client orders and update their status</p>
@@ -330,7 +344,7 @@ export default function OrderAdminPage() {
                                     )}
                                 />
 
-                                <Button 
+                                <Button
                                     type="button"
                                     onClick={form.handleSubmit(handleSubmit)}
                                     className="w-full"
@@ -405,9 +419,9 @@ export default function OrderAdminPage() {
                                         {selectedOrder.references_link && (
                                             <div>
                                                 <span className="text-gray-500">References:</span>
-                                                <a 
-                                                    href={selectedOrder.references_link} 
-                                                    target="_blank" 
+                                                <a
+                                                    href={selectedOrder.references_link}
+                                                    target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-blue-600 hover:underline block mt-1"
                                                 >
@@ -469,12 +483,23 @@ export default function OrderAdminPage() {
                 </Dialog>
 
                 {loading ? (
-                    <div className="flex justify-center items-center h-64">
-                        <p className="text-gray-500">Loading orders...</p>
+                    <div className="flex justify-center items-center ">
+                          <Example/>
                     </div>
                 ) : (
-                    <DataTable columns={columns} data={orders} />
+                    <DataTable columns={columns} data={orders} filterColumn="code_order" title="All Orders"
+                        badgeText={`${orders.length} Orders`}
+                        addButtonText="Export"
+                        onAddClick={() => console.log("exported")} />
                 )}
+
+                {/* Delete Confirmation Dialog */}
+                <ConfirmDialog
+                    open={deleteConfirmOpen}
+                    onOpenChange={setDeleteConfirmOpen}
+                    loading={deleteLoading}
+                    onConfirm={handleConfirmDelete}
+                />
             </div>
         </div>
     )

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { MessageCircle, Send, X, Loader2, User, MessageCircleMore, Check, CheckCheck } from "lucide-react";
+import { MessageCircle, Send, X, Loader2, User, MessageCircleMore, Check, CheckCheck, SquareArrowOutUpLeft, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth";
 import {
@@ -85,38 +85,6 @@ export default function UserChat() {
     };
   }, [chatRoomId, isOpen, user?.id]);
 
-  const initializeChat = async () => {
-    if (!user?.id) return;
-
-    setIsLoading(true);
-    try {
-      const roomResult = await getOrCreateChatRoom(user.id);
-
-      // FIX: Tambahkan logging
-      console.log("[INIT] Room result:", roomResult);
-
-      if (roomResult.success && roomResult.data) {
-        setChatRoomId(roomResult.data.id);
-        console.log("[INIT] Room ID set:", roomResult.data.id);
-
-        const messagesResult = await getChatMessages(roomResult.data.id);
-        if (messagesResult.success) {
-          setMessages(messagesResult.data);
-        }
-
-        await markMessagesAsRead(roomResult.data.id, user.id);
-        setUnreadCount(0);
-      } else {
-        // FIX: Handle error
-        console.error("[INIT] Failed to get/create room:", roomResult);
-      }
-    } catch (error) {
-      console.error("[INIT] Error initializing chat:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -171,6 +139,135 @@ export default function UserChat() {
       setIsSending(false);
     }
   };
+  // Tambahkan useEffect untuk fetch unread count saat komponen mount
+  useEffect(() => {
+    if (user?.id && !isOpen) {
+      fetchUnreadCount();
+    }
+  }, [user?.id]);
+
+  // Fungsi untuk fetch unread count
+  const fetchUnreadCount = async () => {
+    if (!user?.id) return;
+
+    try {
+      // Get or create chat room
+      const roomResult = await getOrCreateChatRoom(user.id);
+
+      if (roomResult.success && roomResult.data) {
+        // Query unread messages count
+        const { count } = await supabase
+          .from("chat_messages")
+          .select("*", { count: "exact", head: true })
+          .eq("chat_room_id", roomResult.data.id)
+          .eq("is_read", false)
+          .neq("sender_id", user.id); // Exclude messages sent by current user
+
+        setUnreadCount(count || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  };
+
+  // Update initializeChat function
+  const initializeChat = async () => {
+    if (!user?.id) return;
+
+    setIsLoading(true);
+    try {
+      const roomResult = await getOrCreateChatRoom(user.id);
+
+      console.log("[INIT] Room result:", roomResult);
+
+      if (roomResult.success && roomResult.data) {
+        setChatRoomId(roomResult.data.id);
+        console.log("[INIT] Room ID set:", roomResult.data.id);
+
+        const messagesResult = await getChatMessages(roomResult.data.id);
+        if (messagesResult.success) {
+          setMessages(messagesResult.data);
+        }
+
+        // Mark as read HANYA saat chat dibuka
+        if (isOpen) {
+          await markMessagesAsRead(roomResult.data.id, user.id);
+          setUnreadCount(0);
+        }
+      } else {
+        console.error("[INIT] Failed to get/create room:", roomResult);
+      }
+    } catch (error) {
+      console.error("[INIT] Error initializing chat:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Update useEffect untuk handle perubahan isOpen
+  useEffect(() => {
+    if (isOpen && user?.id) {
+      if (!chatRoomId) {
+        initializeChat();
+      } else {
+        // Mark as read saat chat dibuka
+        markMessagesAsRead(chatRoomId, user.id);
+        setUnreadCount(0);
+      }
+    } else if (!isOpen && user?.id) {
+      // Fetch unread count saat chat ditutup
+      fetchUnreadCount();
+    }
+  }, [isOpen, user?.id]);
+
+  // Update realtime subscription
+  useEffect(() => {
+    if (!chatRoomId) return;
+
+    const channel = supabase
+      .channel(`chat_room_${chatRoomId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `chat_room_id=eq.${chatRoomId}`,
+        },
+        async (payload) => {
+          const newMsg = payload.new as IChatMessage;
+
+          // Fetch sender info
+          const { data: senderData } = await supabase
+            .from("users")
+            .select("id, email, full_name, avatar_url")
+            .eq("id", newMsg.sender_id)
+            .single();
+
+          if (senderData) {
+            newMsg.sender = senderData;
+          }
+
+          setMessages((prev) => [...prev, newMsg]);
+
+          // Update unread count
+          if (newMsg.sender_id !== user?.id) {
+            if (isOpen) {
+              // Mark as read jika chat terbuka
+              await markMessagesAsRead(chatRoomId, user?.id || "");
+            } else {
+              // Increment unread count jika chat tertutup
+              setUnreadCount((prev) => prev + 1);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [chatRoomId, isOpen, user?.id]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -188,11 +285,11 @@ export default function UserChat() {
       {/* Chat Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="  flex items-center justify-center  hover:scale-110 transition-transform z-50"
+        className=" relative  flex items-center justify-center  hover:scale-110 transition-transform z-50"
       >
         <MessageCircleMore className="w-6 h-6 text-primary" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {unreadCount}
           </span>
         )}
@@ -207,12 +304,22 @@ export default function UserChat() {
               <MessageCircle className="w-5 h-5 text-primary" />
               <h3 className="font-semibold text-white">Chat Support</h3>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-gray-800 hover:text-primary transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center justify-between gap-3">
+               <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-800 hover:text-primary transition-colors"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-800 hover:text-primary transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+             
+            </div>
+
           </div>
 
           {/* Messages */}
@@ -245,12 +352,12 @@ export default function UserChat() {
                   return (
                     <div key={msg.id}>
                       {isOwn && (
-                        <span className={`flex text-[5px] text-gray-400 text-start ${isOwn ? "justify-end" : "justify-start"}`}>
+                        <span className={`flex text-[10px] text-gray-400 text-start ${isOwn ? "justify-end" : "justify-start"}`}>
                           {msg.sender?.full_name}
                         </span>
                       )}
                       {!isOwn && (
-                        <span className={`flex text-[5px] text-gray-400 ${isOwn ? "justify-end" : "justify-start"}`}>
+                        <span className={`flex text-[10px] text-gray-400 ${isOwn ? "justify-end" : "justify-start"}`}>
                           Admin
                         </span>
                       )}
@@ -267,21 +374,21 @@ export default function UserChat() {
                         >
 
                           <p className="text-sm break-words">{msg.message}</p>
-                     
+
                         </div>
 
 
                       </div>
-                      <span className={`flex text-[5px] items-center   text-gray-400 ${isOwn ? "justify-end " : "justify-start ml-2"}`}
+                      <span className={`flex text-[10px] items-center   text-gray-400 ${isOwn ? "justify-end " : "justify-start ml-2"}`}
 
                       >
                         {formatTime(msg.created_at)}
-                        {read &&(
+                        {read && (
                           <CheckCheck className="w-3 h-3 mx-1 text-primary" />
-                        )} 
-                        {!read &&(
+                        )}
+                        {!read && (
                           <Check className="w-3 h-3 mx-1 " />
-                        )} 
+                        )}
                       </span>
                     </div>
                   );

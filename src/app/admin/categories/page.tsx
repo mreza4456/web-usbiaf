@@ -17,6 +17,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog"
+import { ConfirmDialog } from "@/components/confirm-dialog"
+import { Spinner } from "@/components/ui/spinner"
+import Example from "@/components/skeleton"
 
 // Extended interface untuk category dengan images
 interface ICategoryWithImages extends ICategory {
@@ -29,6 +32,8 @@ export default function CategoriesPage() {
     const [loading, setLoading] = React.useState<boolean>(true)
     const [selectedCategory, setSelectedCategory] = React.useState<ICategoryWithImages | null>(null)
     const [showGallery, setShowGallery] = React.useState(false)
+    const [openDelete, setOpenDelete] = React.useState(false)
+    const [categoryToDelete, setCategoryToDelete] = React.useState<string | null>(null)
 
     const fetchCategories = React.useCallback(async () => {
         try {
@@ -51,14 +56,21 @@ export default function CategoriesPage() {
         fetchCategories()
     }, [fetchCategories])
 
-    const handleDelete = async (categoryId: string) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus kategori ini beserta semua gambarnya?")) return
+    const handleDeleteClick = (categoryId: string) => {
+        setCategoryToDelete(categoryId)
+        setOpenDelete(true)
+    }
+
+    const handleDelete = async () => {
+        if (!categoryToDelete) return
 
         try {
             setLoading(true)
-            const response = await deleteCategories(categoryId)
+            const response = await deleteCategories(categoryToDelete)
             if (!response.success) throw new Error(response.message)
             toast.success("Kategori dan semua gambar berhasil dihapus")
+            setOpenDelete(false)
+            setCategoryToDelete(null)
             fetchCategories()
         } catch (error: any) {
             toast.error(error.message)
@@ -71,6 +83,15 @@ export default function CategoriesPage() {
         setSelectedCategory(category)
         setShowGallery(true)
     }
+    const formatCurrency = (amount: number | string): string => {
+        const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(numAmount);
+    };
 
     const truncateText = (text: string, max: number) => {
         if (!text) return "-"
@@ -98,11 +119,11 @@ export default function CategoriesPage() {
                                         e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Crect fill='%23ddd' width='80' height='80'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EError%3C/text%3E%3C/svg%3E"
                                     }}
                                 />
-                                
+
                                 {/* Image Counter Badge */}
                                 {imageCount > 1 && (
-                                    <Badge 
-                                        variant="secondary" 
+                                    <Badge
+                                        variant="secondary"
                                         className="absolute -top-2 -right-2 bg-primary text-white text-xs px-2"
                                     >
                                         {imageCount}
@@ -133,15 +154,15 @@ export default function CategoriesPage() {
                 )
             }
         },
-        { 
-            accessorKey: "name", 
+        {
+            accessorKey: "name",
             header: "Name",
             cell: ({ row }) => (
                 <div className="font-medium">{row.original.name}</div>
             )
         },
         {
-            accessorKey: "description", 
+            accessorKey: "description",
             header: "Description",
             cell: ({ row }) => {
                 const desc = row.original.description || "-"
@@ -160,8 +181,8 @@ export default function CategoriesPage() {
             cell: ({ row }) => {
                 const price = row.original.start_price
                 return price ? (
-                    <span className="font-semibold text-green-600">
-                        Rp {Number(price).toLocaleString('id-ID')}
+                    <span className="font-semibold ">
+                        {formatCurrency(Number(price))}
                     </span>
                 ) : (
                     <span className="text-gray-400">-</span>
@@ -206,7 +227,7 @@ export default function CategoriesPage() {
                             variant="outline"
                             size="icon"
                             className="text-red-500 border-0 cursor-pointer"
-                            onClick={() => handleDelete(category.id)}
+                            onClick={() => handleDeleteClick(category.id)}
                             title="Delete Category"
                         >
                             <Trash className="h-4 w-4" />
@@ -219,30 +240,26 @@ export default function CategoriesPage() {
 
     return (
         <div className="w-full">
-            <SiteHeader title="categories" />
-            <div className="w-full max-w-7xl mx-auto p-6">
-                <div className="flex justify-between items-center mb-6">
-                    <div>
-                        <h1 className="text-2xl font-bold">Categories</h1>
-                        <p className="text-sm text-gray-600 mt-1">
-                            Manage your categories and images
-                        </p>
+            <SiteHeader title="Services" />
+            <div className="w-full px-7 mx-auto pb-10">
+                <div className="flex justify-between items-center">
+
+                    <div className="my-7">
+                        <h1 className="text-3xl font-bold mb-2">Services Management</h1>
+                        <p className="text-gray-500">Manage your Services and Package</p>
                     </div>
-                    
-                    <Button onClick={() => router.push('/admin/categories/add')}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Category
-                    </Button>
+
                 </div>
 
                 {loading ? (
-                    <div className="flex items-center justify-center min-h-[400px]">
-                        <div className="text-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-                            <p className="text-gray-600">Loading categories...</p>
-                        </div>
+                    <div className="flex items-center justify-center ">
+                         <Example/>
                     </div>
                 ) : (
-                    <DataTable columns={columns} data={categories} filterColumn="name" />
+                    <DataTable columns={columns} data={categories} filterColumn="name" title="All Services"
+                        badgeText={`${categories.length} Services`}
+                        addButtonText="Add Services"
+                        onAddClick={() => router.push('/admin/categories/add')} />
                 )}
             </div>
 
@@ -260,8 +277,8 @@ export default function CategoriesPage() {
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
                         {selectedCategory?.images?.map((image, index) => (
-                            <div 
-                                key={image.id} 
+                            <div
+                                key={image.id}
                                 className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary transition-colors group"
                             >
                                 <img
@@ -272,9 +289,9 @@ export default function CategoriesPage() {
                                         e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23ddd' width='200' height='200'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EError Loading%3C/text%3E%3C/svg%3E"
                                     }}
                                 />
-                                
+
                                 {/* Image Number Badge */}
-                                <Badge 
+                                <Badge
                                     className="absolute top-2 left-2 bg-black/70 text-white"
                                 >
                                     #{index + 1}
@@ -302,6 +319,14 @@ export default function CategoriesPage() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Confirm Delete Dialog */}
+            <ConfirmDialog
+                open={openDelete}
+                onOpenChange={setOpenDelete}
+                loading={loading}
+                onConfirm={handleDelete}
+            />
         </div>
     )
 }

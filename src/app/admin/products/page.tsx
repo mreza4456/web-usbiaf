@@ -11,23 +11,27 @@ import { Card } from "@/components/ui/card"
 import { getAllImages } from "@/action/image"
 import { useRouter } from "next/navigation"
 import { SiteHeader } from "@/components/site-header"
+import { ConfirmDialog } from "@/components/confirm-dialog"
+import Example from "@/components/skeleton"
 
 export default function ProductPage() {
   const router = useRouter()
   const [products, setProducts] = React.useState<IProduct[]>([])
   const [images, setImages] = React.useState<IImage[]>([])
   const [loading, setLoading] = React.useState(true)
- 
+  const [openDelete, setOpenDelete] = React.useState(false)
+  const [selectedProductId, setSelectedProductId] = React.useState<string | null>(null)
+
   const fetchProducts = async () => {
     try {
       setLoading(true)
       const response = await getAllProducts()
-           console.log(response?.message)
+      console.log(response?.message)
       if (!response || !response.success) {
         throw new Error(response?.message || "Failed to fetch products")
         console.log(response?.message)
       }
-           console.log(response?.message)
+      console.log(response?.message)
       setProducts(response.data || [])
     } catch (error: any) {
       toast.error(error.message || "Failed to load products")
@@ -43,18 +47,21 @@ export default function ProductPage() {
     fetchProducts()
 
   }, [])
+  const handleDelete = async () => {
+    if (!selectedProductId) return
 
-  const handleDelete = async (productId: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return
-    
     try {
       setLoading(true)
-      const response = await deleteProducts(productId)
+      const response = await deleteProducts(selectedProductId)
+
       if (!response || !response.success) {
         throw new Error(response?.message || "Failed to delete")
       }
+
       toast.success("Product deleted successfully")
       fetchProducts()
+      setOpenDelete(false)
+      setSelectedProductId(null)
     } catch (error: any) {
       toast.error(error.message || "Failed to delete product")
     } finally {
@@ -62,8 +69,9 @@ export default function ProductPage() {
     }
   }
 
+
   const columns: ColumnDef<IProduct>[] = [
-   
+
     {
       accessorKey: "name",
       header: "Name"
@@ -97,7 +105,10 @@ export default function ProductPage() {
             <Button
               variant="destructive"
               size="icon"
-              onClick={() => handleDelete(product.id)}
+              onClick={() => {
+                setSelectedProductId(product.id)
+                setOpenDelete(true)
+              }}
             >
               <Trash className="h-4 w-4" />
             </Button>
@@ -109,25 +120,36 @@ export default function ProductPage() {
 
   return (
     <div className="w-full">
-      <SiteHeader title="Projects" />
-    
-    <div className="p-6 space-y-6">
-      <Card className="p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Products</h1>
-          <Button onClick={() => router.push("/admin/products/add")}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Product
-          </Button>
-        </div>
 
-        {loading ? (
-          <div className="text-center py-8">Loading...</div>
-        ) : (
-          <DataTable columns={columns} data={products} filterColumn="name" />
-        )}
-      </Card>
-    </div>
+      <SiteHeader title="Projects" />
+      <div className="w-full pb-10 mx-auto px-7">
+        <div className="my-7">
+          <h1 className="text-3xl font-bold mb-2">Projects Management</h1>
+          <p className="text-gray-500">Manage Recents Projects</p>
+        </div>
+        <ConfirmDialog
+          open={openDelete}
+          onOpenChange={setOpenDelete}
+
+          loading={loading}
+          onConfirm={handleDelete}
+        />
+
+        <div className="">
+
+
+          {loading ? (
+            <div className="flex justify-center items-center">
+              <Example/>
+            </div>
+          ) : (
+            <DataTable columns={columns} data={products} filterColumn="name" title="All Projects"
+              badgeText={`${products.length} Projects`}
+              addButtonText="Add Projects"
+              onAddClick={() => router.push("/admin/products/add")} />
+          )}
+        </div>
+      </div>
     </div>
   )
 }

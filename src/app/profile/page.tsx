@@ -29,6 +29,7 @@ import { getAllOrdersWithItems } from '@/action/order';
 import { getUserVouchers, getMilestoneRewards } from '@/action/vouchers';
 import { IUser, IOrder, IVoucher } from '@/interface';
 import Link from 'next/link';
+import { ProfilePageSkeleton } from '@/components/skeleton-card';
 
 export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
@@ -175,11 +176,8 @@ const getInitials = (): string => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
-        </div>
+      <div className="min-h-screen max-w-7xl mx-auto mt-30">
+        <ProfilePageSkeleton/>
       </div>
     );
   }
@@ -189,7 +187,7 @@ const getInitials = (): string => {
       <div className="max-w-7xl mx-auto">
         {/* Profile Header Card */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
-          <div className="h-32 bg-gradient-to-r from-purple-500 to-pink-500"></div>
+          <div className="h-32 bg-secondary"></div>
           
           <div className="px-6 pb-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-16 sm:-mt-12">

@@ -25,8 +25,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isAdminLayout =
     pathname?.startsWith("/admin") && pathname !== ("/admin/")
+
   const isAdminChat =
-    pathname?.startsWith("/admin/chat-room") && pathname !== ("/admin/chat-room/")
+    pathname?.startsWith("/admin/chat/") && pathname !== ("/admin/chat")
 
   const authLayout =
     pathname?.startsWith("/auth/") || pathname?.startsWith("/social-media") ||
@@ -82,22 +83,22 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isAdminLayout) {
     return (
-      <SidebarProvider
+      <SidebarProvider 
         style={
           {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--sidebar-width": "calc(var(--spacing) * 60)",
             "--header-height": "calc(var(--spacing) * 12)",
           } as React.CSSProperties
         }
       >
-        <AppSidebar variant="inset" />
-        <SidebarInset>
+        <AppSidebar variant="inset"  />
+        <SidebarInset >
           {children}
         </SidebarInset>
       </SidebarProvider>
     )
   }
-  else if (authLayout) {
+  else if (authLayout && isAdminChat) {
     return (
       <>
         <LenisScroll />
@@ -105,14 +106,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       </>
     )
   }
-  else if (isAdminChat) {
-    return (
-      <>
-        <LenisScroll />
-        {children}
-      </>
-    )
-  }
+  
 
   return (
     <>
