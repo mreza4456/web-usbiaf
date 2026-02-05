@@ -21,6 +21,7 @@ import {
   IconTargetArrow,
   IconTicket,
   IconUsers,
+  IconUsersPlus,
 } from "@tabler/icons-react"
 
 
@@ -83,6 +84,11 @@ const data = {
       title: "Blog",
       url: "/admin/blog",
       icon: IconFileDescription,
+    },
+    {
+      title: "Teams",
+      url: "/admin/teams",
+      icon: IconUsersPlus,
     },
     {
       title: "Chat Customers",

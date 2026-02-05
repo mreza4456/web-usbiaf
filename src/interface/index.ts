@@ -312,6 +312,17 @@ export interface IBlogPost {
   created_at: string;
   updated_at: string;
 }
+export interface ITeams {
+  id: string;
+  name: string;
+  position: string;
+  skills: [];
+  projects: string | number;
+  descriptions?: string;
+  photo_url?: string;
+  created_at: string;
+}
+
 export interface IComment {
   id: string;
   user_id: string;
