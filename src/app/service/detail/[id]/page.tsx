@@ -14,17 +14,21 @@ import {
   ShoppingCart,
   Package,
   X,
-  ArrowRight
+  ArrowRight,
+  Star,
+  MessageSquare
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { getCategoriesById } from '@/action/categories';
 import { getPackageCategoriesByCategoryId } from '@/action/package';
 import { addToCart, getCartCount } from '@/action/cart';
-import type { ICategory, IPackageCategories, IImageCategories } from '@/interface';
+import { getCommentsByCategory } from '@/action/comment';
+import type { ICategory, IPackageCategories, IImageCategories, IComment } from '@/interface';
 import { useAuthStore } from '@/store/auth';
 import { Spinner } from '@/components/ui/spinner';
 import { SkeletonServiceDetail } from '@/components/skeleton-card';
 import CategoryCarousel from '@/components/carousel-categories';
+import Link from 'next/link';
 
 interface CategoryDetailPageProps {
   params: Promise<{ id: string; }>;
@@ -41,6 +45,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
 
   const [category, setCategory] = useState<ICategoryWithImages | null>(null);
   const [packages, setPackages] = useState<IPackageCategories[]>([]);
+  const [comments, setComments] = useState<IComment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,6 +99,14 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
           setPackages(packagesResult.data);
         } else {
           setPackages([]);
+        }
+
+        // Fetch comments for this category
+        const commentsResult = await getCommentsByCategory(categoryId);
+        if (commentsResult.success && Array.isArray(commentsResult.data)) {
+          setComments(commentsResult.data);
+        } else {
+          setComments([]);
         }
 
         if (user?.id) {
@@ -187,6 +200,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
       router.push('/cart');
     }
   };
+
   const formatCurrency = (amount: number | string): string => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
@@ -197,12 +211,27 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
     }).format(numAmount);
   };
 
+  const calculateAverageRating = () => {
+    if (comments.length === 0) return 0;
+    const total = comments.reduce((sum, comment) => sum + parseInt(comment.rating), 0);
+    return (total / comments.length).toFixed(1);
+  };
+
+  const getRatingDistribution = () => {
+    const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    comments.forEach(comment => {
+      const rating = parseInt(comment.rating);
+      if (rating >= 1 && rating <= 5) {
+        distribution[rating as keyof typeof distribution]++;
+      }
+    });
+    return distribution;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen max-w-7xl w-full mx-auto mt-30">
-
-       <SkeletonServiceDetail/>
-
+        <SkeletonServiceDetail />
       </div>
     );
   }
@@ -224,6 +253,9 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
     );
   }
 
+  const averageRating = calculateAverageRating();
+  const ratingDistribution = getRatingDistribution();
+
   return (
     <div className="min-h-screen bg-background py-8 px-4 mt-20">
       <div className="max-w-7xl mx-auto">
@@ -237,11 +269,9 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Services
           </Button>
-
         </div>
 
-
-        <div className="grid md:grid-cols-2  mb-8">
+       <div className="grid md:grid-cols-2 mb-8">
           {/* Image Gallery */}
           <div className="space-y-4 ">
             {images.length > 0 ? (
@@ -260,13 +290,13 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                     <>
                       <button
                         onClick={prevImage}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-muted p-1 hover:bg-white cursor-pointer  rounded-full shadow-lg transition-all"
+                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-muted p-1 hover:bg-white cursor-pointer rounded-full shadow-lg transition-all"
                       >
                         <ChevronLeft className="w-6 h-6 text-primary" />
                       </button>
                       <button
                         onClick={nextImage}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-muted p-1 hover:bg-white cursor-pointer  rounded-full shadow-lg transition-all"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-muted p-1 hover:bg-white cursor-pointer rounded-full shadow-lg transition-all"
                       >
                         <ChevronRight className="w-6 h-6 text-primary" />
                       </button>
@@ -308,29 +338,55 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
 
           {/* Category Description */}
           <div className="max-w-md mx-auto">
-            <div className="flex flex-col justify-between items-center col-span-3">
+            <div className="grid grid-rows-[1fr_auto] col-span-3">
               <div className="space-y-6">
                 <div>
                   <h1 className="text-4xl font-bold text-primary mb-4 mt-5">{category.name}</h1>
+                   {category.start_price && (
+                  <div className='flex items-end mb-3'>
+                    <p className="text-sm text-gray-500 items-end mx-2">Start From</p>
+                    <div className="text-xl font-bold text-secondary">
+                      {formatCurrency(category.start_price)}
+                    </div>
+                  </div>
+                )}
+                  {comments.length > 0 && (
+                    <div className="">
+                      <div className="flex items-center gap-4 mb-2">
+                        {/* <div className="text-4xl font-bold text-primary"></div> */}
+                        <div>
+                          <div className="flex items-center gap-1 mb-1">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                className={`w-5 h-5 ${i < Math.round(parseFloat(averageRating as any))
+                                  ? 'fill-[#FFE66D] text-[#FFE66D]'
+                                  : 'text-gray-300'
+                                  }`}
+                              />
+                            ))}
+                             <p className="text-sm text-gray-600 mx-2">
+                           ({averageRating}) {comments.length} {comments.length === 1 ? 'review' : 'reviews'}
+                          </p>
+                          </div>
+                         
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   {category.description && (
                     <p className="text-gray-600 text-lg leading-relaxed py-8">{category.description}</p>
                   )}
                 </div>
-
+               
+                {/* Rating Summary */}
 
               </div>
-              {category.start_price && (
-                <div className='py-5 w-full'>
-                  <p className="text-sm text-gray-500 mb-2 ">Start From</p>
-                  <div className="text-3xl font-bold text-secondary">
-                    {formatCurrency(category.start_price)}
-                  </div>
-                </div>
-              )}
+
+
 
               {/* CTA Button - Only on Desktop */}
               <div className="mt-8 w-full">
-
                 <Button
                   size="lg"
                   onClick={() => setIsModalOpen(true)}
@@ -344,13 +400,13 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             </div>
           </div>
         </div>
+
         <div className="mt-20 p-5">
           <h3 className="text-2xl md:text-4xl font-bold mb-4 text-[#50398e] relative inline-block">
             How To Order
             <span className="absolute -top-3 -right-5 text-3xl">✦</span>
           </h3>
         </div>
-
 
         <section className='py-3 mb-20'>
           <div className="relative">
@@ -367,7 +423,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                   <div className="flex items-center w-full">
                     <div className={`flex flex-col items-center z-10`}>
                       <div className={`${item.display}`}>
-                        <h3 className="font-semibold  text-gray-900 text-center mb-1">{item.title}</h3>
+                        <h3 className="font-semibold text-gray-900 text-center mb-1">{item.title}</h3>
                         <p className="text-sm text-gray-500 text-center">{item.desc}</p>
                       </div>
                       <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-lg my-3">
@@ -379,7 +435,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                       </div>
                     </div>
                     {i < arr.length - 1 && (
-                      <div className="w-full h-1 bg-secondary mx-15  absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2"></div>
+                      <div className="w-full h-1 bg-secondary mx-15 absolute left-1/2 top-1/2 -translate-y-1/2 -translate-x-1/2"></div>
                     )}
                   </div>
                 </div>
@@ -414,10 +470,8 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
           </div>
         </section>
 
-
-
         {/* Features Section */}
-        <Card className="bg-muted/50">
+        <Card className="bg-muted/50 mb-15">
           <CardHeader>
             <CardTitle className="text-2xl text-primary">What's Included</CardTitle>
             <CardDescription>All packages include these premium features</CardDescription>
@@ -441,6 +495,124 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
           </CardContent>
         </Card>
 
+        {/* Customer Reviews Section */}
+        {comments.length > 0 && (
+          <div className="mb-20">
+            <h2 className="text-3xl font-bold text-primary mb-2 flex items-center gap-3">
+              <MessageSquare className="w-8 h-8" />
+              Customer Reviews
+            </h2>
+            <div className="flex justify-between items-center mb-8">
+              <div className="">
+
+                <p className="text-gray-600">See what our customers are saying</p>
+              </div>
+              <Link className='text-secondary' href="/reviews">Show All Reviews</Link>
+            </div>
+            {/* Rating Breakdown */}
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="flex items-center justify-center gap-6">
+                    <div className="text-center">
+                      <div className="text-5xl font-bold text-primary mb-2">{averageRating}</div>
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-5 h-5 ${i < Math.round(parseFloat(averageRating as any))
+                              ? 'fill-[#FFE66D] text-[#FFE66D]'
+                              : 'text-gray-300'
+                              }`}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-600">{comments.length} reviews</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 col-span-2">
+                    {[5, 4, 3, 2, 1].map((rating) => (
+                      <div key={rating} className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 w-20">
+                          <span className="text-sm font-medium">{rating}</span>
+                          <Star className="w-4 h-4 fill-[#FFE66D] text-[#FFE66D]" />
+                        </div>
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-primary h-2 rounded-full transition-all"
+                            style={{
+                              width: `${comments.length > 0
+                                ? (ratingDistribution[rating as keyof typeof ratingDistribution] / comments.length) * 100
+                                : 0
+                                }%`
+                            }}
+                          />
+                        </div>
+                        <span className="text-sm text-gray-600 w-12 text-right">
+                          {ratingDistribution[rating as keyof typeof ratingDistribution]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Reviews List */}
+            <div className="space-y-4">
+              {comments.map((comment) => (
+                <Card key={comment.id} className="bg-white">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={comment.users?.avatar_url || '/default-avatar.png'}
+                          alt={comment.users?.full_name}
+                          className="w-12 h-12 rounded-full border-2 border-purple-200"
+                          onError={(e) => {
+                            e.currentTarget.src = '/default-avatar.png';
+                          }}
+                        />
+                        <div>
+                          <div className="font-semibold text-primary">
+                            {comment.users?.full_name || 'Anonymous'}
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-1">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`w-4 h-4 ${i < parseInt(comment.rating)
+                                    ? 'fill-[#FFE66D] text-[#FFE66D]'
+                                    : 'text-gray-300'
+                                    }`}
+                                />
+                              ))}
+                            </div>
+                            <span className="text-sm text-gray-500">
+                              {new Date(comment.created_at).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <Badge className="bg-purple-100 text-purple-700">
+                        {comment.order_items?.package_name || 'Verified Purchase'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 leading-relaxed">{comment.message}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Package Selection - Mobile Only (Inline) */}
         {isMobile && packages.length > 0 && (
@@ -492,9 +664,9 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             </div>
           </div>
         )}
-        <div className="mt-20">
 
-        <CategoryCarousel/>
+        <div className="mt-20">
+          <CategoryCarousel />
         </div>
       </div>
 
@@ -530,7 +702,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                 {packages.map((pkg) => (
                   <Card
                     key={pkg.id}
-                    className="transition-all hover:shadow-2xl  bg-white"
+                    className="transition-all hover:shadow-2xl bg-white"
                   >
                     <CardHeader className="pb-3">
                       <Badge className="w-fit mb-2 bg-purple-100 text-purple-700">
@@ -549,7 +721,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                       <Button
                         onClick={() => handleAddToCart(pkg.id.toString())}
                         disabled={isAddingToCart && selectedPackage === pkg.id.toString()}
-                        className="float-end bg-primary rounded-full cursor-pointer hover:scale-105  text-white"
+                        className="float-end bg-primary rounded-full cursor-pointer hover:scale-105 text-white"
                         size="lg"
                       >
                         {isAddingToCart && selectedPackage === pkg.id.toString() ? (
@@ -572,8 +744,6 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
           </div>
         </div>
       )}
-
-
     </div>
   );
 }

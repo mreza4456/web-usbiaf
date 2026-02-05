@@ -79,45 +79,42 @@ export default function VoucherPage() {
     // Loading state
     if (isLoadingVouchers) {
         return (
-            <div className="min-h-screen  text-primary flex items-center justify-center">
-                <div className="text-center">
-                    <Loader2 className="w-12 h-12 text-[#D78FEE] animate-spin mx-auto mb-4" />
-                    <p className="text-gray-400">Memuat voucher...</p>
-                </div>
-            </div>
+             <div className="min-h-screen max-w-7xl mx-auto p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-white/50 rounded w-1/4 mb-6"></div>
+          <div className="h-64 bg-white/50 rounded mb-6"></div>
+          <div className="space-y-3">
+            <div className="h-20 bg-white/50 rounded"></div>
+            <div className="h-20 bg-white/50 rounded"></div>
+            <div className="h-20 bg-white/50 rounded"></div>
+          </div>
+        </div>
+      </div>
         );
     }
 
     return (
-        <div className="relative z-10 w-full max-w-7xl mx-auto text-primary mt-10">
+        <div className="relative z-10 w-full max-w-7xl mx-auto text-primary px-4 sm:px-6 lg:px-8">
             {/* Header Section */}
-            <div className="relative overflow-hidden ">
+            <div className="relative overflow-hidden  ">
 
 
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 relative">
-                    <div className="mb-8">
-                        <div className="flex items-center gap-3 mb-4">
-                            <Ticket className="w-8 h-8 text-secondary" />
-                            <h1 className="text-4xl font-bold text-primary">
-                                My Voucher
-                            </h1>
-                        </div>
-                        <p className="text-gray-500">Track and manage your commission orders</p>
-                    </div>
+                <div className="max-w-7xl mx-auto px-4 relative">
+                        <h1 className="text-3xl font-bold text-primary mb-6">My Vouchers</h1>
 
                     {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-                        <div className="bg-gradient-to-br from-green-900/30 to-green-800/20 border border-green-700/50 rounded-xl p-6 hover:scale-105 transition-transform">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-5 mb-5">
+                        <div className="bg-white shadow-lg rounded-xl p-6">
                             <div className="flex items-center justify-between mb-2">
-                                <Gift className="w-8 h-8 text-green-400" />
+                                <Ticket className="w-8 h-8 text-green-400" />
                                 <span className="text-3xl font-bold text-green-400">{availableVouchers.length}</span>
                             </div>
                             <p className="text-gray-300 font-medium">Voucher Tersedia</p>
                             <p className="text-gray-500 text-sm mt-1">Siap digunakan</p>
                         </div>
 
-                        <div className="bg-gradient-to-br from-gray-800/30 to-gray-700/20 border border-gray-700/50 rounded-xl p-6 hover:scale-105 transition-transform">
+                        <div className="bg-white shadow-lg rounded-xl p-6">
                             <div className="flex items-center justify-between mb-2">
                                 <Check className="w-8 h-8 text-gray-400" />
                                 <span className="text-3xl font-bold text-gray-400">{usedVouchers.length}</span>
@@ -126,7 +123,7 @@ export default function VoucherPage() {
                             <p className="text-gray-500 text-sm mt-1">Sudah digunakan</p>
                         </div>
 
-                        <div className="bg-gradient-to-br from-red-900/30 to-red-800/20 border border-red-700/50 rounded-xl p-6 hover:scale-105 transition-transform">
+                        <div className="bg-white shadow-lg rounded-xl p-6">
                             <div className="flex items-center justify-between mb-2">
                                 <AlertCircle className="w-8 h-8 text-red-400" />
                                 <span className="text-3xl font-bold text-red-400">{expiredVouchers.length}</span>
@@ -188,12 +185,9 @@ export default function VoucherPage() {
                         return (
                             <div
                                 key={voucher.id}
-                                className="relative bg-muted/50 border-secondary  border-2 rounded-2xl p-6 hover:border-primary  transition-all group"
+                                className="relative bg-white border-secondary  border-2 rounded-2xl p-6 hover:border-primary  transition-all group"
                             >
-                                {/* Corner Badge */}
-                                <div className="absolute top-4 right-4 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full">
-                                    ACTIVE
-                                </div>
+                              
 
                                 {/* Discount Value */}
                                 <div className="mb-4">
@@ -207,31 +201,16 @@ export default function VoucherPage() {
                                     </div>
                                 </div>
 
-                                {/* Voucher Code */}
-                                <div
-                                    onClick={() => copyToClipboard(voucher.code)}
-                                    className="relative  border-2 border-dashed border-secondary rounded-lg p-4 mb-4 cursor-pointer  transition-all group-hover:border-primary"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-black font-mono text-lg font-bold break-all">{voucher.code}</span>
-                                        {copiedCode === voucher.code ? (
-                                            <Check className="w-5 h-5 text-black flex-shrink-0 ml-2" />
-                                        ) : (
-                                            <Copy className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors flex-shrink-0 ml-2" />
-                                        )}
-                                    </div>
-                                    <p className="text-xs text-gray-500 mt-2">Klik untuk menyalin kode</p>
-                                </div>
 
                                 {/* Expiry Info */}
                                 <div className="flex items-center gap-2 text-gray-400 text-sm">
                                     <Calendar className="w-4 h-4 flex-shrink-0" />
-                                    <span>Berlaku hingga {formatDate(voucher.expired_at)}</span>
+                                    <span>Expired At {formatDate(voucher.expired_at)}</span>
                                 </div>
                                 {daysLeft <= 7 && daysLeft > 0 && (
                                     <div className="mt-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-2">
                                         <p className="text-yellow-400 text-xs font-semibold">
-                                            ⚠️ Segera berakhir dalam {daysLeft} hari!
+                                            ⚠️ is Over After {daysLeft} Days!
                                         </p>
                                     </div>
                                 )}
@@ -333,27 +312,6 @@ export default function VoucherPage() {
                 </div>
 
                 {/* Info Section */}
-                <div className="mt-12 bg-muted/50  rounded-2xl p-8">
-                    <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-[#D78FEE] to-[#8B5CF6] rounded-xl flex items-center justify-center flex-shrink-0">
-                            <Sparkles className="w-6 h-6 text-white" />
-                        </div>
-                        <div className="flex-1">
-                            <h3 className="text-xl font-bold text-primary mb-2">How To Use</h3>
-                            <ul className="space-y-2 text-gray-500">
-                                <li>• Pilih voucher yang ingin digunakan</li>
-                                <li>• Klik pada kode voucher untuk menyalin</li>
-                                <li>• Tempelkan kode voucher saat checkout</li>
-                                <li>• Diskon akan otomatis diterapkan ke pesanan Anda</li>
-                            </ul>
-                            <div className="mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-                                <p className="text-yellow-400 text-sm">
-                                    💡 <strong>Tips:</strong> Voucher dengan milestone lebih tinggi memberikan diskon lebih besar. Selesaikan lebih banyak pesanan untuk mendapatkan voucher premium!
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     );

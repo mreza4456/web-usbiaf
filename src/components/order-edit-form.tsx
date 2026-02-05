@@ -57,24 +57,24 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
         additional_notes: ''
     });
 
- const getDisplayName = () => {
-  if (!user) return null;
-  if (user.full_name) return user.full_name;
-  return user.email?.split("@")[0];
-};
+    const getDisplayName = () => {
+        if (!user) return null;
+        if (user.full_name) return user.full_name;
+        return user.email?.split("@")[0];
+    };
 
     const displayName = getDisplayName()
 
     useEffect(() => {
         const fetchOrder = async () => {
             console.log('🔍 Fetching order...', { userId: user?.id, orderId });
-            
+
             if (!user?.id) {
                 console.log('❌ No user ID');
                 setLoading(false);
                 return;
             }
-            
+
             if (!orderId) {
                 console.log('❌ No order ID');
                 setLoading(false);
@@ -83,8 +83,7 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
 
             try {
                 setLoading(true);
-                
-                // Use getOrderWithItems from checkout action
+
                 const response = await getOrderWithItems(orderId, user.id);
                 console.log('📦 Order response:', response);
 
@@ -98,7 +97,6 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                 const order = response.data;
                 console.log('✅ Order loaded:', order);
 
-                // Check if user owns this order
                 if (order.user_id !== user.id) {
                     console.log('❌ User does not own this order');
                     toast.error('You do not have permission to edit this order');
@@ -106,7 +104,6 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                     return;
                 }
 
-                // Check if order can be edited
                 if (order.status === 'completed' || order.status === 'cancelled') {
                     console.log('⚠️ Order cannot be edited, status:', order.status);
                     toast.warning('This order cannot be edited');
@@ -125,7 +122,7 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                     usage_type: order.usage_type,
                     additional_notes: order.additional_notes || ''
                 });
-                
+
                 console.log('✅ Form data initialized');
             } catch (error: any) {
                 console.error('❌ Error fetching order:', error);
@@ -167,7 +164,7 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
         const Icon = config.icon;
 
         return (
-            <Badge className={`${config.className} flex items-center gap-1`}>
+            <Badge className={`${config.className} flex items-center gap-1 text-xs`}>
                 <Icon className="w-3 h-3" />
                 {config.label}
             </Badge>
@@ -185,8 +182,7 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
     const handleSubmit = async () => {
         if (!editingOrder) return;
 
-        // Validation
-        if (!formData.purpose || !formData.project_overview || 
+        if (!formData.purpose || !formData.project_overview ||
             !formData.usage_type || formData.platforms.length === 0) {
             setError('Please fill in all required fields');
             return;
@@ -237,8 +233,8 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <Loader2 className="w-12 h-12 text-[#D78FEE] animate-spin mx-auto mb-4" />
-                    <p className="text-primary">Loading order...</p>
+                    <Loader2 className="w-10 h-10 text-[#D78FEE] animate-spin mx-auto mb-3" />
+                    <p className="text-primary text-sm">Loading order...</p>
                 </div>
             </div>
         );
@@ -248,11 +244,12 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Order not found or you don't have permission</p>
-                    <Button 
+                    <AlertCircle className="w-10 h-10 text-red-400 mx-auto mb-3" />
+                    <p className="text-gray-500 text-sm mb-3">Order not found or you don't have permission</p>
+                    <Button
                         onClick={() => router.push('/myorder')}
-                        className="mt-4 bg-primary text-black rounded-full"
+                        size="sm"
+                        className="bg-primary text-black rounded-full"
                     >
                         Back to Orders
                     </Button>
@@ -262,211 +259,202 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
     }
 
     return (
-        <div className="min-h-screen text-black py-12 px-4 mt-30">
-            <div className="relative z-10 w-full max-w-7xl mx-auto">
-                {/* Header */}
-                <div className="mb-8">
+        <div className="min-h-screen text-black ">
+            <div className="relative z-10 w-full max-w-5xl mx-auto">
+
+
+                {/* Order Items Summary - Compact */}
+                <div className="mb-4 bg-white shadow rounded-lg p-4">
+                    <div className="flex items-center">
                     <Button
                         variant="ghost"
-                        onClick={() => router.push('/myorder')}
-                        className="mb-4 text-gray-500 hover:text-black hover:bg-white/5"
+                        size="sm"
+                        onClick={() => router.push('/user/user-order/')}
+                        className=" text-gray-500 hover:text-black hover:bg-white/5"
                     >
-                        <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Orders
+                        <ArrowLeft className="w-3.5 h-3.5 " />
+
                     </Button>
-                    <div className="flex items-center gap-3 mb-4">
-                        <Package className="w-8 h-8 text-secondary" />
-                        <h1 className="text-4xl font-bold text-primary">
-                            Edit Order
-                        </h1>
+                    <h3 className="font-semibold text-base ">Edit Order Items</h3>
                     </div>
-                    <p className="text-gray-500">Update your commission order details</p>
-                    <p className="text-gray-600 text-sm mt-1">Order Code: {editingOrder.code_order}</p>
-                </div>
-
-                {/* Error Alert */}
-                {error && (
-                    <Alert className="mb-6 bg-red-500/10 border-red-500/30">
-                        <AlertCircle className="h-4 w-4 text-red-400" />
-                        <AlertDescription className="text-red-400">{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                {/* Order Items Summary */}
-                <div className="mb-6 bg-muted/10 border border-[#9B5DE0]/30 rounded-lg p-6">
-                    <h3 className="font-semibold text-lg mb-4">Order Items</h3>
-                    <div className="space-y-3">
-                        {editingOrder.order_items?.map((item, idx) => (
-                            <div key={item.id} className="flex justify-between items-start p-3 bg-white/5 rounded-lg">
-                                <div className="space-y-1">
-                                    <p className="font-medium text-primary">{item.category_name}</p>
-                                    <p className="text-sm text-gray-600">
-                                        {item.package_name} ({item.package_type})
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        Quantity: {item.quantity}
+                    <div className="space-y-2">
+                        {editingOrder.order_items?.map((item) => (
+                            <div key={item.id} className="flex justify-between items-start p-2 bg-gray-50 rounded">
+                                <div className="space-y-0.5 flex-1 min-w-0">
+                                    <p className="font-medium text-primary text-sm truncate">{item.category_name}</p>
+                                    <p className="text-xs text-gray-600 truncate">
+                                        {item.package_name} • {item.package_type} • Qty: {item.quantity}
                                     </p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-sm text-gray-600">
+                                <div className="text-right ml-2 flex-shrink-0">
+                                    <p className="text-xs text-gray-600">
                                         {formatCurrency(item.price)} × {item.quantity}
                                     </p>
-                                    <p className="font-semibold text-primary">
+                                    <p className="font-semibold text-sm text-primary">
                                         {formatCurrency(item.total)}
                                     </p>
                                 </div>
                             </div>
                         ))}
                     </div>
-                    <div className="flex justify-between items-center pt-4 mt-4 border-t border-[#9B5DE0]/30">
-                        <span className="font-semibold text-lg">Total:</span>
-                        <span className="font-bold text-xl text-primary">
+                    <div className="flex justify-between items-center pt-3 mt-3 border-t border-gray-200">
+                        <span className="font-semibold text-sm">Total:</span>
+                        <span className="font-bold text-lg text-primary">
                             {formatCurrency(editingOrder.total)}
                         </span>
                     </div>
                 </div>
+                {error && (
+                    <Alert className="mb-4 bg-red-500/10 border-red-500/30 py-2">
+                        <AlertCircle className="h-3.5 w-3.5 text-red-400" />
+                        <AlertDescription className="text-red-400 text-sm">{error}</AlertDescription>
+                    </Alert>
+                )}
 
-                {/* Edit Form */}
-                <div className="bg-muted/10 border border-[#9B5DE0]/30 rounded-lg p-6">
-                    <div className="space-y-6">
-                        {/* Read-only fields */}
-                        <div className="space-y-4 p-4 rounded-lg bg-muted/50">
+                {/* Edit Form - Compact */}
+                <div className="bg-white shadow rounded-lg p-4">
+                    <div className="space-y-4">
+                        {/* Read-only fields - Compact Grid */}
+                        <div className="grid grid-cols-3 gap-3 p-3 rounded-lg ">
                             <div>
-                                <Label className="text-gray-500 text-sm">Status</Label>
-                                <div className="mt-2">{getStatusBadge(editingOrder.status)}</div>
+                                <Label className="text-gray-500 text-xs">Status</Label>
+                                <div className="mt-1">{getStatusBadge(editingOrder.status)}</div>
                             </div>
                             <div>
-                                <Label className="text-gray-500 text-sm">Email</Label>
-                                <p className="text-black mt-1">{editingOrder.users?.email}</p>
+                                <Label className="text-gray-500 text-xs">Email</Label>
+                                <p className="text-black text-sm mt-1 truncate">{editingOrder.users?.email}</p>
                             </div>
                             <div>
-                                <Label className="text-gray-500 text-sm">Name</Label>
-                                <p className="text-black mt-1">{editingOrder.users?.full_name || displayName}</p>
+                                <Label className="text-gray-500 text-xs">Name</Label>
+                                <p className="text-black text-sm mt-1 truncate">{editingOrder.users?.full_name || displayName}</p>
                             </div>
                         </div>
 
-                        {/* Editable fields */}
-                        <div className="space-y-2">
-                            <Label className="text-primary">Discord Username</Label>
-                            <Input
-                                placeholder="username#0000"
-                                value={formData.discord}
-                                onChange={(e) => setFormData(prev => ({ ...prev, discord: e.target.value }))}
-                                className="bg-white/5 border-[#9B5DE0]/30 text-black placeholder-gray-500"
-                            />
+                        {/* Editable fields - Compact Grid Layout */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                                <Label className="text-primary text-sm">Discord Username</Label>
+                                <Input
+                                    placeholder="username#0000"
+                                    value={formData.discord}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, discord: e.target.value }))}
+                                    className="bg-white/5 border-[#9B5DE0]/30 text-black placeholder-gray-500 h-9 text-sm"
+                                />
+                            </div>
+
+                            <div className="space-y-1">
+                                <Label className="text-primary text-sm">Purpose *</Label>
+                                <Select
+                                    value={formData.purpose}
+                                    onValueChange={(value) => setFormData(prev => ({ ...prev, purpose: value }))}
+                                >
+                                    <SelectTrigger className="bg-white/5 border-[#9B5DE0]/30 text-black h-9 text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-background border-[#9B5DE0]/30">
+                                        <SelectGroup>
+                                            <SelectItem value="vtuber-debut" className="text-primary focus:bg-[#9B5DE0]/20 text-sm">VTuber debut</SelectItem>
+                                            <SelectItem value="rebrand" className="text-primary focus:bg-[#9B5DE0]/20 text-sm">Rebrand / upgrade</SelectItem>
+                                            <SelectItem value="event" className="text-primary focus:bg-[#9B5DE0]/20 text-sm">Event / campaign</SelectItem>
+                                            <SelectItem value="personal" className="text-primary focus:bg-[#9B5DE0]/20 text-sm">Personal project</SelectItem>
+                                            <SelectItem value="other" className="text-primary focus:bg-[#9B5DE0]/20 text-sm">Other</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1">
+                                <Label className="text-primary text-sm">Usage Type *</Label>
+                                <Select
+                                    value={formData.usage_type}
+                                    onValueChange={(value) => setFormData(prev => ({ ...prev, usage_type: value }))}
+                                >
+                                    <SelectTrigger className="bg-white/5 border-[#9B5DE0]/30 text-black h-9 text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-background border-[#9B5DE0]/30">
+                                        <SelectGroup>
+                                            <SelectItem value="personal" className="text-black text-sm">Personal use</SelectItem>
+                                            <SelectItem value="commercial" className="text-black text-sm">Commercial use</SelectItem>
+                                            <SelectItem value="brand" className="text-black text-sm">Brand / agency use</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1">
+                                <Label className="text-primary text-sm">Have references?</Label>
+                                <Select
+                                    value={formData.hasReferences}
+                                    onValueChange={(value) => setFormData(prev => ({ ...prev, hasReferences: value }))}
+                                >
+                                    <SelectTrigger className="bg-white/5 border-[#9B5DE0]/30 text-black h-9 text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="bg-background border-[#9B5DE0]/30">
+                                        <SelectItem value="yes" className="text-primary focus:bg-[#9B5DE0]/20 text-sm">Yes</SelectItem>
+                                        <SelectItem value="no" className="text-primary focus:bg-[#9B5DE0]/20 text-sm">No</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-primary">Purpose *</Label>
-                            <Select
-                                value={formData.purpose}
-                                onValueChange={(value) => setFormData(prev => ({ ...prev, purpose: value }))}
-                            >
-                                <SelectTrigger className="bg-white/5 border-[#9B5DE0]/30 text-black">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border-[#9B5DE0]/30">
-                                    <SelectGroup>
-                                        <SelectItem value="vtuber-debut" className="text-primary focus:bg-[#9B5DE0]/20">VTuber debut</SelectItem>
-                                        <SelectItem value="rebrand" className="text-primary focus:bg-[#9B5DE0]/20">Rebrand / upgrade</SelectItem>
-                                        <SelectItem value="event" className="text-primary focus:bg-[#9B5DE0]/20">Event / campaign</SelectItem>
-                                        <SelectItem value="personal" className="text-primary focus:bg-[#9B5DE0]/20">Personal project</SelectItem>
-                                        <SelectItem value="other" className="text-primary focus:bg-[#9B5DE0]/20">Other</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-primary">Project Overview *</Label>
+                        <div className="space-y-1">
+                            <Label className="text-primary text-sm">Project Overview *</Label>
                             <Textarea
-                                rows={4}
+                                rows={3}
                                 value={formData.project_overview}
                                 onChange={(e) => setFormData(prev => ({ ...prev, project_overview: e.target.value }))}
-                                className="bg-white/5 border-[#9B5DE0]/30 text-black resize-none"
+                                className="bg-white/5 border-[#9B5DE0]/30 text-black resize-none text-sm"
                             />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-primary">Do you have references?</Label>
-                            <Select
-                                value={formData.hasReferences}
-                                onValueChange={(value) => setFormData(prev => ({ ...prev, hasReferences: value }))}
-                            >
-                                <SelectTrigger className="bg-white/5 border-[#9B5DE0]/30 text-black">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border-[#9B5DE0]/30">
-                                    <SelectItem value="yes" className="text-primary focus:bg-[#9B5DE0]/20">Yes</SelectItem>
-                                    <SelectItem value="no" className="text-primary focus:bg-[#9B5DE0]/20">No</SelectItem>
-                                </SelectContent>
-                            </Select>
                         </div>
 
                         {formData.hasReferences === 'yes' && (
-                            <div className="space-y-2">
-                                <Label className="text-primary">Reference Links</Label>
+                            <div className="space-y-1">
+                                <Label className="text-primary text-sm">Reference Links</Label>
                                 <Textarea
-                                    rows={3}
+                                    rows={2}
                                     value={formData.references_link}
                                     onChange={(e) => setFormData(prev => ({ ...prev, references_link: e.target.value }))}
-                                    className="bg-white/5 border-[#9B5DE0]/30 text-black resize-none"
-                                    placeholder="Add links to reference images or examples"
+                                    className="bg-white/5 border-[#9B5DE0]/30 text-black resize-none text-sm"
+                                    placeholder="Add links to reference images"
                                 />
                             </div>
                         )}
 
-                        <div className="space-y-3">
-                            <Label className="text-primary">Platforms *</Label>
-                            <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label className="text-primary text-sm">Platforms *</Label>
+                            <div className="grid grid-cols-3 gap-3">
                                 {['Twitch', 'YouTube', 'Kick', 'TikTok', 'Discord', 'Other'].map((platform) => (
-                                    <div key={platform} className="flex items-center gap-3">
+                                    <div key={platform} className="flex items-center gap-2">
                                         <Checkbox
                                             checked={formData.platforms.includes(platform.toLowerCase())}
                                             onCheckedChange={() => togglePlatform(platform.toLowerCase())}
-                                            className="border-[#9B5DE0]/30"
+                                            className="border-[#9B5DE0]/30 h-4 w-4"
                                         />
-                                        <Label className="text-primary cursor-pointer">{platform}</Label>
+                                        <Label className="text-primary cursor-pointer text-sm">{platform}</Label>
                                     </div>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-primary">Usage Type *</Label>
-                            <Select
-                                value={formData.usage_type}
-                                onValueChange={(value) => setFormData(prev => ({ ...prev, usage_type: value }))}
-                            >
-                                <SelectTrigger className="bg-white/5 border-[#9B5DE0]/30 text-black">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="bg-background border-[#9B5DE0]/30">
-                                    <SelectGroup>
-                                        <SelectItem value="personal" className="text-black">Personal use</SelectItem>
-                                        <SelectItem value="commercial" className="text-black">Commercial use</SelectItem>
-                                        <SelectItem value="brand" className="text-black">Brand / agency use</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-primary">Additional Notes</Label>
+                        <div className="space-y-1">
+                            <Label className="text-primary text-sm">Additional Notes</Label>
                             <Textarea
-                                rows={3}
+                                rows={2}
                                 value={formData.additional_notes}
                                 onChange={(e) => setFormData(prev => ({ ...prev, additional_notes: e.target.value }))}
-                                className="bg-white/5 border-[#9B5DE0]/30 text-black resize-none"
-                                placeholder="Any additional information or requirements"
+                                className="bg-white/5 border-[#9B5DE0]/30 text-black resize-none text-sm"
+                                placeholder="Any additional information"
                             />
                         </div>
 
-                        <div className="flex gap-3 pt-4">
+                        <div className="flex justify-end gap-2 pt-3">
                             <Button
                                 onClick={() => router.push('/myorder')}
                                 variant="outline"
-                                className="flex-1 bg-white/5 rounded-full cursor-pointer border-primary border-2 text-black hover:bg-white/10 p-6"
+                                
+                                className=" bg-white/5  cursor-pointer border-primary border-2 text-black hover:bg-white/10"
                                 disabled={isSubmitting}
                             >
                                 Cancel
@@ -474,11 +462,12 @@ export default function OrderEditPage({ categories }: OrderEditPageProps) {
                             <Button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting}
-                                className="flex-1 bg-primary rounded-full cursor-pointer border-primary border-2 p-6"
+                                
+                                className=" bg-primary  cursor-pointer border-primary border-2"
                             >
                                 {isSubmitting ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                                         Saving...
                                     </>
                                 ) : (

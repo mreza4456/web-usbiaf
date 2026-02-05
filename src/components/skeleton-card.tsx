@@ -75,33 +75,33 @@ export function SkeletonProjects() {
 }
 export function CheckoutSkeleton() {
   return (
-<div className='w-full max-w-7xl'>
-  <div className="flex justify-around mb-10">
-     <Skeleton className="h-15 w-15 rounded-full bg-gray-200 opacity-20" />
-     <Skeleton className="h-15 w-15 rounded-full bg-gray-200 opacity-20" />
-     <Skeleton className="h-15 w-15 rounded-full bg-gray-200 opacity-20" />
-     <Skeleton className="h-15 w-15 rounded-full bg-gray-200 opacity-20" />
-  </div>
-    <Card className="flex  bg-white/50 h-120 flex-col gap-6 p-5">
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-4 w-20" />
-        <Skeleton className="h-10 w-full" />
+    <div className='w-full max-w-7xl'>
+      <div className="flex justify-around mb-10">
+        <Skeleton className="h-15 w-15 rounded-full bg-gray-200 opacity-20" />
+        <Skeleton className="h-15 w-15 rounded-full bg-gray-200 opacity-20" />
+        <Skeleton className="h-15 w-15 rounded-full bg-gray-200 opacity-20" />
+        <Skeleton className="h-15 w-15 rounded-full bg-gray-200 opacity-20" />
       </div>
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-4 w-24" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-4 w-16" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-      <div className="flex flex-col gap-2">
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="h-24 w-full" />
-      </div>
-      <Skeleton className="h-10 w-32" />
-    </Card>
-</div>
+      <Card className="flex  bg-white/50 h-120 flex-col gap-6 p-5">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-28" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+        <Skeleton className="h-10 w-32" />
+      </Card>
+    </div>
 
   )
 }
@@ -163,6 +163,20 @@ export function SkeletonBlog({ cardcount = 6 }) {
       </div>
 
     </div>
+  )
+}
+export function SkeletonChat() {
+  return (
+    <div className='h-full'>
+      <div className="flex flex-col gap-3 p-4 justify-arround">
+        <Skeleton className="h-4 w-2/3 float-end" />
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-4 w-5/6" />
+        <Skeleton className="h-4 w-4/6" />
+        
+      </div>
+    </div>
+
   )
 }
 
@@ -310,7 +324,7 @@ export function SkeletonServiceDetail() {
 }
 export function ProfilePageSkeleton() {
   return (
-    <div className="min-h-screen  py-8 px-4">
+    <div className="min-h-screen px-4">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Profile Header Card Skeleton */}
         <div className="bg-white/50 backdrop-blur-sm rounded-2xl shadow-lg p-8 border border-white/20">

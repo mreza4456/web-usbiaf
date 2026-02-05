@@ -58,6 +58,8 @@ export interface IOrderItem {
   total: number;
   created_at: string;
   updated_at: string;
+
+  categories:ICategory;
 }
 
 export interface IOrder {
@@ -72,7 +74,7 @@ export interface IOrder {
   usage_type: string;
   additional_notes: string;
   total: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'completed' | 'cancelled';
   created_at: string;
   updated_at: string;
 }
@@ -309,4 +311,14 @@ export interface IBlogPost {
   image?: string;
   created_at: string;
   updated_at: string;
+}
+export interface IComment {
+  id: string;
+  user_id: string;
+  order_items_id: string;  // ← Updated!
+  message: string;
+  rating: string;
+  created_at: string;
+  users?: IUser;
+  order_items?: IOrderItem;
 }

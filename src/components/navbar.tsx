@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react"
 import Link from "next/link"
-import { Sparkles, User, LogOut, ChevronDown, Loader2, Menu, X, Ticket, Gift, CheckCircle, Calendar, Tag, Bell } from "lucide-react"
+import { Sparkles, User, LogOut, ChevronDown, Loader2, Menu, X, Ticket, Gift, CheckCircle, Calendar, Tag, Bell, ShoppingBag } from "lucide-react"
 import { Button } from "./ui/button"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/config/supabase"
@@ -182,7 +182,11 @@ export default function Navbar(): React.ReactElement {
 
           <div>
             {/* Auth Section Desktop */}
-            {user ? (
+            {isLoading ? (
+              <div className="flex items-center space-x-3">
+                <Loader2 className="w-6 h-6 text-[#D78FEE] animate-spin" />
+              </div>
+            ) : user ? (
               <div className="flex items-center space-x-3">
                 <UserChat />
 
@@ -298,7 +302,7 @@ export default function Navbar(): React.ReactElement {
                       {/* Footer - Link to voucher page */}
                       {voucherEvents.length > 0 && (
                         <Link
-                          href="/voucher"
+                          href="/user/voucher"
                           onClick={() => setShowVoucherMenu(false)}
                           className="block p-3 text-center text-xs text-[#D78FEE] hover:bg-white/5  transition-colors"
                         >
@@ -339,7 +343,7 @@ export default function Navbar(): React.ReactElement {
 
                       <div className="p-2">
                         <Link
-                          href="/profile"
+                          href="/user/profile"
                           className="flex items-center space-x-2 px-3 py-2 text-primary rounded-lg transition-colors hover:bg-white/10"
                           onClick={() => setShowUserMenu(false)}
                         >
@@ -347,21 +351,14 @@ export default function Navbar(): React.ReactElement {
                           <span>Profile</span>
                         </Link>
                         <Link
-                          href="/myorder"
+                          href="/user/user-order"
                           className="flex items-center space-x-2 px-3 py-2 text-primary rounded-lg transition-colors hover:bg-white/10"
                           onClick={() => setShowUserMenu(false)}
                         >
-                          <Ticket className="w-4 h-4" />
+                          <ShoppingBag className="w-4 h-4" />
                           <span>My Order</span>
                         </Link>
-                        <Link
-                          href="/voucher"
-                          className="flex items-center space-x-2 px-3 py-2 text-primary rounded-lg transition-colors hover:bg-white/10"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <Gift className="w-4 h-4" />
-                          <span>My Vouchers</span>
-                        </Link>
+                        
                         <button
                           onClick={handleLogout}
                           disabled={isLoggingOut}
@@ -449,25 +446,18 @@ export default function Navbar(): React.ReactElement {
                 </Link>
 
                 <Link
-                  href="/profile"
+                  href="/user/profile"
                   className="block text-primary hover:text-[#D78FEE] transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Profile
                 </Link>
                 <Link
-                  href="/myorder"
+                  href="/user/user-order"
                   className="block text-primary hover:text-[#D78FEE] transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   My Orders
-                </Link>
-                <Link
-                  href="/voucher"
-                  className="block text-primary hover:text-[#D78FEE] transition-colors py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  My Vouchers
                 </Link>
                 <button
                   onClick={handleLogout}

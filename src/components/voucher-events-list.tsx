@@ -6,6 +6,14 @@ import { getActiveVoucherEvents } from '@/action/voucher-events';
 import { claimVoucherEvent, checkVoucherEventClaimed } from '@/action/vouchers';
 import { useAuthStore } from '@/store/auth';
 import { IVoucherEvents } from '@/interface';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import { toast } from 'sonner';
 
 export default function VoucherEventsList() {
   const [voucherEvents, setVoucherEvents] = useState<IVoucherEvents[]>([]);
@@ -46,7 +54,7 @@ export default function VoucherEventsList() {
 
   const handleClaimVoucher = async (voucherEventId: string) => {
     if (!user?.id) {
-      alert('Silakan login terlebih dahulu');
+      toast('Silakan login terlebih dahulu');
       return;
     }
 
@@ -55,13 +63,13 @@ export default function VoucherEventsList() {
       const result = await claimVoucherEvent(user.id, voucherEventId);
       
       if (result.success) {
-        alert(result.message);
+        toast(result.message);
         setClaimedVouchers(prev => new Set([...prev, voucherEventId]));
       } else {
-        alert(result.message);
+        toast(result.message);
       }
     } catch (error) {
-      alert('Terjadi kesalahan saat mengklaim voucher');
+      toast('Terjadi kesalahan saat mengklaim voucher');
     } finally {
       setClaimingId(null);
     }
@@ -83,96 +91,96 @@ export default function VoucherEventsList() {
     );
   }
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-primary mb-2">Voucher Events</h2>
-        <p className="text-gray-500">Ambil voucher spesial yang tersedia untuk waktu terbatas</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {voucherEvents.map((event) => {
-          const isClaimed = claimedVouchers.has(event.id);
-          const isClaiming = claimingId === event.id;
-          const isExpired = new Date(event.expired_at) < new Date();
-
-          return (
-            <div
-              key={event.id}
-              className="relative bg-gradient-to-br from-purple-900/30 to-purple-800/20 border-2 border-purple-700/50 rounded-2xl p-6 hover:scale-105 transition-transform"
-            >
-              {/* Type Badge */}
-           
-
-              {/* Event Name */}
-              <h3 className="text-xl font-bold text-primary mb-4 pr-16">
-                {event.name}
-              </h3>
-
-              {/* Discount Value */}
-              <div className="mb-4">
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-5xl font-bold text-[#D78FEE]">{event.value}</span>
-                  <span className="text-2xl text-gray-400">OFF</span>
-                </div>
-              </div>
-
-              {/* Code Preview */}
-              <div className="bg-black/30 border border-purple-700/50 rounded-lg p-3 mb-4">
-                <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
-                  <Tag className="w-4 h-4" />
-                  <span>Kode Voucher</span>
-                </div>
-                <span className="text-purple-300 font-mono text-sm">{event.code}-XXXX</span>
-              </div>
-
-              {/* Expiry Date */}
-              <div className="flex items-center gap-2 text-gray-400 text-sm mb-4">
-                <Calendar className="w-4 h-4" />
-                <span>Berlaku hingga {formatDate(event.expired_at)}</span>
-              </div>
-
-              {/* Claim Button */}
-              <button
-                onClick={() => handleClaimVoucher(event.id)}
-                disabled={isClaimed || isClaiming || isExpired || !user}
-                className={`w-full py-3 rounded-lg font-semibold transition-all ${
-                  isClaimed
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/50 cursor-not-allowed'
-                    : isExpired
-                    ? 'bg-gray-500/20 text-gray-400 border border-gray-500/50 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-[#D78FEE] to-[#8B5CF6] text-white hover:scale-105'
-                }`}
-              >
-                {isClaiming ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Mengklaim...
-                  </span>
-                ) : isClaimed ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Sudah Diklaim
-                  </span>
-                ) : isExpired ? (
-                  'Sudah Berakhir'
-                ) : !user ? (
-                  'Login untuk Klaim'
-                ) : (
-                  'Klaim Voucher'
-                )}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {voucherEvents.length === 0 && (
+  if (voucherEvents.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto px-4">
         <div className="text-center py-12">
           <Gift className="w-16 h-16 text-gray-500 mx-auto mb-4" />
           <p className="text-gray-500">Belum ada voucher event yang tersedia</p>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 ">
+      <div className="mb-8">
+        <h2 className="text-3xl font-bold text-primary mt-5">Claim Vouchers Now</h2>
+      </div>
+
+      <Carousel
+        opts={{
+          align: "start",
+          loop: true,
+        }}
+        className="w-full"
+      >
+        <CarouselContent className="-ml-2 md:-ml-4 py-5">
+          {voucherEvents.map((event) => {
+            const isClaimed = claimedVouchers.has(event.id);
+            const isClaiming = claimingId === event.id;
+            const isExpired = new Date(event.expired_at) < new Date();
+
+            return (
+              <CarouselItem key={event.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                <div className="relative bg-muted/30 p-6 rounded-lg shadow-lg h-full flex flex-col">
+                  {/* Event Name */}
+                  <h3 className="text-xl font-bold text-primary mb-4">
+                    {event.name}
+                  </h3>
+
+                  {/* Discount Value */}
+                  <div className="mb-4 flex-grow">
+                    <div className="flex items-baseline gap-2 mb-2">
+                      <span className="text-5xl font-bold text-[#D78FEE]">{event.value}</span>
+                      <span className="text-2xl text-gray-400">OFF</span>
+                    </div>
+                  </div>
+
+                  {/* Expiry Date */}
+                  <div className="flex items-center gap-2 text-gray-400 text-sm mb-4">
+                    <Calendar className="w-4 h-4" />
+                    <span>Expired: {formatDate(event.expired_at)}</span>
+                  </div>
+
+                  {/* Claim Button */}
+                  <button
+                    onClick={() => handleClaimVoucher(event.id)}
+                    disabled={isClaimed || isClaiming || isExpired || !user}
+                    className={`w-full py-3 rounded-lg font-semibold transition-all ${
+                      isClaimed
+                        ? 'bg-green-500/20 text-green-400 border border-green-500/50 cursor-not-allowed'
+                        : isExpired
+                        ? 'bg-gray-500/20 text-gray-400 border border-gray-500/50 cursor-not-allowed'
+                        : 'bg-primary cursor-pointer text-white hover:scale-105'
+                    }`}
+                  >
+                    {isClaiming ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Loading...
+                      </span>
+                    ) : isClaimed ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        Claimed
+                      </span>
+                    ) : isExpired ? (
+                      'Is Over'
+                    ) : !user ? (
+                      'Login For Claim'
+                    ) : (
+                      'Claim'
+                    )}
+                  </button>
+                </div>
+              </CarouselItem>
+            );
+          })}
+        </CarouselContent>
+        <CarouselPrevious className="hidden md:flex" />
+        <CarouselNext className="hidden md:flex" />
+      </Carousel>
     </div>
   );
 }

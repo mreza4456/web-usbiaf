@@ -11,6 +11,7 @@ import {
 } from "@/action/message";
 import { IChatMessage } from "@/interface/";
 import { supabase } from "@/config/supabase";
+import { useRouter } from "next/navigation";
 
 export default function UserChat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +21,8 @@ export default function UserChat() {
   const [isSending, setIsSending] = useState(false);
   const [chatRoomId, setChatRoomId] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
-
+  const [isMobile, setIsMobile] = useState(false);
+  const router = useRouter();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
 
@@ -32,13 +34,23 @@ export default function UserChat() {
     scrollToBottom();
   }, [messages]);
 
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // 768px adalah breakpoint md di Tailwind
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   useEffect(() => {
     if (isOpen && user?.id && !chatRoomId) {
       initializeChat();
     }
   }, [isOpen, user?.id]);
-  // Tambahkan useEffect ini
-
 
   // Subscribe to new messages
   useEffect(() => {
@@ -139,7 +151,8 @@ export default function UserChat() {
       setIsSending(false);
     }
   };
-  // Tambahkan useEffect untuk fetch unread count saat komponen mount
+
+  // Fetch unread count saat komponen mount
   useEffect(() => {
     if (user?.id && !isOpen) {
       fetchUnreadCount();
@@ -277,6 +290,19 @@ export default function UserChat() {
     });
   };
 
+  const Handlemax = () => {
+    router.push("/chat");
+    setIsOpen(false);
+  };
+
+  // Handle chat button click - redirect to /chat if mobile
+  const handleChatButtonClick = () => {
+    if (isMobile) {
+      router.push("/chat");
+    } else {
+      setIsOpen(true);
+    }
+  };
 
   if (!user) return null;
 
@@ -284,8 +310,8 @@ export default function UserChat() {
     <>
       {/* Chat Button */}
       <button
-        onClick={() => setIsOpen(true)}
-        className=" relative  flex items-center justify-center  hover:scale-110 transition-transform z-50"
+        onClick={handleChatButtonClick}
+        className="relative flex items-center justify-center hover:scale-110 transition-transform z-50"
       >
         <MessageCircleMore className="w-6 h-6 text-primary" />
         {unreadCount > 0 && (
@@ -295,18 +321,18 @@ export default function UserChat() {
         )}
       </button>
 
-      {/* Chat Window */}
-      {isOpen && (
-        <div className="fixed right-0 bottom-0 w-96  h-[500px] bg-background border border-gray-100 rounded-lg shadow-xl flex flex-col z-50">
+      {/* Chat Window - Only show on desktop */}
+      {isOpen && !isMobile && (
+        <div className="fixed right-0 bottom-0 w-96 h-[500px] bg-background border border-gray-100 rounded-lg shadow-xl flex flex-col z-50">
           {/* Header */}
-          <div className="flex items-center justify-between p-4  rounded-t-lg border-gray-800 bg-secondary">
+          <div className="flex items-center justify-between p-4 rounded-t-lg border-gray-800 bg-secondary">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-5 h-5 text-primary" />
               <h3 className="font-semibold text-white">Chat Support</h3>
             </div>
             <div className="flex items-center justify-between gap-3">
-               <button
-                onClick={() => setIsOpen(false)}
+              <button
+                onClick={Handlemax}
                 className="text-gray-800 hover:text-primary transition-colors"
               >
                 <Maximize2 className="w-4 h-4" />
@@ -317,9 +343,7 @@ export default function UserChat() {
               >
                 <X className="w-5 h-5" />
               </button>
-             
             </div>
-
           </div>
 
           {/* Messages */}
@@ -363,32 +387,26 @@ export default function UserChat() {
                       )}
 
                       <div
-
                         className={`flex ${isOwn ? "justify-end " : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[70%]  ${isOwn
-                            ? "bg-primary text-white tooltip"
-                            : "bg-muted text-primary tooltipleft"
+                          className={`max-w-[70%] ${isOwn
+                              ? "bg-primary text-white tooltip"
+                              : "bg-muted text-primary tooltipleft"
                             } rounded-xl px-4 py-2`}
                         >
-
                           <p className="text-sm break-words">{msg.message}</p>
-
                         </div>
-
-
                       </div>
-                      <span className={`flex text-[10px] items-center   text-gray-400 ${isOwn ? "justify-end " : "justify-start ml-2"}`}
-
+                      <span
+                        className={`flex text-[10px] items-center text-gray-400 ${isOwn ? "justify-end " : "justify-start ml-2"
+                          }`}
                       >
                         {formatTime(msg.created_at)}
                         {read && (
                           <CheckCheck className="w-3 h-3 mx-1 text-primary" />
                         )}
-                        {!read && (
-                          <Check className="w-3 h-3 mx-1 " />
-                        )}
+                        {!read && <Check className="w-3 h-3 mx-1 " />}
                       </span>
                     </div>
                   );
