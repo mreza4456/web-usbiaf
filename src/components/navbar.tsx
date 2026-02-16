@@ -11,6 +11,7 @@ import { getActiveVoucherEvents } from "@/action/voucher-events";
 import { checkVoucherEventClaimed, claimVoucherEvent } from "@/action/vouchers";
 import { IVoucherEvents } from "@/interface";
 import { Card } from "./ui/card";
+import Image from "next/image";
 
 export default function Navbar(): React.ReactElement {
   const [isScrolled, setIsScrolled] = React.useState(false)
@@ -159,12 +160,7 @@ export default function Navbar(): React.ReactElement {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#D78FEE] to-[#8B5CF6] rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Sparkles className="w-6 h-6 text-primary" />
-            </div>
-            <span className="text-xl font-bold text-primary group-hover:text-[#D78FEE] transition-colors">
-              Nemuneko Studio
-            </span>
+           <Image alt="logo" src="/images/logonav.png" width={180} height={50} />
           </Link>
 
           {/* Desktop Navigation */}
@@ -173,7 +169,7 @@ export default function Navbar(): React.ReactElement {
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-primary hover:text-[#D78FEE] transition-colors font-medium"
+                className="arial font-medium"
               >
                 {link.label}
               </Link>

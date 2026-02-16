@@ -46,22 +46,12 @@ export default function CommmentsCarousel() {
 
     return (
         <div>
-            <section id="testimonials" className="py-30 px-6 relative overflow-hidden">
+            <section id="testimonials" className="px-6 relative overflow-hidden">
                 <div className="absolute top-10 left-20 text-5xl text-primary opacity-10 rotate-12">★</div>
                 <div className="absolute bottom-20 right-40 text-6xl text-primary opacity-10">✦</div>
 
                 <div className="container mx-auto max-w-7xl">
-                    <div className="text-left mb-12">
-                        <div className="inline-block mb-4">
-                            <span className="text-sm font-semibold text-primary bg-muted px-4 py-2 rounded-full">
-                                Testimonials
-                            </span>
-                        </div>
-                        <h2 className="text-4xl md:text-5xl font-bold mb-4 text-primary">
-                            What Streamers Say
-                        </h2>
-                        <p className="text-gray-500 text-lg">Trusted by thousands of content creators</p>
-                    </div>
+                    
                     {loading ? (
                         <SkeletonBlog cardcount={3} />
                     ) : comment.length === 0 ? (

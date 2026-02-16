@@ -5,6 +5,22 @@ import AppLayout from "@/components/app-layout";
 import LenisScroll from "@/components/lenis";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from 'sonner';
+import localFont from "next/font/local";
+
+const borsok = localFont({
+  src: "../../public/fonts/boorsok.ttf",
+  variable: "--font-borsok",
+});
+const eliane = localFont({
+  src: "../../public/fonts/anjaeliane.ttf",
+  variable: "--font-eliane",
+});
+const arial = localFont({
+  src: "../../public/fonts/arial-rounded-bold.ttf",
+  variable: "--font-arial",
+});
+
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -28,12 +44,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${borsok.variable} ${eliane.variable} ${arial.variable} ${geistMono.variable} antialiased`}
       >
-        <Toaster/>
+        <Toaster />
         <AppLayout>
-       
-        {children}
+
+          {children}
         </AppLayout>
       </body>
     </html>

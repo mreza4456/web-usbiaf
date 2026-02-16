@@ -6,6 +6,10 @@ import { Sparkles, Zap, Palette, Users, Star, ArrowRight, Check, Package, Shield
 import Link from 'next/link';
 import BlogCarousel from '@/components/carousel-blog';
 import CommmentsCarousel from '@/components/comments.-carousel';
+import { Textstyle, TextstyleEliane, TextstyleElianeGreen, Textstylegreen } from '@/components/font-design';
+import CategoryPageCarousel from '@/components/service-page-carousel';
+import ProductsCarousel from '@/components/carousel-products';
+import Image from 'next/image';
 
 export default function NemunekoStudio() {
   const services = [
@@ -36,12 +40,11 @@ export default function NemunekoStudio() {
   ];
 
   const features = [
-    "Kompatibel dengan OBS, Streamlabs & StreamElements",
-    "Support Twitch, YouTube & Kick",
-    "Customizable Colors & Fonts",
-    "Easy Installation",
-    "Free Updates",
-    "24/7 Customer Support"
+    "One Stop Service For Vtuber",
+    "Specialize On The Artwork",
+    "Unlimited Revision Guarantee",
+    "Specialize On The Artwork",
+    "Unlimited Revision Guarantee"
   ];
 
   const testimonials = [
@@ -77,28 +80,32 @@ export default function NemunekoStudio() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f5f5] relative overflow-hidden">
+    <div className=" relative overflow-hidden">
       {/* Hero Section */}
-      <section className="relative pt-24 pb-20 px-6">
-        <div className="container mx-auto text-center max-w-5xl">
-          <div className="inline-block mb-6 px-4 py-2 bg-muted rounded-full shadow-sm ">
-            <span className="text-sm font-semibold text-[#50398e]"> Welcome to Nemuneko Studio</span>
-          </div>
+      <section className="relative min-h-screen  flex flex-col justify-center items-center ">
+        <div className="container mx-auto  max-w-7xl">
 
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-[#50398e]">
+
+          {/* <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight text-[#50398e]">
             The place to find the best
             <br />
             <span className="relative inline-block">
               streaming assets
               <div className="absolute -bottom-2 left-0 w-full h-3 bg-[#FFE66D] opacity-50 -rotate-1 -z-5"></div>
             </span>
-          </h1>
-
-          <p className="text-lg md:text-xl text-gray-700 mb-10 max-w-2xl mx-auto">
-            You came to look for streaming assets? You are in the right place, here we have provided thousands of assets that might be suitable for you.
+          </h1> */}
+          <Textstyle Title="One Stop" className='text-6xl w-full' color='text-purple' />
+          <Textstyle Title="Creative" className='text-7xl w-full' color='text-yellow' />
+          <div className="flex gap-5">
+            <Textstyle Title="For" className='text-6xl w-full' color='text-purple' />
+            <Textstylegreen Title="Vtubers" className='text-6xl w-full' color='text-green' />
+          </div>
+          <p className="text-lg md:text-xl text-gray-700 mb-10 max-w-2xl  arial">
+            More than art - We're partner for Vtuber who dream bigger
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+
+          {/* <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
             <Button onClick={handleClick} size="lg" className="cursor-pointer bg-muted hover:bg-muted/90 text-primary text-lg px-10 py-7 rounded-full shadow-lg">
               Order Now <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
@@ -107,7 +114,7 @@ export default function NemunekoStudio() {
             </Button>
           </div>
 
-          {/* Stats */}
+      
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 max-w-4xl mx-auto">
             {[
               { number: "5000+", label: "Happy Streamers" },
@@ -123,120 +130,161 @@ export default function NemunekoStudio() {
                 <div className="text-gray-600 text-sm font-medium relative z-10">{stat.label}</div>
               </div>
             ))}
-          </div>
+          </div> */}
         </div>
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-20 px-6 relative">
-        <div className="absolute top-10 right-20 text-5xl rotate-12">✦</div>
-
-        <div className="container mx-auto max-w-6xl">
+      <section id="services" className=" px-6 relative">
+        <div className=" mx-auto max-w-7xl">
           <div className="text-left mb-12 flex flex-col">
             <div className="inline-block mb-4">
-              <span className="text-sm font-semibold text-[#50398e] bg-muted px-4 py-2 rounded-full shadow-sm border-2 border-[#dbc8fb]">
-                Our Services
-              </span>
+              <TextstyleEliane Title="FOR CONSISTENLY" className='text-5xl w-full mb-4' color='text-purple' />
+
+              <div className="flex gap-5 ">
+                <TextstyleEliane Title="ARTWORK" className='text-5xl w-full' color='text-yellow' />
+                <TextstyleEliane Title="AND" className='text-5xl w-full' color='text-purple' />
+                <TextstyleElianeGreen Title="BRANDS" className='text-5xl w-full' color='text-green' />
+              </div>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-[#50398e] relative inline-block">
-              Complete Streaming Solutions
-              <span className="absolute -top-6 -right-8 text-4xl">✦</span>
-            </h2>
-            <p className="text-gray-600 text-lg max-w-2xl">
-              Solusi lengkap untuk semua kebutuhan streaming Anda
-            </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {services.map((service, i) => {
+          <CategoryPageCarousel />
 
-              return (
-                <Card key={i} className={`border-3 border-primary rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:transform hover:-translate-y-2 overflow-hidden bg-white`}>
-
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-xl text-[#50398e] mb-2 flex items-center justify-between">
-                      {service.title}
-                      <Star className="w-5 h-5 fill-[#FFE66D] text-[#FFE66D]" />
-                    </CardTitle>
-                    <CardDescription className="text-gray-600 text-sm leading-relaxed">
-                      {service.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <ul className="space-y-2 mb-4">
-                      {service.features.map((feature, j) => (
-                        <li key={j} className="flex items-center text-gray-600 text-sm">
-                          <Check className="w-4 h-4 mr-2 text-[#50398e]" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link href="/service">
-              <Button className="bg-white cursor-pointer hover:bg-gray-50 text-[#50398e] px-10 py-6 rounded-full shadow-md border-2 border-[#50398e]">
-                Show More
-              </Button>
-            </Link>
-          </div>
         </div>
       </section>
 
-      <section id='blog' className='py-20 px-6 relative'>
+      <section id="projects" className=" pb-30 px-6 relative">
+        <div className=" mx-auto max-w-7xl">
+          <div className="text-left mb-12 flex flex-col">
+            <div className="inline-block mb-4">
+              <TextstyleEliane Title="READY TO USE" className='text-5xl w-full mb-4' color='text-purple' />
+
+              <div className="flex gap-5">
+                <TextstyleEliane Title="AND" className='text-5xl w-full' color='text-purple' />
+                <TextstyleElianeGreen Title="ADOBTABLE" className='text-5xl w-full' color='text-green' />
+              </div>
+            </div>
+          </div>
+
+          <ProductsCarousel />
+
+        </div>
+      </section>
+
+      {/* <section id='blog' className='py-20 px-6 relative'>
         <BlogCarousel />
         <div className="text-center ">
-        <Link href="/blog">
-          <Button className="bg-white cursor-pointer hover:bg-gray-50 text-[#50398e] px-10 py-6 rounded-full shadow-md border-2 border-[#50398e]">
-            Show More
-          </Button>
-        </Link>
+          <Link href="/blog">
+            <Button className="bg-white cursor-pointer hover:bg-gray-50 text-[#50398e] px-10 py-6 rounded-full shadow-md border-2 border-[#50398e]">
+              Show More
+            </Button>
+          </Link>
         </div>
-      </section>
+      </section> */}
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-6 bg-muted/50 relative overflow-hidden">
+      <section id="features" className="py-20 px-6 bg-[#e9def8]  relative overflow-hidden">
         <div className="absolute bottom-10 left-10 text-6xl opacity-20">★</div>
         <div className="absolute top-20 right-40 text-4xl rotate-45">✦</div>
 
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
+        <div className="container mx-auto max-w-6xl ">
+          <div className="grid md:grid-cols-5  gap-8 items-center">
+            <div className='col-span-2'>
               <div className="inline-block mb-4">
-                <span className="text-sm font-semibold text-[#50398e] bg-white px-4 py-2 rounded-full shadow-sm">
-                  Why Choose Us?
-                </span>
+                <TextstyleEliane Title="GROW BEYOND!" className='text-5xl w-full mb-4' color='text-purple' />
+
+                <div className="flex gap-5">
+                  <TextstyleEliane Title="WITH" className='text-5xl w-full' color='text-yellow' />
+                  <TextstyleEliane Title="NEMUNEKO" className='text-5xl w-full' color='text-purple' />
+                </div>
+                <p className="text-lg md:text-xl text-gray-700 my-5 max-w-2xl  arial">
+                  More than art - We're partner for Vtuber who dream bigger
+                </p>
               </div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-[#50398e]">
-                Why Choose Nemuneko?
-              </h2>
-              <p className="text-gray-700 text-lg mb-8">
-                Kami memahami kebutuhan setiap content creator. Dengan pengalaman bertahun-tahun, kami menciptakan produk berkualitas tinggi yang mudah digunakan dan terjangkau.
-              </p>
               <div className="grid grid-cols-1 gap-3">
                 {features.map((feature, i) => (
-                  <div key={i} className="flex items-center p-4 bg-white rounded-2xl shadow-sm border-2 border-white hover:shadow-md transition-all">
-                    <Check className="w-5 h-5 mr-3 text-[#50398e] flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
+                  <div key={i} className="flex items-center px-5  bg-white overflow-hidden rounded-full shadow-sm  hover:shadow-md transition-all">
+                    {/* <Check className="w-5 h-5 mr-3 text-[#50398e] flex-shrink-0" /> */}
+                    <div className="bg-gray-100 p-3 aspect-square h-full flex items-center justify-center ">
+                      <img src="images/stars.png" alt="asw3" className='w-7 h-7 ' />
+                    </div>
+                    <span className="text-arial text-primary p-3">{feature}</span>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="relative">
-              <div className="aspect-square bg-white rounded-3xl shadow-xl  flex items-center justify-center">
-                <Users className="w-32 h-32 text-[#50398e]" />
+            <div className="relative col-span-3">
+              <div className=" flex items-center justify-center">
+                <Image src="/images/why.png" alt="why" width={1000} height={1000} />
               </div>
             </div>
           </div>
         </div>
       </section>
+      <section>
+        <div className="container mx-auto max-w-7xl pt-40 pb-20">
+          <div className="text-left flex flex-col">
+            <div className="inline-block mb-4">
 
-     <CommmentsCarousel/>
+              <TextstyleEliane Title="TESTIMONIALS" className='text-5xl w-full mb-4' color='text-purple' />
+
+              <div className="flex gap-5">
+                <TextstyleEliane Title="WHAT" className='text-5xl w-full mb-4' color='text-purple' />
+                <TextstyleEliane Title="STREAMERS" className='text-5xl w-full' color='text-yellow' />
+                <TextstyleEliane Title="SAY" className='text-5xl w-full' color='text-purple' />
+              </div>
+              <p className="text-lg md:text-xl text-gray-700 my-5 max-w-2xl  arial">
+                More than art - We're partner for Vtuber who dream bigger
+              </p>
+            </div>
+            <CommmentsCarousel />
+          </div>
+        </div>
+      </section >
+
+
+      <section id="teams" className=" py-20 mb-20 px-6 relative">
+        <div className="absolute top-10 right-20 text-5xl rotate-12">✦</div>
+
+        <div className="container mx-auto max-w-7xl">
+          <div className="text-left mb-12 flex flex-col">
+            <div className="inline-block mb-4">
+              <TextstyleEliane Title="SUPERMAN BEHIND" className='text-5xl w-full mb-4' color='text-purple' />
+
+              <div className="flex gap-5">
+                <TextstyleEliane Title="ARTWORK" className='text-5xl w-full' color='text-yellow' />
+                <TextstyleEliane Title="AND" className='text-5xl w-full' color='text-purple' />
+                <TextstyleElianeGreen Title="BRAND" className='text-5xl w-full' color='text-green' />
+              </div>
+            </div>
+          </div>
+
+          {/* <ProductsCarousel /> */}
+          <div className="grid md:grid-cols-4">
+            <div className='relative h-[400px]'>
+              <div className='absolute inset-0 translate-y-2 bg-[#f99c08] rounded-[40px] border-3 border-[#ad4512] z-0'></div>
+
+              <div className='relative z-10 h-full bg-[#faca06] border-3 rounded-[40px] border-[#ad4512] p-4 '>
+                <div className=''>
+                  <div className="h-full w-8 absolute top-0 left-25  bg-[#fff8dc] -z-1 -skew-x-20"></div>
+                  <div className="h-full w-15 absolute top-0 left-35   bg-[#fff8dc] -z-1 -skew-x-20"></div>
+                </div>
+                <div className="w-full h-full bg-gradient-to-r rounded-[30px] from-[#493977] relative to-[#6b53ac] p-2 border-3 border-[#ad4512] shadow-box1 z-20">
+                  <div className="bg-gradient-to-t from-[#4c3b7c]  to-transparent absolute rounded-[25px] bottom-0 left-0  z-10 w-full h-2/3"></div>
+                  <div className="w-full h-full bg-gradient-to-r relative rounded-[25px] from-[#6b53ac] to-[#493977]">
+                    <img src="images/airi.png" className='absolute top-[-15%] left-1/2 -translate-x-1/2 w-[85%]' alt="" />
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20">
+                      <Textstyle Title="AIRI" className=' text-5xl w-full mb-4' color='text-purple' />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
 
       <section className="pb-20 px-4 sm:px-6">
         <div className="container mx-auto">
@@ -264,6 +312,6 @@ export default function NemunekoStudio() {
           </Card>
         </div>
       </section>
-    </div>
+    </div >
   );
 }

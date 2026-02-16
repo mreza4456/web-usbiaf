@@ -311,7 +311,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     <>
       <LenisScroll />
 
-      <div className="min-h-screen background relative overflow-hidden">
+      <div className="min-h-screen bg-white relative overflow-hidden">
         <div className="absolute top-20 left-10 w-32 h-32 bg-[#FFE66D] rounded-full opacity-20 blur-3xl"></div>
         <div className="absolute top-40 right-20 w-40 h-40 bg-[#c09afe] rounded-full opacity-20 blur-3xl"></div>
 
