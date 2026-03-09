@@ -311,9 +311,9 @@ export default function UserChat() {
       {/* Chat Button */}
       <button
         onClick={handleChatButtonClick}
-        className="relative flex items-center justify-center hover:scale-110 transition-transform z-50"
+        className="relative flex items-center justify-center hover:scale-110 transition-transform z-50 "
       >
-        <MessageCircleMore className="w-6 h-6 text-primary" />
+         <img src="icon/messageicon.svg" className="w-6 h-6" alt="" />
         {unreadCount > 0 && (
           <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {unreadCount}
@@ -327,7 +327,7 @@ export default function UserChat() {
           {/* Header */}
           <div className="flex items-center justify-between p-4 rounded-t-lg border-gray-800 bg-secondary">
             <div className="flex items-center gap-2">
-              <MessageCircle className="w-5 h-5 text-primary" />
+             <img src="icon/messageicon.svg" className="w-6 h-6" alt="" />
               <h3 className="font-semibold text-white">Chat Support</h3>
             </div>
             <div className="flex items-center justify-between gap-3">

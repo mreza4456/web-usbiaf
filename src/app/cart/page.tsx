@@ -252,7 +252,7 @@ export default function CartPage() {
 
 
   return (
-    <div className="min-h-screen bg-background py-6 sm:py-12 px-4 mt-16 sm:mt-20">
+    <div className="min-h-screen  py-6 sm:py-12 px-4 mt-16 sm:mt-20">
       <div className="max-w-7xl w-full mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
           <div className='w-full'>

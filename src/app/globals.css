@@ -283,14 +283,14 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  -webkit-text-stroke: 1px #dccfff;
+  -webkit-text-stroke: 0.25px #fff;
 
 }
 
 .text-yellow {
 
   background: linear-gradient(to top, #F8F351, #FDE130);
-  -webkit-text-stroke: 1px #eecb1b;
+  -webkit-text-stroke: 0.25px #fffdb6;
   -webkit-background-clip: text;
   background-clip: text;
 
@@ -300,7 +300,7 @@
 .text-green {
 
   background: linear-gradient(to bottom, #91FA02, #5DD30E);
-  -webkit-text-stroke: 1px #75c41b;
+  -webkit-text-stroke: 0.25px #e0ffbd;
   -webkit-background-clip: text;
   background-clip: text;
 
@@ -312,6 +312,12 @@
   text-shadow: 1.5px 1.5px 0 #6B50B0, 1.5px -1.5px 0 #6B50B0, -1.5px 1.5px 0 #6B50B0, -1.5px -1.5px 0 #6B50B0, 1.5px 0px 0 #6B50B0, 0px 1.5px 0 #6B50B0, -1.5px 0px 0 #6B50B0, 0px -1.5px 0 #6B50B0, 1.5px 1.5px 1.5px rgba(107,80,176,0), 1.5px 1.5px 1.5px rgba(107,80,176,0);
   font-family: var(--font-arial);
   color: #fff;
+}
+.arial-nav {
+  /* -webkit-text-stroke: 1.5px #6B50B0; */
+  text-shadow: 1.5px 1.5px 0 #6B50B0, 1.5px -1.5px 0 #6B50B0, -1.5px 1.5px 0 #6B50B0, -1.5px -1.5px 0 #6B50B0, 1.5px 0px 0 #6B50B0, 0px 1.5px 0 #6B50B0, -1.5px 0px 0 #6B50B0, 0px -1.5px 0 #6B50B0, 1.5px 1.5px 1.5px rgba(107,80,176,0), 1.5px 1.5px 1.5px rgba(107,80,176,0);
+  font-family: var(--font-arial);
+ 
 }
 .text-arial{
   font-family: var(--font-arial);
@@ -339,4 +345,49 @@ box-shadow: -3px -3px #fff8dc
 mask: url("/images/stars.png");
 mask-size: contain;
 mask-repeat: no-repeat;
+}
+
+.button-yellow{
+  position: relative;
+  border:4px solid #FFA20A ;
+  background-color: #FCCB07;
+  color: #fff;
+    -webkit-text-stroke: 0.8px #FFA20A;
+  
+  
+     font-family: var(--font-arial);
+     border-radius: 99px;
+
+}
+.button-yellow::after{
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 1px solid #FFA20A;
+  border-style: dashed;
+  border-radius: 99px;
+}
+body{
+  background-image: 
+    linear-gradient(45deg, #FBFAFE 25%, transparent 25%),
+    linear-gradient(-45deg, #FBFAFE 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #FBFAFE 75%),
+    linear-gradient(-45deg, transparent 75%, #FBFAFE 75%);
+  background-size: 80px 80px;
+  background-position: 0 0, 0 40px, 40px -40px, -40px 0px;
+  background-color: #fff;
+}
+
+.bg-board{
+    background-image: 
+    linear-gradient(45deg, #FBFAFE 25%, transparent 25%),
+    linear-gradient(-45deg, #FBFAFE 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #FBFAFE 75%),
+    linear-gradient(-45deg, transparent 75%, #FBFAFE 75%);
+  background-size: 150px 150px;
+  background-position: 0 0, 0 75px, 75px -75px, -75px 0px;
+  background-color: #fff;
 }

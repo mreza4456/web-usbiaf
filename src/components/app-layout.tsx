@@ -311,14 +311,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     <>
       <LenisScroll />
 
-      <div className="min-h-screen bg-white relative overflow-hidden">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-[#FFE66D] rounded-full opacity-20 blur-3xl"></div>
-        <div className="absolute top-40 right-20 w-40 h-40 bg-[#c09afe] rounded-full opacity-20 blur-3xl"></div>
-
-        {/* Star decorations */}
-        <div className="absolute top-32 right-40 text-4xl">✦</div>
-        <div className="absolute top-60 left-32 text-2xl rotate-12">★</div>
-        <div className="absolute bottom-40 right-60 text-3xl">✦</div>
+      <div className="min-h-screen bg-board relative overflow-hidden">
+      
 
         <Navbar />
         <NoNetwork>
@@ -326,7 +320,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             {children}
           </AuthProvider>
         </NoNetwork>
+      
         <Footer />
+        </div>
 
         {/* Render modal OUTSIDE AuthProvider to avoid blocking */}
         {!isLoading && (
@@ -335,7 +331,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             onOpenChange={setShowSocialMediaModal}
           />
         )}
-      </div>
+ 
     </>
   )
 }

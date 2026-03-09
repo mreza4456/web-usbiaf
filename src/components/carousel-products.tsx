@@ -18,24 +18,27 @@ import {
 import { SkeletonBlog } from './skeleton-card';
 import { getAllCategories } from '@/action/categories';
 import { getAllProducts } from '@/action/product';
+import { TextstyleEliane, TextstyleElianeGreen } from './font-design';
+import { useRouter } from 'next/navigation';
 interface ICategoryWithImages extends ICategory {
     images?: IImageCategories[]
 }
 export default function ProductsCarousel() {
- 
-    const [loading, setLoading] = useState(true);
 
+    const [loading, setLoading] = useState(true);
+const [searchQuery, setSearchQuery] = useState('');
+const router = useRouter();
     const [error, setError] = useState<string | null>(null);
- const [products, setProducts] = useState<IProduct[]>([]);
- const formatCurrency = (amount: number | string): string => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(numAmount);
-  };
+    const [products, setProducts] = useState<IProduct[]>([]);
+    const formatCurrency = (amount: number | string): string => {
+        const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(numAmount);
+    };
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -48,7 +51,7 @@ export default function ProductsCarousel() {
                     setProducts(productsResult.data as any);
                 }
 
-               
+
             } catch (error) {
                 console.error('Error fetching data:', error);
             } finally {
@@ -58,6 +61,15 @@ export default function ProductsCarousel() {
 
         fetchData();
     }, []);
+
+      const handleClick = (productId:string) => {
+    router.push(`/projects/${productId}`)
+  };
+    // Tambahkan ini SEBELUM return statement
+const filteredProducts = products.filter((product) =>
+    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.description?.toLowerCase().includes(searchQuery.toLowerCase())
+);
     return (
         <div>
             <div className="relative z-10">
@@ -68,51 +80,82 @@ export default function ProductsCarousel() {
                 {/* Blog Posts Grid */}
                 <section className="pb-20 sm:px-6">
                     <div className="container mx-auto">
-                        
+                        <div className="md:flex  mb-12 md:justify-between items-center">
+
+                            <div className="text-left flex flex-col">
+                                <div className="inline-block ">
+                                    <TextstyleEliane Title="READY TO USE" className='text-4xl sm:text-5xl w-full mb-4' color='text-purple' />
+
+                                    <div className="flex gap-5">
+                                        <TextstyleEliane Title="AND" className='text-4xl sm:text-5xl w-full' color='text-purple' />
+                                        <TextstyleElianeGreen Title="ADOBTABLE" className='text-4xl sm:text-5xl w-full' color='text-green' />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className=" md:w-[50%] w-full mt-5 relative">
+                                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary w-5 h-5" />
+                                <input
+                                    type="text"
+                                    placeholder="Search For Items..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-12 pr-12 py-2 bg-white/5  border border-[#6F52B2] border-2 rounded-full text-primary placeholder-gray-400 focus:outline-none focus:border-primary/50 transition-all"
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                                    >
+                                        <X className="w-5 h-5" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
                         {loading ? (
                             <SkeletonBlog cardcount={3} />
-                        ) : products.length === 0 ? (
-                            <div></div>
+                        ) : filteredProducts.length === 0 ? (
+                            <div className='flex justify-center itenms-center text-gray-300'>Not Found</div>
                         ) : (
                             <Carousel>
                                 <CarouselContent>.
-                                    {products.map((product) => {
+                                    {filteredProducts.map((product) => {
                                         // Ambil gambar pertama saja
                                         const primaryImage = product.images?.[0]?.image_url || "";
                                         const imageCount = product.images?.length || 0
                                         return (
-                                            <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4">
+                                            <CarouselItem key={product.id} className="md:basis-1/2 lg:basis-1/4" onClick={()=>handleClick(product.id)}>
                                                 <div >
 
                                                     <div
 
                                                         className="border-primary/30 p-0   hover:border-primary transition-all duration-300  overflow-hidden group"
                                                     >
-                                                        
-                                                            <div className="relative aspect-square rounded-[50px] overflow-hidden">
-                                                                {primaryImage ? (
-                                                                    <>
-                                                                        <img
-                                                                            className='w-full h-full object-cover  transition-all duration-300'
-                                                                            src={primaryImage}
-                                                                            alt={product.name}
-                                                                            onError={(e) => {
-                                                                                e.currentTarget.src = "/placeholder-image.svg"
-                                                                            }}
-                                                                        />
+
+                                                        <div className="relative aspect-square rounded-[50px] overflow-hidden">
+                                                            {primaryImage ? (
+                                                                <>
+                                                                    <img
+                                                                        className='w-full h-full object-cover  transition-all duration-300'
+                                                                        src={primaryImage}
+                                                                        alt={product.name}
+                                                                        onError={(e) => {
+                                                                            e.currentTarget.src = "/placeholder-image.svg"
+                                                                        }}
+                                                                    />
 
 
-                                                                    </>
-                                                                ) : (
-                                                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                                        <ImageIcon className="w-16 h-16 text-gray-400" />
-                                                                    </div>
-                                                                )}
-                                                                <div className="absolute top-0 right-10 h-18 rounded-b-full w-12 bg-primary/80 flex flex-col justify-end items-center">
-                                                                    <div className="clip-stars h-6 w-6 bg-white mb-5"></div>
+                                                                </>
+                                                            ) : (
+                                                                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                                    <ImageIcon className="w-16 h-16 text-gray-400" />
                                                                 </div>
+                                                            )}
+                                                            <div className="absolute top-0 right-10 h-18 rounded-b-full w-12 bg-primary/80 flex flex-col justify-end items-center">
+                                                                <div className="clip-stars h-6 w-6 bg-white mb-5"></div>
                                                             </div>
-                                                       
+                                                        </div>
+
 
                                                         <div className="p-3 h-full px-5">
                                                             <h3 className="text-xl text-borsok text-dark line-clamp-2 group-hover:text-primary/80 transition-colors">
@@ -128,7 +171,7 @@ export default function ProductsCarousel() {
 
                                                         </div>
 
-                                                     
+
                                                     </div>
 
                                                 </div>
