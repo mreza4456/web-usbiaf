@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   try {
     const cookieStore = await cookies()
-    
+
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -28,15 +28,15 @@ export async function GET(request: Request) {
             cookieStore.set({ name, value, ...options })
           },
           remove(name: string, options: any) {
-            cookieStore.set({ name, value: '', ...options })
+            cookieStore.delete(name)
           },
-        },
+        }
       }
     )
 
     // Exchange code for session
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
-    
+
     if (exchangeError) {
       console.error('Error exchanging code:', exchangeError)
       return NextResponse.redirect(new URL('/auth/login?error=auth_failed', origin))
@@ -64,10 +64,10 @@ export async function GET(request: Request) {
         .insert({
           id: user.id,
           email: user.email,
-          username: user.user_metadata?.full_name || 
-                    user.user_metadata?.name || 
-                    user.email?.split('@')[0] || 
-                    'user',
+          username: user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.email?.split('@')[0] ||
+            'user',
           full_name: user.user_metadata?.full_name || user.user_metadata?.name,
           avatar: user.user_metadata?.avatar_url || user.user_metadata?.picture,
           social_media_completed: false, // ✅ Ensure modal will show

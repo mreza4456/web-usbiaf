@@ -5,7 +5,7 @@ import { motion, useInView, Variants } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Search, X } from 'lucide-react';
+import { ArrowRight, Search, X } from 'lucide-react';
 import Footer from '@/components/footer';
 import { getAllProducts } from '@/action/product';
 import { getAllCategories } from '@/action/categories';
@@ -13,6 +13,7 @@ import { IProduct, ICategory } from '@/interface';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { SkeletonProjects } from '@/components/skeleton-card';
+import { Textstyle, TextstyleEliane, Textstylegreen } from '@/components/font-design';
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
 
@@ -146,51 +147,36 @@ export default function Projects() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
-              <Badge className="inline-block mb-6 px-4 py-2 bg-muted rounded-full shadow-sm border-2 border-[#dbc8fb]">
-                <span className="text-sm font-semibold text-[#50398e]">✨ {products.length}+ Premium Projects</span>
-              </Badge>
+              <div className="flex gap-5 justify-center w-full mb-4 mt-15">
+                <Textstyle Title="OUR" className="text-4xl sm:text-7xl w-full " color="text-purple" />
+                <Textstyle Title="RECENTS" className="text-4xl sm:text-7xl w-full" color="text-yellow" />
+                <Textstylegreen Title="WORKS" className="text-4xl sm:text-7xl w-full" color="text-green" />
+              </div>
             </motion.div>
-
-            {/* Heading */}
-            <motion.h1
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: 'easeOut', delay: 0.1 }}
-              className="text-4xl sm:text-5xl md:text-6xl text-primary font-bold mb-6 leading-tight"
-            >
-              Our Recent{' '}
-              <span className="text-primary relative">
-                Projects
-                <div className="absolute -bottom-2 left-0 w-full h-3 opacity-50 -rotate-2 -z-5">
-                  <img src="curve.png" alt="" />
-                </div>
-              </span>
-            </motion.h1>
-
-            {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
-              className="text-lg sm:text-xl text-black mb-8 max-w-3xl mx-auto"
-            >
-              Explore koleksi lengkap stream widgets, overlays, dan animasi premium kami
-            </motion.p>
-
+            <div className="w-full max-w-3xl mx-auto">
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
+                className="text-lg md:text-xl text-center arial"
+              >
+                Explore our collection and portofolio and browse for your reffrences
+              </motion.p>
+            </div>
             {/* Search Bar */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: 'easeOut', delay: 0.3 }}
-              className="max-w-2xl mx-auto relative"
+              className="max-w-2xl mx-auto relative mt-10"
             >
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary w-5 h-5" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-primary w-5 h-5 " />
               <input
                 type="text"
-                placeholder="Search projects, tags, or categories..."
+                placeholder="Search for items..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-12 py-4 bg-white/5 border border-secondary border-2 rounded-xl text-primary placeholder-gray-400 focus:outline-none focus:border-primary/50 transition-all"
+                className="w-full pl-12 pr-12 py-4 bg-white/5 text-arial border border-primary border-2 rounded-full text-primary placeholder-gray-400 focus:outline-none focus:border-primary/50 transition-all"
               />
               {searchQuery && (
                 <button
@@ -207,39 +193,40 @@ export default function Projects() {
         {/* ── Category Filter ── */}
         <section className="pb-8 px-4 sm:px-6">
           <div className="container mx-auto">
-            <AnimateWhenVisible className="flex items-center justify-between mb-6">
-              <h3 className="text-3xl md:text-5xl font-bold mb-4 text-[#50398e] relative inline-block">
-                Browse Projects
-                <span className="absolute -top-6 -right-8 text-4xl">✦</span>
-              </h3>
-              <span className="text-gray-400 text-sm sm:text-base">
-                {filteredProjects.length} projects found
-              </span>
-            </AnimateWhenVisible>
+
 
             {/* Category Buttons with stagger */}
-            <StaggerContainer className="flex flex-wrap gap-3">
-              {categoryOptions.map((category, i) => (
-                <motion.div key={category.id} variants={fadeUp} custom={i}>
-                  <Button
-                    onClick={() => setSelectedCategory(category.id)}
-                    variant={selectedCategory === category.id ? 'default' : 'outline'}
-                    className={
-                      selectedCategory === category.id
-                        ? 'bg-muted hover:bg-muted/90 text-primary rounded-full shadow-lg'
-                        : 'bg-muted/5 hover:bg-muted/30 text-[#50398e] rounded-full shadow-lg border-2 border-[#50398e]'
-                    }
-                  >
-                    {category.name}
-                  </Button>
-                </motion.div>
-              ))}
-            </StaggerContainer>
+            <div className="flex justify-between gap-5 items-center">
+              <StaggerContainer className="flex flex-wrap gap-3">
+                {categoryOptions.map((category, i) => (
+                  <motion.div key={category.id} variants={fadeUp} custom={i}>
+                    <Button
+                      onClick={() => setSelectedCategory(category.id)}
+                      variant={selectedCategory === category.id ? 'default' : 'outline'}
+                      className={
+                        selectedCategory === category.id
+                          ? 'bg-primary/8 arial hover:bg-bg-primary/8  text-primary rounded-full border-0 flex py-7 px-2 pr-4'
+                          : 'bg-white border-0  arial rounded-full hover:bg-primary/8 cursor-pointer flex py-7 px-2 pr-4  flex'
+                      }
+                    >
+                      <div className="w-10 h-10 bg-primary rounded-full"></div>
+                      {category.name}
+                    </Button>
+                  </motion.div>
+                ))}
+              </StaggerContainer>
+              <Link href={"/service"} className='lg:block hidden'>
+                <button className="rounded-full text-font-arial flex justify-center items-center gap-2 bg-primary h-14 px-6 text-white whitespace-nowrap flex-shrink-0 hover:bg-primary/90 transition-colors">
+                  Browse Commissions
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </Link>
+            </div>
           </div>
         </section>
 
         {/* ── Projects Grid ── */}
-        <section className="pb-20 px-4 sm:px-6">
+        <section className="pb-20 px-4 sm:px-6 bg-white">
           <div className="container mx-auto">
             {loading ? (
               <SkeletonProjects />
@@ -278,14 +265,10 @@ export default function Projects() {
                     >
                       <Card
                         onClick={() => handleClick(project.id)}
-                        className="bg-white p-0 m-0 border-0 shadow-lg hover:shadow-xl cursor-pointer transition-shadow duration-300 overflow-hidden"
+                        className="bg-white p-0 mt-5 border-0 shadow-lg hover:shadow-xl relative cursor-pointer rounded-[50px] transition-shadow duration-300 overflow-hidden"
                       >
                         <CardContent className="p-0">
-                          {/* Header */}
-                          <div className="flex items-center gap-3 px-4 py-3 border-b">
-                            <img src="/avatarnemuneko.jpg" className="w-8 h-8 rounded-full" alt="" />
-                            <span className="font-semibold text-sm">{project.name}</span>
-                          </div>
+
 
                           {/* Image */}
                           <div className="relative aspect-square bg-gradient-to-br from-[#1a1a2e] via-[#16213e] to-[#0f0f1e] flex items-center justify-center overflow-hidden">
@@ -314,12 +297,21 @@ export default function Projects() {
                           </div>
 
                           {/* Footer */}
-                          <div className="px-4 py-4">
-                            <h3 className="font-semibold text-sm mb-1 line-clamp-1">
-                              {project.description || 'No description available'}
+                          <div className="p-3 h-full px-10">
+                            <h3 className="text-xl text-borsok text-dark line-clamp-2 group-hover:text-primary/80 transition-colors">
+                              {project.name}
                             </h3>
+                            <p className="text-gray-400 text-arial text-sm line-clamp-3 ">
+                              {project.description || 'No description available'}
+                            </p>
+
+
+
                           </div>
                         </CardContent>
+                        <div className="absolute top-0 right-10 h-18 rounded-b-full w-12 bg-primary/80 flex flex-col justify-end items-center">
+                          <div className="clip-stars h-6 w-6 bg-white mb-5"></div>
+                        </div>
                       </Card>
                     </motion.div>
                   );
@@ -330,21 +322,21 @@ export default function Projects() {
         </section>
 
         {/* ── CTA Section ── */}
-        <section className="pb-20 px-4 sm:px-6">
+        <section className="py-20 px-4 sm:px-6">
           <div className="container mx-auto">
             <AnimateWhenVisible variants={scaleIn}>
-              <Card className="bg-muted/50 border-primary/30">
+              <Card className="bg-[#e6dcff] rounded-[100px]">
                 <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl text-primary font-bold mb-4 sm:mb-6">
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl text-borsok text-primary mb-4 sm:mb-6">
                     Can't Find What You're{' '}
                     <span className="text-primary">Looking For?</span>
                   </h2>
-                  <p className="text-gray-800 text-base sm:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto">
-                    Hubungi kami untuk custom project sesuai kebutuhan stream Anda
+                  <p className="text-arial text-primary/50 sm:text-lg mb-6 sm:mb-8 max-w-3xl mx-auto">
+                    Contact us to make custom project to fit with your request and personalized
                   </p>
                   <Link href="/order">
                     <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
-                      <Button size="lg" className="bg-primary text-white">
+                      <Button size="lg" className="button-yellow text-2xl px-10 py-5">
                         Request Custom Project
                       </Button>
                     </motion.div>

@@ -191,7 +191,7 @@ export default function Teams() {
               /* Team Members Grid */
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {teamMembers.map((member) => (
-                  <Card key={member.id} onClick={() => handleClick(member.id)} className="bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30 hover:border-[#D78FEE]/50 transition-all duration-300 hover:transform hover:scale-105 overflow-hidden group">
+                  <Card key={member.id} onClick={() => handleClick(member.id)} className="bg-white backdrop-blur-sm border-[#9B5DE0]/30 hover:border-[#D78FEE]/50 transition-all duration-300 hover:transform hover:scale-105 overflow-hidden group">
                     <CardHeader className="text-center pb-3">
                       {/* Photo */}
                       <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-[#9B5DE0]/30 to-[#D78FEE]/30 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform overflow-hidden">

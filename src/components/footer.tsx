@@ -41,18 +41,18 @@ export default function Footer() {
         }, []);
 
     return (
-        <footer className="py-12 mt-50 px-6 bg-muted/50 border-t border-[#9B5DE0]/20 ">
-            <div className="container mx-auto">
+        <footer className="py-12 mt-50 px-6 bg-[#e6dcff] border-t border-[#9B5DE0]/20 ">
+            <div className="container mx-auto text-arial">
                 <div className="grid md:grid-cols-4 gap-8 mb-8">
                     <div>
                        <Image src="/images/logonav.png" width={100} height={50} className="w-1/2 mb-5" alt="" />
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-primary/50 text-sm">
                             Premium stream widgets & overlays for content creators
                         </p>
                     </div>
                     <div>
                         <h4 className="font-semibold mb-4 text-primary">Services</h4>
-                        <ul className="space-y-2 text-gray-400 text-sm grid md:grid-cols-2">
+                        <ul className="space-y-2 text-primary/50 text-sm grid md:grid-cols-2">
                             {categories.map((category)=>(
                             <li key={category.id} ><a href={`/service/detail/${category.id}`} className="hover:text-[#D78FEE] transition-colors">{category.name}</a></li>
                             ))}
@@ -60,7 +60,7 @@ export default function Footer() {
                     </div>
                     <div>
                         <h4 className="font-semibold mb-4 text-primary">Company</h4>
-                        <ul className="space-y-2 text-gray-400 text-sm">
+                        <ul className="space-y-2 text-primary/50 text-sm">
                             <li><a href="/teams" className="hover:text-[#D78FEE] transition-colors">About Us</a></li>
                             <li><a href="/contact" className="hover:text-[#D78FEE] transition-colors">Contact</a></li>
                             <li><a href="/projects" className="hover:text-[#D78FEE] transition-colors">Our Projects</a></li>
@@ -69,14 +69,14 @@ export default function Footer() {
                     </div>
                     <div>
                         <h4 className="font-semibold mb-4 text-primary">Connect</h4>
-                        <ul className="space-y-2 text-gray-400 text-sm">
+                        <ul className="space-y-2 text-primary/50 text-sm">
                             <li><a href="#" className="hover:text-[#D78FEE] transition-colors">Twitter</a></li>
                             <li><a href="#" className="hover:text-[#D78FEE] transition-colors">Instagram</a></li>
                             <li><a href="#" className="hover:text-[#D78FEE] transition-colors">Discord</a></li>
                         </ul>
                     </div>
                 </div>
-                <div className="border-t border-[#9B5DE0]/20 pt-8 text-center text-gray-400 text-sm">
+                <div className="border-t border-[#9B5DE0]/20 pt-8 text-center text-primary/50 text-sm">
                     © 2025 Nemuneko Studio. All rights reserved.
                 </div>
             </div>

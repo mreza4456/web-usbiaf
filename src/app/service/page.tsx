@@ -9,7 +9,15 @@ import { ArrowRight, Zap, Shield, Star, Clock, ImageIcon } from 'lucide-react';
 import { getAllCategories } from '@/action/categories';
 import type { ICategory, IImageCategories } from '@/interface';
 import SkeletonService from '@/components/skeleton-card';
-
+import Link from 'next/link';
+import { Textstyle, Textstylegreen } from '@/components/font-design';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 // ─── Animation Variants ────────────────────────────────────────────────────────
 
 const fadeUp: Variants = {
@@ -130,47 +138,34 @@ export default function ServicesPage() {
 
   return (
     <div className="min-h-screen">
-
+      
       {/* ── Hero Section ── */}
       <section className="pt-16 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6">
-        <div className="container mx-auto text-center">
-
+        <div className="container mx-auto">
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: 'easeOut' }}
           >
-            <Badge className="inline-block mb-6 px-4 py-2 bg-muted rounded-full shadow-sm border-2 border-[#dbc8fb]">
-              <span className="text-sm font-semibold text-[#50398e]">✨ Premium Streaming Assets</span>
-            </Badge>
+            <div className="flex gap-5  w-full mb-4 mt-15">
+              <Textstyle Title="FIND" className="text-4xl sm:text-7xl w-full " color="text-purple" />
+              <Textstyle Title="OUR" className="text-4xl sm:text-7xl w-full" color="text-yellow" />
+              <Textstylegreen Title="SERVICES" className="text-4xl sm:text-7xl w-full" color="text-green" />
+            </div>
           </motion.div>
-
-          {/* Heading */}
-          <motion.h1
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut', delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl text-primary font-bold mb-6 leading-tight"
-          >
-            Our{' '}
-            <span className="text-primary relative">
-              Services
-              <div className="absolute -bottom-2 left-0 w-full h-3 bg-[#FFE66D] opacity-50 -rotate-3 -z-5" />
-            </span>
-          </motion.h1>
-
-          {/* Subtitle */}
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
-            className="text-lg sm:text-xl text-gray-800 mb-8 max-w-3xl mx-auto"
-          >
-            Pilih kategori yang sesuai kebutuhan streaming Anda. Semua produk dirancang dengan detail dan kualitas premium.
-          </motion.p>
-
+          <div className=" max-w-3xl ">
+            <motion.p
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
+              className="text-lg md:text-xl  arial"
+            >
+              Explore our collection and portofolio and browse for your reffrences
+            </motion.p>
+          </div>
         </div>
+
       </section>
 
       {/* ── Service Categories ── */}
@@ -195,16 +190,19 @@ export default function ServicesPage() {
               </Card>
             </AnimateWhenVisible>
           ) : (
-            <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-2 gap-6">
+            <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {categories.map((category, index) => {
                 const primaryImage = category.images?.[0]?.image_url || '';
 
                 return (
                   <motion.div key={category.id} variants={fadeUp} custom={index}>
-                    <Card className="bg-white grid grid-cols-1 lg:grid-cols-2 p-0 m-0 overflow-hidden shadow-lg border-primary/30 hover:border-primary/50 h-full">
+                    <Card onClick={(e) => {
+                      e.stopPropagation();
+                      handleCategoryClick(category.id);
+                    }} className="bg-white p-0 m-0 relative overflow-hidden shadow-lg cursor-pointer   rounded-[50px]">
 
                       {/* Image Section */}
-                      <div className="relative h-full min-h-[250px] overflow-hidden">
+                      <div className="relative h-70 overflow-hidden">
                         {primaryImage ? (
                           <motion.img
                             whileHover={{ scale: 1.06 }}
@@ -221,43 +219,29 @@ export default function ServicesPage() {
                         )}
                       </div>
 
-                      {/* Content Section */}
-                      <div className="py-7 flex flex-col justify-between">
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <CardTitle className="text-2xl text-primary mb-2 flex items-center gap-2">
-                                {category.name}
-                              </CardTitle>
-                              {category.description && (
-                                <CardDescription className="text-gray-700">
-                                  {category.description}
-                                </CardDescription>
-                              )}
-                              {category.start_price && (
-                                <p className="text-secondary mt-5">
-                                  Start From {category.start_price}$
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                            <Button
-                              className="w-full bg-primary rounded-full cursor-pointer hover:from-[#8049c7] hover:to-[#c576e0] text-white"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCategoryClick(category.id);
-                              }}
-                            >
-                              View
-                              <ArrowRight className="w-4 h-4 ml-2" />
-                            </Button>
-                          </motion.div>
-                        </CardContent>
+
+                      <div className="p-0 px-10">
+                        <h3 onClick={(e) => {
+                          e.stopPropagation();
+                          handleCategoryClick(category.id);
+                        }} className="text-xl text-borsok text-dark line-clamp-2 group-hover:text-primary/80 transition-colors">
+                          {category.name}
+                        </h3>
+                        <p className="text-gray-400 text-arial text-sm line-clamp-3 ">
+                          {category.description || 'No description available'}
+                        </p>
+
+
+
                       </div>
 
+                      <CardContent>
+
+                      </CardContent>
+
+                      <div className="absolute top-0 right-10 h-18 rounded-b-full w-12 bg-white/50 flex flex-col justify-end items-center">
+                        <div className="clip-stars h-6 w-6 bg-white mb-5"></div>
+                      </div>
                     </Card>
                   </motion.div>
                 );
@@ -268,38 +252,25 @@ export default function ServicesPage() {
       </section>
 
       {/* ── Features / Benefits Section ── */}
-      <section className="py-12 sm:pb-16 px-4 sm:px-6">
+      <section className="py-20 px-4 sm:px-6">
         <div className="container mx-auto">
           <AnimateWhenVisible variants={scaleIn}>
-            <Card className="bg-muted/50 border-primary/30">
-              <CardHeader className="text-center">
-                <CardTitle className="text-3xl text-primary mb-2">What You Get</CardTitle>
-                <CardDescription className="text-gray-700">
-                  Setiap pembelian mencakup fitur-fitur premium berikut
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
-                  {benefits.map((benefit, i) => (
-                    <motion.div
-                      key={i}
-                      variants={fadeUp}
-                      custom={i}
-                      whileHover={{ scale: 1.05, y: -4 }}
-                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    >
-                      <Card className="background backdrop-blur-sm border-[#9B5DE0]/30 hover:border-[#D78FEE]/50 transition-colors duration-300 h-full">
-                        <CardContent className="pt-6 text-center">
-                          <div className="w-16 h-16 bg-gradient-to-br from-[#9B5DE0]/30 to-[#D78FEE]/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <benefit.icon className="w-8 h-8 text-[#D78FEE]" />
-                          </div>
-                          <h3 className="text-lg font-semibold text-primary mb-2">{benefit.title}</h3>
-                          <p className="text-sm text-gray-400">{benefit.description}</p>
-                        </CardContent>
-                      </Card>
-                    </motion.div>
-                  ))}
-                </StaggerContainer>
+            <Card className="bg-[#e6dcff] rounded-[100px]">
+              <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl text-borsok text-primary mb-4 sm:mb-6">
+                  Can't Find What You're{' '}
+                  <span className="text-primary">Looking For?</span>
+                </h2>
+                <p className="text-arial text-primary/50 sm:text-lg mb-6 sm:mb-8 max-w-3xl mx-auto">
+                  Contact us to make custom project to fit with your request and personalized
+                </p>
+                <Link href="/order">
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
+                    <Button size="lg" className="button-yellow text-2xl px-10 py-5">
+                      Request Custom Project
+                    </Button>
+                  </motion.div>
+                </Link>
               </CardContent>
             </Card>
           </AnimateWhenVisible>

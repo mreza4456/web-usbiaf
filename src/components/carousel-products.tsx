@@ -118,7 +118,7 @@ const filteredProducts = products.filter((product) =>
                             <div className='flex justify-center itenms-center text-gray-300'>Not Found</div>
                         ) : (
                             <Carousel>
-                                <CarouselContent>.
+                                <CarouselContent>
                                     {filteredProducts.map((product) => {
                                         // Ambil gambar pertama saja
                                         const primaryImage = product.images?.[0]?.image_url || "";
