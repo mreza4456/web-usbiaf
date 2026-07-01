@@ -1,0 +1,23 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "Nemuneko_RIG.moc3",
+		"Textures": [
+			"Nemuneko_RIG.8192/texture_00.png"
+		],
+		"Physics": "Nemuneko_RIG.physics3.json",
+		"DisplayInfo": "Nemuneko_RIG.cdi3.json"
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		}
+	]
+}

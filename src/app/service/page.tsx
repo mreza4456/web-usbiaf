@@ -323,7 +323,7 @@ export default function ServicesPage() {
       <section className="py-20 px-4 sm:px-6">
         <div className="container mx-auto">
           <AnimateWhenVisible variants={scaleIn}>
-            <Card className="bg-[#e6dcff] rounded-[100px]">
+            <Card className="bg-[#e6dcff] md:rounded-[100px] ">
               <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl text-borsok text-primary mb-4 sm:mb-6">
                   Can't Find What You're{' '}
@@ -334,7 +334,7 @@ export default function ServicesPage() {
                 </p>
                 <Link href="/order">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
-                    <Button size="lg" className="button-yellow text-2xl px-10 py-5">
+                    <Button size="lg" className="button-yellow text-2xl px-7 py-5">
                       Request Custom Project
                     </Button>
                   </motion.div>

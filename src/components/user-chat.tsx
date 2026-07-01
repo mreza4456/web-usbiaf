@@ -313,7 +313,7 @@ export default function UserChat() {
         onClick={handleChatButtonClick}
         className="relative flex items-center justify-center hover:scale-110 transition-transform z-50 "
       >
-         <img src="icon/messageicon.svg" className="w-6 h-6" alt="" />
+         <img src="/icon/messageicon.svg" className="w-6 h-6" alt="" />
         {unreadCount > 0 && (
           <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {unreadCount}

@@ -43,7 +43,7 @@ export default function Footer() {
     return (
         <footer className="py-12 mt-50 px-6 bg-[#e6dcff] border-t border-[#9B5DE0]/20 ">
             <div className="container mx-auto text-arial">
-                <div className="grid md:grid-cols-4 gap-8 mb-8">
+                <div className="grid md:grid-cols-4 grid-cols-2 gap-8 mb-8">
                     <div>
                        <Image src="/images/logonav.png" width={100} height={50} className="w-1/2 mb-5" alt="" />
                         <p className="text-primary/50 text-sm">

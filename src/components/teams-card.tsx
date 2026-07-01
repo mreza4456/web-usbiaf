@@ -81,10 +81,10 @@ export default function TeamsCard() {
                         <div className='relative aspect-[2/3] w-full ' key={i} onClick={() => handleClick(stat.id)}>
                             <div className='absolute inset-0 translate-y-2 bg-[#f99c08] rounded-[40px] border-3 border-[#ad4512] z-0'></div>
 
-                            <div className='relative z-10 h-full bg-[#faca06] border-3 rounded-[40px] border-[#ad4512] p-4 '>
+                            <div className='relative z-10 h-full bg-[#faca06] border-3 rounded-[40px] border-[#ad4512] p-3 md:p-4 lg:p-5'>
                                 <div className=''>
-                                    <div className="h-1/2 w-8 absolute bottom-0 left-[30%] bg-[#fff8dc] -z-1 -skew-x-20"></div>
-                                    <div className="h-1/2 w-15 absolute bottom-0 md:left-[45%] left-[50%]   bg-[#fff8dc] -z-1 -skew-x-20"></div>
+                                    <div className="h-1/2 w-5 md:w-8 absolute bottom-0 left-[30%] bg-[#fff8dc] -z-1 -skew-x-20"></div>
+                                    <div className="h-1/2 w-10 md:w-15 absolute bottom-0 md:left-[45%] left-[50%]   bg-[#fff8dc] -z-1 -skew-x-20"></div>
                                 </div>
                                 <div className="w-full h-full bg-gradient-to-r rounded-[30px] from-[#493977] relative to-[#6b53ac] p-2 border-3 border-[#ad4512] shadow-box1 z-20">
                                     <div className="bg-gradient-to-t from-[#4c3b7c]  to-transparent absolute rounded-[25px] bottom-0 left-0  z-10 w-full h-2/3"></div>

@@ -249,7 +249,7 @@
 
 .text-shadow {
   position: absolute;
-  top: -10px;
+  top: -8px;
   left: 50%;
   transform: translateX(-50%);
   color: #eee;
@@ -263,7 +263,7 @@
 
 .text-inside {
   position: absolute;
-  top: -10px;
+  top: -8px;
   left: 50%;
   transform: translateX(-50%);
 
@@ -380,8 +380,8 @@ body{
     linear-gradient(-45deg, #FBFAFE 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, #FBFAFE 75%),
     linear-gradient(-45deg, transparent 75%, #FBFAFE 75%);
-  background-size: 80px 80px;
-  background-position: 0 0, 0 40px, 40px -40px, -40px 0px;
+  background-size: 150px 150px;
+  background-position: 0 0, 0 75px, 75px -75px, -75px 0px;
   background-color: #fff;
 }
 

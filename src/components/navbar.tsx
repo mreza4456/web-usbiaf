@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react"
 import Link from "next/link"
-import { Sparkles, User, LogOut, ChevronDown, Loader2, Menu, X, Ticket, Gift, CheckCircle, Calendar, Tag, Bell, ShoppingBag } from "lucide-react"
+import { Sparkles, User, LogOut, ChevronDown, Loader2, Menu, X, Ticket, Gift, CheckCircle, Calendar, Tag, Bell, ShoppingBag, FileText } from "lucide-react"
 import { Button } from "./ui/button"
 import { usePathname, useRouter } from "next/navigation"
 import { supabase } from "@/config/supabase"
@@ -14,106 +14,59 @@ import { Card } from "./ui/card";
 import Image from "next/image";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 
-// ─── Animation Variants ────────────────────────────────────────────────────────
-
 const navbarVariants: Variants = {
   hidden: { y: -80, opacity: 0 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    transition: { duration: 0.6, ease: "easeOut" },
-  },
+  visible: { y: 0, opacity: 1, transition: { duration: 0.6, ease: "easeOut" } },
 };
 
 const logoVariants: Variants = {
   hidden: { opacity: 0, x: -30 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.5, ease: "easeOut", delay: 0.2 },
-  },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: "easeOut", delay: 0.2 } },
 };
 
 const navLinkContainerVariants: Variants = {
   hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.3 },
-  },
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.3 } },
 };
 
 const navLinkVariants: Variants = {
   hidden: { opacity: 0, y: -12 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: "easeOut" },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
 };
 
 const authVariants: Variants = {
   hidden: { opacity: 0, x: 30 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.5, ease: "easeOut", delay: 0.5 },
-  },
+  visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: "easeOut", delay: 0.5 } },
 };
 
 const dropdownVariants: Variants = {
   hidden: { opacity: 0, y: -8, scale: 0.97 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: { duration: 0.2, ease: "easeOut" },
-  },
-  exit: {
-    opacity: 0,
-    y: -8,
-    scale: 0.97,
-    transition: { duration: 0.15, ease: "easeIn" },
-  },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.2, ease: "easeOut" } },
+  exit: { opacity: 0, y: -8, scale: 0.97, transition: { duration: 0.15, ease: "easeIn" } },
 };
 
-const mobileMenuVariants: Variants = {
-  hidden: { opacity: 0, height: 0 },
-  visible: {
-    opacity: 1,
-    height: "auto",
-    transition: { duration: 0.3, ease: "easeOut" },
-  },
-  exit: {
-    opacity: 0,
-    height: 0,
-    transition: { duration: 0.25, ease: "easeIn" },
-  },
+const overlayMenuVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.25, ease: "easeOut" } },
+  exit: { opacity: 0, transition: { duration: 0.2, ease: "easeIn" } },
 };
 
-const mobileNavLinkVariants: Variants = {
+const overlayLinkVariants: Variants = {
   hidden: { opacity: 0, x: -16 },
-  visible: (i: number) => ({
-    opacity: 1,
-    x: 0,
-    transition: { duration: 0.3, ease: "easeOut", delay: i * 0.05 },
-  }),
+  visible: (i: number) => ({ opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeOut", delay: i * 0.05 } }),
 };
 
 const badgePulse: Variants = {
   initial: { scale: 1 },
-  animate: {
-    scale: [1, 1.2, 1],
-    transition: { duration: 0.6, repeat: Infinity, repeatDelay: 2 },
-  },
+  animate: { scale: [1, 1.2, 1], transition: { duration: 0.6, repeat: Infinity, repeatDelay: 2 } },
 };
-
-// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Navbar(): React.ReactElement {
   const [isScrolled, setIsScrolled] = React.useState(false)
   const [showUserMenu, setShowUserMenu] = React.useState(false)
   const [showVoucherMenu, setShowVoucherMenu] = React.useState(false)
   const [isLoggingOut, setIsLoggingOut] = React.useState(false)
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false)
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false)
   const [voucherEvents, setVoucherEvents] = React.useState<IVoucherEvents[]>([]);
   const [isLoadingVouchers, setIsLoadingVouchers] = React.useState(true);
   const [claimedVouchers, setClaimedVouchers] = React.useState<Set<string>>(new Set());
@@ -131,9 +84,7 @@ export default function Navbar(): React.ReactElement {
   }, [])
 
   React.useEffect(() => {
-    if (user?.id) {
-      fetchVoucherEvents();
-    }
+    if (user?.id) fetchVoucherEvents();
   }, [user?.id]);
 
   const fetchVoucherEvents = async () => {
@@ -182,7 +133,7 @@ export default function Navbar(): React.ReactElement {
       await supabase.auth.signOut()
       setShowUserMenu(false)
       setShowVoucherMenu(false)
-      setIsMobileMenuOpen(false)
+      setIsMenuOpen(false)
     } catch (error) {
       console.error("Error logging out:", error)
     } finally {
@@ -200,7 +151,8 @@ export default function Navbar(): React.ReactElement {
   React.useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null
-      if (showUserMenu && target && !target.closest(".user-menu-container")) setShowUserMenu(false)
+      const isMobileView = typeof window !== "undefined" && window.innerWidth < 640
+      if (showUserMenu && !isMobileView && target && !target.closest(".user-menu-container")) setShowUserMenu(false)
       if (showVoucherMenu && target && !target.closest(".voucher-menu-container")) setShowVoucherMenu(false)
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -223,6 +175,7 @@ export default function Navbar(): React.ReactElement {
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
 
+  const avatarUrl = user?.avatar_url;
   return (
     <motion.nav
       variants={navbarVariants}
@@ -230,69 +183,70 @@ export default function Navbar(): React.ReactElement {
       animate="visible"
       className={`fixed top-0 w-full z-50 transition-all duration-300 bg-white`}
     >
-      <div className="max-w-8xl sm:px-6 lg:px-8">
+      <div className="max-w-8xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
+          <div className="flex items-center space-x-4 lg:space-x-8">
+            <motion.button
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsMenuOpen(true)}
+              className="xl:hidden p-2 -ml-2 text-primary hover:text-[#D78FEE] transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="w-6 h-6" />
+            </motion.button>
 
-          {/* Logo */}
-          <motion.div variants={logoVariants} initial="hidden" animate="visible">
-            <Link href="/" className="flex items-center space-x-2 group">
-              <Image alt="logo" src="/images/logonav.png" width={180} height={50} />
-            </Link>
-          </motion.div>
-
-          {/* Desktop Navigation */}
-          <motion.div
-            className="hidden lg:flex items-center space-x-8"
-            variants={navLinkContainerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {navLinks.map((link) => (
-              <motion.div key={link.href} variants={navLinkVariants}>
-                <Link
-                  href={link.href}
-                  className={`arial-nav font-medium relative group ${
-                    pathname === link.href ? "text-[#F6CEFF]" : "text-white"
-                  }`}
-                >
-                  {link.label}
-                  {/* Animated underline on hover */}
-                  <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#F6CEFF] rounded-full transition-all duration-300 group-hover:w-full" />
-                </Link>
-              </motion.div>
-            ))}
-            <motion.div variants={navLinkVariants}>
-              <Link
-                className="button-yellow px-4 py-1 transition-transform duration-200 hover:scale-105 active:scale-95"
-                href={"/service"}
-              >
-                Order Now
+            <motion.div variants={logoVariants} initial="hidden" animate="visible">
+              <Link href="/" className="flex items-center space-x-2 group">
+                <Image alt="logo" src="/images/logonav.png" width={150} height={42} />
               </Link>
             </motion.div>
-          </motion.div>
 
-          {/* Auth Section Desktop */}
-          <motion.div variants={authVariants} initial="hidden" animate="visible">
+            <motion.div
+              className="hidden xl:flex items-center space-x-7"
+              variants={navLinkContainerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              {navLinks.map((link) => (
+                <motion.div key={link.href} variants={navLinkVariants}>
+                  <Link
+                    href={link.href}
+                    className={`arial font-medium relative group flex items-center gap-1 ${pathname === link.href ? "text-[#D78FEE]" : "text-primary"}`}
+                  >
+                    {link.label}
+                    <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#F6CEFF] rounded-full transition-all duration-300 group-hover:w-full" />
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+
+          <motion.div variants={authVariants} initial="hidden" animate="visible" className="flex items-center">
             {isLoading ? (
               <div className="flex items-center space-x-3">
                 <Loader2 className="w-6 h-6 text-[#D78FEE] animate-spin" />
               </div>
             ) : user ? (
               <div className="flex items-center space-x-3">
-                <UserChat />
-
-                {/* Cart */}
-                <Link href={"/cart"} className="mx-2 transition-transform duration-200 hover:scale-110">
-                  <img className="w-6 h-6" src="icon/carticon.svg" alt="" />
+                <Link
+                  href="/service"
+                  className="hidden xl:flex items-center gap-2 button-yellow px-5 transition-colors"
+                >
+                  Order Now
                 </Link>
 
-                {/* Voucher Bell */}
+                <UserChat />
+
+                <Link href={"/cart"} className="mx-1 transition-transform duration-200 hover:scale-110">
+                  <img className="w-6 h-6" src="/icon/carticon.svg" alt="" />
+                </Link>
+
                 <div className="relative voucher-menu-container">
                   <button
                     onClick={() => { setShowVoucherMenu(!showVoucherMenu); setShowUserMenu(false); }}
                     className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 transition-all"
                   >
-                    <img src="icon/bellicon.svg" className="w-6 h-6 hover:scale-110 transition-transform" alt="" />
+                    <img src="/icon/bellicon.svg" className="w-6 h-6 hover:scale-110 transition-transform" alt="" />
                     <AnimatePresence>
                       {availableVoucherEvents.length > 0 && (
                         <motion.span
@@ -308,7 +262,6 @@ export default function Navbar(): React.ReactElement {
                     </AnimatePresence>
                   </button>
 
-                  {/* Voucher Dropdown */}
                   <AnimatePresence>
                     {showVoucherMenu && (
                       <motion.div
@@ -372,13 +325,12 @@ export default function Navbar(): React.ReactElement {
                                           whileHover={!isClaimed && !isExpired ? { scale: 1.05 } : {}}
                                           onClick={() => handleClaimVoucher(event.id)}
                                           disabled={isClaimed || isClaiming || isExpired || !user}
-                                          className={`w-full py-2 rounded-full text-xs font-semibold transition-all ${
-                                            isClaimed
+                                          className={`w-full py-2 rounded-full text-xs font-semibold transition-all ${isClaimed
                                               ? 'bg-gray-200 cursor-not-allowed opacity-50'
                                               : isExpired
                                                 ? 'bg-gray-500/10 text-gray-400 border border-gray-500/30 cursor-not-allowed'
                                                 : 'bg-primary text-white hover:opacity-90 cursor-pointer'
-                                          }`}
+                                            }`}
                                         >
                                           {isClaiming ? (
                                             <span className="flex items-center justify-center">
@@ -410,76 +362,83 @@ export default function Navbar(): React.ReactElement {
                   </AnimatePresence>
                 </div>
 
-                {/* User Menu */}
-                <div className="relative user-menu-container hidden sm:block">
+                <div className="relative user-menu-container">
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={() => { setShowUserMenu(!showUserMenu); setShowVoucherMenu(false); }}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-all"
+                    className="relative flex items-center justify-center w-9 h-9 rounded-full  border border-gray-200"
                     disabled={isLoggingOut}
                   >
-                    <div className="w-8 h-8 flex items-center justify-center">
-                      {isLoggingOut ? (
-                        <Loader2 className="w-4 h-4 text-white animate-spin" />
-                      ) : (
-                        <img src="icon/usericon.svg" className="w-5 h-5" alt="" />
-                      )}
-                    </div>
-                    <img src="icon/3stripesicon.svg" className="w-10 h-10" alt="" />
+                    {isLoggingOut ? (
+                      <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                    ) : (
+                      <img
+                        src={avatarUrl || "/icon/usericon.svg"}
+                        className="w-full h-full object-cover rounded-full "
+                        alt="avatar"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/icon/usericon.svg";
+                        }}
+                      />
+                    )}
                   </motion.button>
 
-                  {/* User Dropdown */}
                   <AnimatePresence>
                     {showUserMenu && (
                       <motion.div
-                        key="user-dropdown"
+                        key="user-dropdown-compact"
                         variants={dropdownVariants}
                         initial="hidden"
                         animate="visible"
                         exit="exit"
-                        className="absolute right-0 mt-2 w-64 bg-background border border-muted rounded-lg"
+                        className="hidden sm:block absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
                       >
-                        <div className="p-4 border-b border-gray-800">
-                          <p className="text-primary font-semibold">{displayName}</p>
-                          <p className="text-secondary text-sm">{user.email}</p>
-                        </div>
-                        <div className="p-2">
-                          {[
-                            { href: "/user/profile", icon: <User className="w-4 h-4" />, label: "Profile" },
-                            { href: "/user/user-order", icon: <ShoppingBag className="w-4 h-4" />, label: "My Order" },
-                          ].map((item, i) => (
-                            <motion.div
-                              key={item.href}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              transition={{ delay: i * 0.06 + 0.05 }}
-                            >
-                              <Link
-                                href={item.href}
-                                className="flex items-center space-x-2 px-3 py-2 text-primary rounded-lg transition-colors hover:bg-white/10"
-                                onClick={() => setShowUserMenu(false)}
-                              >
-                                {item.icon}
-                                <span>{item.label}</span>
-                              </Link>
-                            </motion.div>
-                          ))}
-                          <motion.div
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.17 }}
+                        <div className="flex flex-col items-center pt-6 pb-4 px-4">
+                          <div className="relative w-16 h-16 rounded-full overflow-hidden border border-gray-200">
+                            <img
+                              src={avatarUrl || "/icon/usericon.svg"}
+                              className="w-full h-full object-cover"
+                              alt="avatar"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/icon/usericon.svg";
+                              }}
+                            />
+                          </div>
+                          <p className="mt-3 text-primary font-semibold">{displayName}</p>
+                          <Link
+                            href="/service"
+                            onClick={() => setShowUserMenu(false)}
+                            className="mt-4 w-full flex items-center justify-center gap-2 border border-[#D78FEE] text-[#D78FEE] rounded-full py-2 text-sm font-medium hover:bg-[#D78FEE]/10 transition-colors"
                           >
-                            <button
-                              onClick={handleLogout}
-                              disabled={isLoggingOut}
-                              className="w-full flex items-center space-x-2 px-3 py-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
-                            >
-                              {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-                              <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
-                            </button>
-                          </motion.div>
+                            <FileText className="w-4 h-4" />
+                            Order Now
+                          </Link>
                         </div>
+                        <div className="border-t border-gray-100" />
+                        <div className="py-2">
+                          {[
+                            { href: "/user/user-order", label: "My Order" },
+                            { href: "/user/profile", label: "Profile" },
+                          ].map((item, i) => (
+                            <Link
+                              key={item.label}
+                              href={item.href}
+                              className="block px-5 py-2.5 text-primary hover:bg-gray-50 transition-colors"
+                              onClick={() => setShowUserMenu(false)}
+                            >
+                              {item.label}
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="border-t border-gray-100" />
+                        <button
+                          onClick={handleLogout}
+                          disabled={isLoggingOut}
+                          className="w-full flex items-center px-5 py-3 text-left text-primary hover:bg-gray-50 transition-colors"
+                        >
+                          {isLoggingOut ? 'Logging out...' : 'Sign Out'}
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -495,143 +454,192 @@ export default function Navbar(): React.ReactElement {
               </Link>
             )}
           </motion.div>
-
-          {/* Mobile Menu Button */}
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 text-primary hover:text-[#D78FEE] transition-colors"
-          >
-            <AnimatePresence mode="wait">
-              {isMobileMenuOpen ? (
-                <motion.div
-                  key="close"
-                  initial={{ rotate: -90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: 90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <X className="w-6 h-6" />
-                </motion.div>
-              ) : (
-                <motion.div
-                  key="menu"
-                  initial={{ rotate: 90, opacity: 0 }}
-                  animate={{ rotate: 0, opacity: 1 }}
-                  exit={{ rotate: -90, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <Menu className="w-6 h-6" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
-        {isMobileMenuOpen && (
+        {showUserMenu && user && (
           <motion.div
-            key="mobile-menu"
-            variants={mobileMenuVariants}
+            key="user-dropdown-mobile"
+            variants={overlayMenuVariants}
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="lg:hidden border-t border-gray-200 overflow-hidden"
+            className="sm:hidden fixed inset-0 z-[70] bg-white flex flex-col"
           >
-            <div className="px-4 py-6 space-y-4">
+            <div className="flex items-center justify-between h-20 px-4 border-b border-gray-100">
+              <button
+                onClick={() => setIsMenuOpen(true)}
+                className="p-2 -ml-2 text-primary"
+                aria-label="Open menu"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+              <Image alt="logo" src="/images/logonav.png" width={130} height={36} />
+              <div className="flex items-center space-x-3">
+                <UserChat />
+                <img src="/icon/bellicon.svg" className="w-5 h-5" alt="" />
+                <button
+                  onClick={() => setShowUserMenu(false)}
+                  className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-[#D78FEE]"
+                  aria-label="Close profile menu"
+                >
+                  <img
+                    src={avatarUrl || "/icon/usericon.svg"}
+                    className="w-full h-full object-cover"
+                    alt="avatar"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/icon/usericon.svg";
+                    }}
+                  />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-6 pt-8">
+              <div className="flex flex-col items-center">
+                <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-200">
+                  <img
+                    src={avatarUrl || "/icon/usericon.svg"}
+                    className="w-full h-full object-cover"
+                    alt="avatar"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/icon/usericon.svg";
+                    }}
+                  />
+                </div>
+                <p className="mt-4 text-lg text-primary font-semibold">{displayName}</p>
+
+                <Link
+                  href="/service"
+                  onClick={() => setShowUserMenu(false)}
+                  className="mt-5 flex items-center gap-2 border border-gray-300 rounded-full px-5 py-2.5 text-sm font-medium text-primary hover:border-[#D78FEE] hover:text-[#D78FEE] transition-colors"
+                >
+                  <FileText className="w-4 h-4" />
+                  Order Now
+                </Link>
+              </div>
+
+              <div className="mt-10 space-y-1">
+                <Link
+                  href="/user/user-order"
+                  className="block py-3 text-primary text-base"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  My Order
+                </Link>
+                <Link
+                  href="/user/profile"
+                  className="block py-3 text-primary text-base"
+                  onClick={() => setShowUserMenu(false)}
+                >
+                  Profile
+                </Link>
+              </div>
+
+              <div className="border-t border-gray-200 mt-2" />
+
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="w-full text-left py-4 text-primary text-base flex items-center gap-2"
+              >
+                {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                {isLoggingOut ? 'Logging out...' : 'Sign Out'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isMenuOpen && (
+          <motion.div
+            key="overlay-menu"
+            variants={overlayMenuVariants}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            className="xl:hidden fixed inset-0 z-[60] bg-white"
+          >
+            <div className="flex items-center justify-between h-20 px-4 border-b border-gray-100">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setIsMenuOpen(false)}
+                className="p-2 -ml-2 text-primary hover:text-[#D78FEE] transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-6 h-6" />
+              </motion.button>
+
+              <Link href="/" onClick={() => setIsMenuOpen(false)}>
+                <Image alt="logo" src="/images/logonav.png" width={130} height={36} />
+              </Link>
+
+              <div className="flex items-center space-x-3">
+                {user && <UserChat />}
+                <img src="/icon/bellicon.svg" className="w-5 h-5" alt="" />
+                {user ? (
+                  <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200">
+                    <img
+                      src={avatarUrl || "/icon/usericon.svg"}
+                      className="w-full h-full object-cover"
+                      alt="avatar"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/icon/usericon.svg";
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <div className="w-8" />
+                )}
+              </div>
+            </div>
+
+            <div className="px-6 sm:px-10 py-8 space-y-6">
               {navLinks.map((link, i) => (
-                <motion.div key={link.href} custom={i} variants={mobileNavLinkVariants} initial="hidden" animate="visible">
+                <motion.div
+                  key={link.href}
+                  custom={i}
+                  variants={overlayLinkVariants}
+                  initial="hidden"
+                  animate="visible"
+                >
                   <Link
                     href={link.href}
-                    className="block text-primary arial font-medium py-2"
-                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={`block text-lg font-bold arial ${pathname === link.href ? "text-[#D78FEE]" : "text-primary"}`}
+                    onClick={() => setIsMenuOpen(false)}
                   >
                     {link.label}
                   </Link>
                 </motion.div>
               ))}
 
-              {user ? (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.35 }}
-                  className="pt-4 border-t border-gray-800 space-y-3"
+              <motion.div
+                custom={navLinks.length}
+                variants={overlayLinkVariants}
+                initial="hidden"
+                animate="visible"
+              >
+                <Link
+                  href="/service"
+                  className=" text-lg font-bold button-yellow px-5"
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  <div className="flex items-center space-x-3 pb-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-[#D78FEE] to-[#8B5CF6] rounded-full flex items-center justify-center">
-                      <User className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-primary text-font-arial font-semibold">{displayName}</p>
-                      <p className="text-gray-400 text-sm">{user.email}</p>
-                    </div>
-                  </div>
-
-                  <Link
-                    href="/voucher"
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-[#D78FEE]/10 to-[#8B5CF6]/10 border border-[#D78FEE]/30 rounded-lg"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Ticket className="w-5 h-5 text-primary" />
-                      <span className="text-font-arial text-primary">Voucher</span>
-                    </div>
-                    {availableVoucherEvents.length > 0 && (
-                      <motion.span
-                        animate={{ scale: [1, 1.15, 1] }}
-                        transition={{ duration: 0.6, repeat: Infinity, repeatDelay: 2 }}
-                        className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-semibold"
-                      >
-                        {availableVoucherEvents.length}
-                      </motion.span>
-                    )}
-                  </Link>
-
-                  {["Profile", "My Orders", "Cart"].map((label, i) => {
-                    const hrefs: Record<string, string> = { Profile: "/user/profile", "My Orders": "/user/user-order", Cart: "/cart" };
-                    return (
-                      <motion.div
-                        key={label}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 + i * 0.06 }}
-                      >
-                        <Link
-                          href={hrefs[label]}
-                          className="block arial hover:text-[#D78FEE] transition-colors py-2"
-                          onClick={() => setIsMobileMenuOpen(false)}
-                        >
-                          {label}
-                        </Link>
-                      </motion.div>
-                    );
-                  })}
-
-                  <motion.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.58 }}
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="w-full flex items-center space-x-2 text-red-400 hover:text-red-300 transition-colors py-2"
-                  >
-                    {isLoggingOut ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}
-                    <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
-                  </motion.button>
-                </motion.div>
-              ) : (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}>
-                  <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full border-[#D78FEE] text-[#D78FEE]">
-                      Login
-                    </Button>
-                  </Link>
-                </motion.div>
-              )}
+                  Order Now
+                </Link>
+              </motion.div>
             </div>
+
+            {!user && (
+              <div className="px-6 sm:px-10 pt-4 border-t border-gray-100">
+                <Link href="/auth/login" onClick={() => setIsMenuOpen(false)}>
+                  <Button variant="outline" className="w-full border-[#D78FEE] text-[#D78FEE]">
+                    Login
+                  </Button>
+                </Link>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

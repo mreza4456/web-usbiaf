@@ -16,7 +16,13 @@ import ProductsCarousel from '@/components/carousel-products';
 import TeamsCard from '@/components/teams-card';
 
 // ─── Animation Variants ────────────────────────────────────────────────────────
+import dynamic from 'next/dynamic';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
+const Live2DWidget = dynamic(() => import('@/components/live2d-widget'), {
+  ssr: false,
+});
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 40 },
   visible: (i: number = 0) => ({
@@ -52,7 +58,7 @@ interface AnimateProps {
 
 function AnimateWhenVisible({ children, variants = fadeUp, custom, className = '' }: AnimateProps) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: false, margin: '-80px' });
+  const inView = useInView(ref, { once: true, margin: '-80px' });
 
   return (
     <motion.div
@@ -60,7 +66,7 @@ function AnimateWhenVisible({ children, variants = fadeUp, custom, className = '
       variants={variants}
       custom={custom}
       initial="hidden"
-      animate={inView ? 'visible' : 'hidden'}
+     animate={inView ? 'visible' : undefined}
       className={className}
     >
       {children}
@@ -70,13 +76,13 @@ function AnimateWhenVisible({ children, variants = fadeUp, custom, className = '
 
 function StaggerContainer({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: false, margin: '-80px' });
+  const inView = useInView(ref, { once: true, margin: '-80px' });
 
   return (
     <motion.div
       ref={ref}
       initial="hidden"
-      animate={inView ? 'visible' : 'hidden'}
+     animate={inView ? 'visible' : undefined}
       variants={{
         visible: { transition: { staggerChildren: 0.12 } },
         hidden: {},
@@ -114,45 +120,62 @@ const FEATURES = [
 ];
 
 // ─── Section Components ───────────────────────────────────────────────────────
-
 function HeroSection() {
   const heroItems = [
-    { title: "One Stop", component: Textstyle, color: 'text-purple', size: 'sm:text-7xl text-6xl', delay: 0 },
-    { title: "Creative", component: Textstyle, color: 'text-yellow', size: 'sm:text-8xl text-7xl', delay: 0.15 },
+    { title: "One Stop", component: Textstyle, color: 'text-purple', size: 'sm:text-7xl text-5xl whitespace-nowrap', delay: 0 },
+    { title: "Creative", component: Textstyle, color: 'text-yellow', size: 'sm:text-8xl text-6xl', delay: 0.15 },
   ];
-
+  const isDesktop = useMediaQuery("(min-width: 768px)")
   return (
-    <section className="relative min-h-screen flex flex-col justify-center items-center bg-gradient-to-t from-white to-transparent">
-      <div className="container mx-auto max-w-7xl text-center md:text-left">
-        {heroItems.map(({ title, component: Component, color, size, delay }) => (
+    <section className="relative min-h-screen flex items-center bg-gradient-to-t from-white to-transparent">
+      <div className="container mx-auto max-w-7xl px-6 grid grid-cols-1 md:grid-cols-2 items-center gap-10">
+
+        {/* Text kiri */}
+        <div className="text-center md:text-left">
+          {heroItems.map(({ title, component: Component, color, size, delay }) => (
+            <motion.div
+              key={title}
+              initial={{ opacity: 0, y: 60 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: 'easeOut', delay }}
+            >
+              <Component Title={title} className={`${size} w-full`} color={color} />
+            </motion.div>
+          ))}
+
           <motion.div
-            key={title}
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut', delay }}
+            transition={{ duration: 0.7, ease: 'easeOut', delay: 0.3 }}
+            className="flex gap-5 justify-center md:justify-start"
           >
-            <Component Title={title} className={`${size} w-full`} color={color} />
+            <Textstyle Title="For" className="sm:text-7xl text-5xl w-full" color="text-purple" />
+            <Textstylegreen Title="Vtubers" className="sm:text-7xl text-5xl w-full" color="text-green" />
           </motion.div>
-        ))}
 
-        <motion.div
-          initial={{ opacity: 0, y: 60 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, ease: 'easeOut', delay: 0.3 }}
-          className="flex gap-5 justify-center md:justify-start"
-        >
-          <Textstyle Title="For" className="sm:text-7xl text-6xl w-full" color="text-purple" />
-          <Textstylegreen Title="Vtubers" className="sm:text-7xl text-6xl w-full" color="text-green" />
-        </motion.div>
+          <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: 'easeOut', delay: 0.45 }}
+            className="text-md px-5 sm:px-0 md:text-xl text-gray-700 mb-10 arial"
+          >
+            More than art - We're partner for Vtuber who dream bigger
+          </motion.p>
+        </div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.45 }}
-          className="text-lg md:text-xl text-gray-700 mb-10 arial"
-        >
-          More than art - We're partner for Vtuber who dream bigger
-        </motion.p>
+        {/* Live2D kanan */}
+         {isDesktop && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: 'easeOut', delay: 0.4 }}
+            className="relative w-full h-[1000px]"
+          >
+            <div className="h-1/7 bottom-0 absolute left-0 bg-gradient-to-t from-white to-transparent w-full" />
+            <Live2DWidget modelPath="/Rigging_Karater_Nemuneko_RIG/Nemuneko_RIG.model3.json" />
+          </motion.div>
+        )}
+
       </div>
     </section>
   );
@@ -165,11 +188,11 @@ function ServicesSection() {
         <div className="max-w-7xl mx-auto">
           <div className="text-left mb-12 flex flex-col">
             <AnimateWhenVisible variants={fadeLeft}>
-              <TextstyleEliane Title="FOR CONSISTENLY" className="text-4xl sm:text-5xl w-full mb-4" color="text-purple" />
+              <TextstyleEliane Title="FOR CONSISTENLY" className="text-3xl sm:text-5xl w-full mb-4" color="text-purple" />
               <div className="flex gap-5">
-                <TextstyleEliane Title="ARTWORK" className="text-4xl sm:text-5xl w-full" color="text-yellow" />
-                <TextstyleEliane Title="AND" className="text-4xl sm:text-5xl w-full" color="text-purple" />
-                <TextstyleElianeGreen Title="BRANDS" className="text-4xl sm:text-5xl w-full" color="text-green" />
+                <TextstyleEliane Title="ARTWORK" className="text-3xl sm:text-5xl w-full" color="text-yellow" />
+                <TextstyleEliane Title="AND" className="text-3xl sm:text-5xl w-full" color="text-purple" />
+                <TextstyleElianeGreen Title="BRANDS" className="text-3xl sm:text-5xl w-full" color="text-green" />
               </div>
             </AnimateWhenVisible>
           </div>
@@ -202,7 +225,7 @@ function FeaturesSection() {
   return (
     <section id="features" className="py-10 px-6 bg-[#e9def8] relative overflow-hidden">
       <div className="absolute bottom-10 left-10 text-6xl opacity-20">★</div>
-      <div className="absolute top-20 right-40 text-4xl rotate-45">✦</div>
+      <div className="absolute top-20 right-40 text-3xl rotate-45">✦</div>
 
       <div className="container mx-auto max-w-6xl">
         <div className="grid md:grid-cols-5 grid-cols-1 gap-8 items-center">
@@ -210,10 +233,10 @@ function FeaturesSection() {
           <div className="col-span-2">
             <AnimateWhenVisible variants={fadeLeft}>
               <div className="inline-block mb-4">
-                <TextstyleEliane Title="GROW BEYOND!" className="text-4xl sm:text-5xl w-full mb-4" color="text-purple" />
+                <TextstyleEliane Title="GROW BEYOND!" className="text-3xl sm:text-5xl w-full mb-4" color="text-purple" />
                 <div className="flex gap-5">
-                  <TextstyleEliane Title="WITH" className="text-4xl sm:text-5xl w-full" color="text-yellow" />
-                  <TextstyleEliane Title="NEMUNEKO" className="text-4xl sm:text-5xl w-full" color="text-purple" />
+                  <TextstyleEliane Title="WITH" className="text-3xl sm:text-5xl w-full" color="text-yellow" />
+                  <TextstyleEliane Title="NEMUNEKO" className="text-3xl sm:text-5xl w-full" color="text-purple" />
                 </div>
                 <p className="text-lg md:text-xl text-gray-700 my-5 max-w-2xl arial">
                   More than art - We're partner for Vtuber who dream bigger
@@ -256,17 +279,17 @@ function FeaturesSection() {
 function TeamsSection() {
   return (
     <section id="teams" className="py-30 px-6 relative bg-gradient-to-b from-white via-transparent to-white">
-      <div className="absolute top-10 right-20 text-4xl sm:text-5xl rotate-12">✦</div>
+      <div className="absolute top-10 right-20 text-3xl sm:text-5xl rotate-12">✦</div>
 
       <div className="container mx-auto max-w-7xl">
         <div className="text-left mb-12 flex flex-col">
           <AnimateWhenVisible variants={fadeLeft}>
             <div className="inline-block mb-4">
-              <TextstyleEliane Title="SUPERMAN BEHIND" className="text-4xl sm:text-5xl w-full mb-4" color="text-purple" />
+              <TextstyleEliane Title="SUPERMAN BEHIND" className="text-3xl sm:text-5xl w-full mb-4" color="text-purple" />
               <div className="flex gap-5 flex-wrap">
-                <TextstyleEliane Title="ARTWORK" className="text-4xl sm:text-5xl w-full" color="text-yellow" />
-                <TextstyleEliane Title="AND" className="text-4xl sm:text-5xl w-full" color="text-purple" />
-                <TextstyleElianeGreen Title="BRAND" className="text-4xl sm:text-5xl w-full" color="text-green" />
+                <TextstyleEliane Title="ARTWORK" className="text-3xl sm:text-5xl w-full" color="text-yellow" />
+                <TextstyleEliane Title="AND" className="text-3xl sm:text-5xl w-full" color="text-purple" />
+                <TextstyleElianeGreen Title="BRAND" className="text-3xl sm:text-5xl w-full" color="text-green" />
               </div>
             </div>
           </AnimateWhenVisible>
@@ -293,11 +316,11 @@ function TestimonialsSection() {
         <div className="text-left flex flex-col">
           <div className="inline-block mb-20">
             <AnimateWhenVisible variants={fadeLeft}>
-              <TextstyleEliane Title="TESTIMONIALS" className="text-4xl sm:text-5xl w-full mb-4" color="text-purple" />
+              <TextstyleEliane Title="TESTIMONIALS" className="text-3xl sm:text-5xl w-full mb-4" color="text-purple" />
               <div className="flex gap-5">
-                <TextstyleEliane Title="WHAT" className="text-4xl sm:text-5xl w-full mb-4" color="text-purple" />
-                <TextstyleEliane Title="STREAMERS" className="text-4xl sm:text-5xl w-full" color="text-yellow" />
-                <TextstyleEliane Title="SAY" className="text-4xl sm:text-5xl w-full" color="text-purple" />
+                <TextstyleEliane Title="WHAT" className="text-3xl sm:text-5xl w-full mb-4" color="text-purple" />
+                <TextstyleEliane Title="STREAMERS" className="text-3xl sm:text-5xl w-full" color="text-yellow" />
+                <TextstyleEliane Title="SAY" className="text-3xl sm:text-5xl w-full" color="text-purple" />
               </div>
               <p className="text-lg md:text-xl text-gray-700 max-w-2xl arial">
                 More than art - We're partner for Vtuber who dream bigger
@@ -316,30 +339,31 @@ function TestimonialsSection() {
 
 function CTASection() {
   return (
-  <section className="py-20 px-4 sm:px-6">
-          <div className="container mx-auto">
-            <AnimateWhenVisible variants={scaleIn}>
-              <Card className="bg-[#e6dcff] rounded-[100px]">
-                <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl text-borsok text-primary mb-4 sm:mb-6">
-                    Can't Find What You're{' '}
-                    <span className="text-primary">Looking For?</span>
-                  </h2>
-                  <p className="text-arial text-primary/50 sm:text-lg mb-6 sm:mb-8 max-w-3xl mx-auto">
-                    Contact us to make custom project to fit with your request and personalized
-                  </p>
-                  <Link href="/order">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
-                      <Button size="lg" className="button-yellow text-2xl px-10 py-5">
-                        Request Custom Project
-                      </Button>
-                    </motion.div>
-                  </Link>
-                </CardContent>
-              </Card>
-            </AnimateWhenVisible>
-          </div>
-        </section>
+ <section className="py-20 px-4 sm:px-6">
+        <div className="container mx-auto">
+          <AnimateWhenVisible variants={scaleIn}>
+            <Card className="bg-[#e6dcff] md:rounded-[100px] ">
+              <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl text-borsok text-primary mb-4 sm:mb-6">
+                  Can't Find What You're{' '}
+                  <span className="text-primary">Looking For?</span>
+                </h2>
+                <p className="text-arial text-primary/50 sm:text-lg mb-6 sm:mb-8 max-w-3xl mx-auto">
+                  Contact us to make custom project to fit with your request and personalized
+                </p>
+                <Link href="/order">
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
+                    <Button size="lg" className="button-yellow text-2xl px-7 py-5">
+                      Request Custom Project
+                    </Button>
+                  </motion.div>
+                </Link>
+              </CardContent>
+            </Card>
+          </AnimateWhenVisible>
+        </div>
+      </section>
+
   );
 }
 

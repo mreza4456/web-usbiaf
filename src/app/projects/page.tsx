@@ -65,7 +65,7 @@ function AnimateWhenVisible({
 
 function StaggerContainer({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   const ref = useRef(null);
-  const inView = useInView(ref, { once: false, margin: '-80px' });
+  const inView = useInView(ref, { once: true, margin: '-80px' });
 
   return (
     <motion.div
@@ -322,30 +322,31 @@ export default function Projects() {
         </section>
 
         {/* ── CTA Section ── */}
-        <section className="py-20 px-4 sm:px-6">
-          <div className="container mx-auto">
-            <AnimateWhenVisible variants={scaleIn}>
-              <Card className="bg-[#e6dcff] rounded-[100px]">
-                <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
-                  <h2 className="text-3xl sm:text-4xl md:text-5xl text-borsok text-primary mb-4 sm:mb-6">
-                    Can't Find What You're{' '}
-                    <span className="text-primary">Looking For?</span>
-                  </h2>
-                  <p className="text-arial text-primary/50 sm:text-lg mb-6 sm:mb-8 max-w-3xl mx-auto">
-                    Contact us to make custom project to fit with your request and personalized
-                  </p>
-                  <Link href="/order">
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
-                      <Button size="lg" className="button-yellow text-2xl px-10 py-5">
-                        Request Custom Project
-                      </Button>
-                    </motion.div>
-                  </Link>
-                </CardContent>
-              </Card>
-            </AnimateWhenVisible>
-          </div>
-        </section>
+       <section className="py-20 px-4 sm:px-6">
+        <div className="container mx-auto">
+          <AnimateWhenVisible variants={scaleIn}>
+            <Card className="bg-[#e6dcff] md:rounded-[100px] ">
+              <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
+                <h2 className="text-3xl sm:text-4xl md:text-5xl text-borsok text-primary mb-4 sm:mb-6">
+                  Can't Find What You're{' '}
+                  <span className="text-primary">Looking For?</span>
+                </h2>
+                <p className="text-arial text-primary/50 sm:text-lg mb-6 sm:mb-8 max-w-3xl mx-auto">
+                  Contact us to make custom project to fit with your request and personalized
+                </p>
+                <Link href="/order">
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
+                    <Button size="lg" className="button-yellow text-2xl px-7 py-5">
+                      Request Custom Project
+                    </Button>
+                  </motion.div>
+                </Link>
+              </CardContent>
+            </Card>
+          </AnimateWhenVisible>
+        </div>
+      </section>
+
 
       </div>
     </div>

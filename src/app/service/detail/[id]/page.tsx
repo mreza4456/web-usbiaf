@@ -257,8 +257,8 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
   const ratingDistribution = getRatingDistribution();
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4 mt-20">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen  py-8  mt-20">
+      <div className="max-w-7xl mx-auto bg-white px-5">
         {/* Header Navigation */}
         <div className="flex justify-between items-center mb-8">
           <Button
