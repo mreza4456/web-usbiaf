@@ -16,7 +16,7 @@ import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { ICategory, IPackageCategories, IImageCategories } from "@/interface"
-import { Plus, Trash2, Upload, X, Image as ImageIcon } from "lucide-react"
+import { Plus, Trash2, Upload, X, Image as ImageIcon, GripVertical, ArrowUp, ArrowDown } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { uploadImage, deleteImage } from "@/action/upload"
@@ -37,6 +37,8 @@ const imageSchema = z.object({
     image_url: z.string().min(1, "URL gambar harus diisi"),
     categories_id: z.union([z.string(), z.number()]).optional(),
     created_at: z.string().optional(),
+    // urutan tampil gambar, disimpan supaya bisa dipersist ke DB
+    sort_order: z.number().optional(),
 })
 
 const categorySchema = z.object({
@@ -64,18 +66,27 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
     const [urlInput, setUrlInput] = React.useState("")
     const fileInputRef = React.useRef<HTMLInputElement>(null)
 
+    // state untuk drag & drop reorder gambar
+    const [dragIndex, setDragIndex] = React.useState<number | null>(null)
+    const [overIndex, setOverIndex] = React.useState<number | null>(null)
+
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
         defaultValues: {
             name: initialData?.name || "",
             description: initialData?.description || "",
             start_price: initialData?.start_price || "",
-            images: initialData?.images?.map(img => ({
-                id: img.id,
-                image_url: img.image_url,
-                categories_id: img.categories_id,
-                created_at: img.created_at,
-            })) || [],
+            images: (initialData?.images || [])
+                // urutkan dulu dari data awal berdasarkan sort_order jika ada
+                .slice()
+                .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                .map((img, idx) => ({
+                    id: img.id,
+                    image_url: img.image_url,
+                    categories_id: img.categories_id,
+                    created_at: img.created_at,
+                    sort_order: (img as any).sort_order ?? idx,
+                })),
             packages: initialData?.packages?.map(pkg => ({
                 id: pkg.id,
                 name: pkg.name,
@@ -86,7 +97,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
         },
     })
 
-    const { fields: imageFields, append: appendImage, remove: removeImage } = useFieldArray({
+    const { fields: imageFields, append: appendImage, remove: removeImage, move: moveImage } = useFieldArray({
         control: form.control,
         name: "images",
     })
@@ -95,6 +106,16 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
         control: form.control,
         name: "packages",
     })
+
+    // pastikan sort_order selalu sinkron dengan posisi array setiap kali urutan berubah
+    const syncSortOrder = React.useCallback(() => {
+        const current = form.getValues("images")
+        current.forEach((img, idx) => {
+            if (img.sort_order !== idx) {
+                form.setValue(`images.${idx}.sort_order`, idx, { shouldDirty: true })
+            }
+        })
+    }, [form])
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
@@ -131,7 +152,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
 
                 appendImage({
                     image_url: result.url!,
-
+                    sort_order: imageFields.length,
                 })
             }
 
@@ -155,6 +176,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
 
         appendImage({
             image_url: urlInput.trim(),
+            sort_order: imageFields.length,
         })
 
         setUrlInput("")
@@ -170,6 +192,46 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
 
         removeImage(index)
         toast.success("Gambar berhasil dihapus")
+        setTimeout(syncSortOrder, 0)
+    }
+
+    // ---- Reorder handlers ----
+    const handleMoveImage = (from: number, to: number) => {
+        if (to < 0 || to >= imageFields.length) return
+        moveImage(from, to)
+        setTimeout(syncSortOrder, 0)
+    }
+
+    const handleDragStart = (index: number) => (e: React.DragEvent) => {
+        setDragIndex(index)
+        e.dataTransfer.effectAllowed = "move"
+    }
+
+    const handleDragEnter = (index: number) => (e: React.DragEvent) => {
+        e.preventDefault()
+        if (index !== overIndex) setOverIndex(index)
+    }
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault()
+    }
+
+    const handleDrop = (index: number) => (e: React.DragEvent) => {
+        e.preventDefault()
+        if (dragIndex === null || dragIndex === index) {
+            setDragIndex(null)
+            setOverIndex(null)
+            return
+        }
+        moveImage(dragIndex, index)
+        setTimeout(syncSortOrder, 0)
+        setDragIndex(null)
+        setOverIndex(null)
+    }
+
+    const handleDragEnd = () => {
+        setDragIndex(null)
+        setOverIndex(null)
     }
 
     const addPackage = () => {
@@ -299,12 +361,27 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                             </TabsContent>
                         </Tabs>
 
-                        {/* Image Gallery */}
+                        {/* Image Gallery - drag & drop + tombol panah untuk reorder */}
                         {imageFields.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {imageFields.map((field, index) => (
-                                    <div key={field.id} className="relative group">
-                                        <div className="relative w-full h-48 border-2 rounded-lg overflow-hidden">
+                                    <div
+                                        key={field.id}
+                                        draggable
+                                        onDragStart={handleDragStart(index)}
+                                        onDragEnter={handleDragEnter(index)}
+                                        onDragOver={handleDragOver}
+                                        onDrop={handleDrop(index)}
+                                        onDragEnd={handleDragEnd}
+                                        className={`relative group cursor-move transition-transform ${
+                                            dragIndex === index ? "opacity-40" : ""
+                                        } ${
+                                            overIndex === index && dragIndex !== null && dragIndex !== index
+                                                ? "ring-2 ring-slate-800 rounded-lg"
+                                                : ""
+                                        }`}
+                                    >
+                                        <div className="relative w-full h-48 border-2 rounded-lg overflow-hidden bg-gray-100">
                                             <img
                                                 src={field.image_url}
                                                 alt={`Image ${index + 1}`}
@@ -313,16 +390,52 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                                     e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EError%3C/text%3E%3C/svg%3E"
                                                 }}
                                             />
+
+                                            {/* Badge nomor urutan */}
+                                            <div className="absolute top-2 left-2 bg-slate-900/80 text-white text-xs font-medium h-6 w-6 rounded-full flex items-center justify-center">
+                                                {index + 1}
+                                            </div>
+
+                                            {/* Grip handle, penanda bisa di-drag */}
+                                            <div className="absolute bottom-2 left-2 bg-black/50 text-white rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <GripVertical className="h-4 w-4" />
+                                            </div>
                                         </div>
+
+                                        {/* Tombol hapus */}
                                         <Button
                                             type="button"
                                             variant="destructive"
                                             size="icon"
-                                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7"
                                             onClick={() => handleRemoveImage(index)}
                                         >
                                             <Trash2 className="h-4 w-4" />
                                         </Button>
+
+                                        {/* Tombol panah naik/turun, fallback selain drag & drop */}
+                                        <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-7 w-7"
+                                                disabled={index === 0}
+                                                onClick={() => handleMoveImage(index, index - 1)}
+                                            >
+                                                <ArrowUp className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-7 w-7"
+                                                disabled={index === imageFields.length - 1}
+                                                onClick={() => handleMoveImage(index, index + 1)}
+                                            >
+                                                <ArrowDown className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -331,6 +444,12 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                 <ImageIcon className="h-12 w-12 mb-2" />
                                 <p className="text-sm">Belum ada gambar. Upload atau tambahkan URL gambar.</p>
                             </div>
+                        )}
+
+                        {imageFields.length > 1 && (
+                            <p className="text-xs text-muted-foreground">
+                                Tips: geser (drag) gambar untuk mengubah urutan, atau gunakan tombol panah saat hover.
+                            </p>
                         )}
 
                         <FormMessage>{form.formState.errors.images?.message}</FormMessage>

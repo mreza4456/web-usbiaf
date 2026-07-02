@@ -11,6 +11,7 @@ import {
   IconFileWord,
   IconFolder,
   IconHelp,
+  IconImageInPicture,
   IconInnerShadowTop,
   IconListDetails,
   IconMessage2,
@@ -23,6 +24,7 @@ import {
   IconUsers,
   IconUsersPlus,
 } from "@tabler/icons-react"
+
 
 
 import { NavMain } from "@/components/nav-main"
@@ -94,6 +96,11 @@ const data = {
       title: "Chat Customers",
       url: "/admin/chat",
       icon: IconMessage2,
+    },
+    {
+      title: "Posters",
+      url: "/admin/posters",
+      icon: IconImageInPicture,
     },
   ],
 }

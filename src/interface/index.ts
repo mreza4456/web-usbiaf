@@ -178,7 +178,7 @@ export interface ICategory {
 export interface IImageCategories {
   id: number;
   image_url: string;
-
+  sort_order?: number;
   categories_id?: string // NEW
   created_at?: string
   categories?: ICategory;

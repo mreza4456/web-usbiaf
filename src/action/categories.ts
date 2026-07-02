@@ -74,10 +74,12 @@ export const addCategories = async (category: Partial<ICategory>, images: Partia
     }
 
     // 2. Insert semua images dengan categories_id
+    // sort_order diambil dari urutan array (index) sesuai urutan di form
     if (images && images.length > 0) {
-      const imagesToInsert = images.map(img => ({
+      const imagesToInsert = images.map((img, index) => ({
         image_url: img.image_url,
         categories_id: categoryData.id,
+        sort_order: index,
       }));
 
       const { error: imagesError } = await supabase
@@ -150,12 +152,16 @@ export const updateCategories = async (
       }
     }
 
-    // 4. Insert images baru (yang tidak punya id)
-    const newImages = images.filter(img => !img.id);
+    // 4. Insert images baru (yang tidak punya id), sort_order sesuai posisi di array form
+    const newImages = images
+      .map((img, index) => ({ img, index }))
+      .filter(({ img }) => !img.id);
+
     if (newImages.length > 0) {
-      const imagesToInsert = newImages.map(img => ({
+      const imagesToInsert = newImages.map(({ img, index }) => ({
         image_url: img.image_url,
         categories_id: id,
+        sort_order: index,
       }));
 
       const { error: insertError } = await supabase
@@ -164,6 +170,28 @@ export const updateCategories = async (
       
       if (insertError) {
         console.error("Images insert error:", insertError);
+      }
+    }
+
+    // 5. Update sort_order untuk images yang sudah ada (yang punya id)
+    // Ini bagian yang sebelumnya hilang, sehingga reorder tidak pernah tersimpan.
+    const existingToUpdate = images
+      .map((img, index) => ({ img, index }))
+      .filter(({ img }) => img.id);
+
+    if (existingToUpdate.length > 0) {
+      const updateResults = await Promise.all(
+        existingToUpdate.map(({ img, index }) =>
+          supabase
+            .from("image_categories")
+            .update({ sort_order: index })
+            .eq("id", img.id!)
+        )
+      );
+
+      const updateError = updateResults.find(r => r.error);
+      if (updateError?.error) {
+        console.error("Images sort_order update error:", updateError.error);
       }
     }
 
@@ -260,6 +288,8 @@ export const getCategoriesById = async (id: string) => {
         packages:categories_package(*)
       `)
       .eq("id", id)
+      // urutkan nested images berdasarkan sort_order (ascending)
+      .order("sort_order", { foreignTable: "image_categories", ascending: true })
       .single();
 
     if (error) {
@@ -284,7 +314,9 @@ export const getAllCategories = async () => {
         *,
         images:image_categories(*)
       `)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      // urutkan nested images berdasarkan sort_order (ascending)
+      .order("sort_order", { foreignTable: "image_categories", ascending: true });
 
     if (error) {
       console.error("getAllCategories error:", error);
@@ -309,7 +341,9 @@ export const getActiveCategories = async (filters: any) => {
         images:image_categories(*)
       `)
       .eq("is_active", true)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      // urutkan nested images berdasarkan sort_order (ascending)
+      .order("sort_order", { foreignTable: "image_categories", ascending: true });
 
     if (filters.search) {
       qry = qry.ilike("name", `%${filters.search}%`);
