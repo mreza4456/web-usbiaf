@@ -190,9 +190,9 @@ function ServicesSection() {
             <AnimateWhenVisible variants={fadeLeft}>
               <TextstyleEliane Title="FOR CONSISTENLY" className="text-3xl sm:text-5xl w-full mb-4" color="text-purple" />
               <div className="flex gap-5">
-                <TextstyleEliane Title="ARTWORK" className="text-3xl sm:text-5xl w-full" color="text-yellow" />
-                <TextstyleEliane Title="AND" className="text-3xl sm:text-5xl w-full" color="text-purple" />
-                <TextstyleElianeGreen Title="BRANDS" className="text-3xl sm:text-5xl w-full" color="text-green" />
+                <TextstyleEliane Title="ARTWORK" className="text-2xl sm:text-5xl w-full" color="text-yellow" />
+                <TextstyleEliane Title="AND" className="text-2xl sm:text-5xl w-full" color="text-purple" />
+                <TextstyleElianeGreen Title="BRANDS" className="text-2xl sm:text-5xl w-full" color="text-green" />
               </div>
             </AnimateWhenVisible>
           </div>
@@ -353,7 +353,7 @@ function CTASection() {
                 </p>
                 <Link href="/order">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
-                    <Button size="lg" className="button-yellow text-2xl px-7 py-5">
+                    <Button size="sm" className="button-yellow text-xl p-5 ">
                       Request Custom Project
                     </Button>
                   </motion.div>

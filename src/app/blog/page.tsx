@@ -255,8 +255,8 @@ export default function BlogPage() {
         <section className="py-20 px-4 sm:px-6">
           <div className="container mx-auto">
 
-            <AnimateWhenVisible className="flex items-center justify-between mb-8">
-              <Button className='px-7 py-5 cursor-pointer rounded-full bg-white border-primary border-4 arial'>
+            <AnimateWhenVisible className="flex flex-col-reverse md:flex-row items-center justify-between mb-8 ">
+              <Button className='px-7 py-5 cursor-pointer rounded-full bg-white border-primary border-4 arial '>
                 About Nemuneko
               </Button>
               <h5 className='text-2xl max-w-xl text-arial text-end text-primary'>Nemuneko Studio is a group of 7 Talented
@@ -366,7 +366,7 @@ export default function BlogPage() {
 
         {/* ── FAQ Section ── */}
         <section className='max-w-7xl w-full mx-auto'>
-          <div className="grid grid-cols-3 p-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-10">
             {faqCategories.map((cat) => (
               <StaggerContainer key={cat.title} className='p-5 my-5'>
                 {/* Category title */}
@@ -396,12 +396,12 @@ export default function BlogPage() {
           {/* Support CTA */}
           <div>
             <AnimateWhenVisible>
-              <h1 className='text-center mx-auto text-4xl text-primary text-borsok max-w-2xl'>
+              <h1 className='text-center mx-auto md:text-4xl text-2xl text-primary text-borsok max-w-2xl'>
                 Have a specific issue with your account or commission?
               </h1>
             </AnimateWhenVisible>
 
-            <StaggerContainer className="max-w-5xl mt-10 mx-auto flex flex-col gap-5 pb-16">
+            <StaggerContainer className="max-w-5xl mt-10 mx-auto flex flex-col gap-5 pb-16 px-10">
               {supportOptions.map((opt) => (
                 <motion.div
                   key={opt.label}

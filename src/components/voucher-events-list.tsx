@@ -96,7 +96,7 @@ export default function VoucherEventsList() {
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center py-12">
           <Gift className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-          <p className="text-gray-500">Belum ada voucher event yang tersedia</p>
+          <p className="text-gray-500">No event vouchers are currently available</p>
         </div>
       </div>
     );

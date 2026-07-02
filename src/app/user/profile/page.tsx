@@ -136,7 +136,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen  ">
       <div className="max-w-7xl mx-auto">
-        
+
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6 ">
           <div className="h-32 bg-secondary"></div>
 
@@ -290,7 +290,7 @@ export default function ProfilePage() {
 
         {/* Link to Milestone Page */}
         <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-md p-6 border-2 border-purple-200">
-          <div className="flex items-center justify-between">
+          <div className="flex md:flex-row flex-col gap-5 items-center justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <Award className="w-6 h-6 text-purple-600" />
@@ -304,7 +304,7 @@ export default function ProfilePage() {
               </Badge>
             </div>
             <Link href="/milestone">
-              <Button className="bg-purple-600 hover:bg-purple-700">
+              <Button className="bg-purple-600 hover:bg-purple-700 ">
                 View Milestones
                 <Award className="w-4 h-4 ml-2" />
               </Button>

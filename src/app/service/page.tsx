@@ -334,7 +334,7 @@ export default function ServicesPage() {
                 </p>
                 <Link href="/order">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
-                    <Button size="lg" className="button-yellow text-2xl px-7 py-5">
+                    <Button size="sm" className="button-yellow text-xl p-5 ">
                       Request Custom Project
                     </Button>
                   </motion.div>

@@ -147,10 +147,10 @@ export default function Projects() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, ease: 'easeOut' }}
             >
-              <div className="flex gap-5 justify-center w-full mb-4 mt-15">
-                <Textstyle Title="OUR" className="text-4xl sm:text-7xl w-full " color="text-purple" />
-                <Textstyle Title="RECENTS" className="text-4xl sm:text-7xl w-full" color="text-yellow" />
-                <Textstylegreen Title="WORKS" className="text-4xl sm:text-7xl w-full" color="text-green" />
+              <div className="flex gap-5 justify-center w-full  mb-4 mt-15">
+                <Textstyle Title="OUR" className="text-3xl sm:text-7xl w-full " color="text-purple" />
+                <Textstyle Title="RECENTS" className="text-3xl sm:text-7xl w-full" color="text-yellow" />
+                <Textstylegreen Title="WORKS" className="text-3xl sm:text-7xl w-full" color="text-green" />
               </div>
             </motion.div>
             <div className="w-full max-w-3xl mx-auto">
@@ -322,7 +322,7 @@ export default function Projects() {
         </section>
 
         {/* ── CTA Section ── */}
-       <section className="py-20 px-4 sm:px-6">
+    <section className="py-20 px-4 sm:px-6">
         <div className="container mx-auto">
           <AnimateWhenVisible variants={scaleIn}>
             <Card className="bg-[#e6dcff] md:rounded-[100px] ">
@@ -336,7 +336,7 @@ export default function Projects() {
                 </p>
                 <Link href="/order">
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.96 }}>
-                    <Button size="lg" className="button-yellow text-2xl px-7 py-5">
+                    <Button size="sm" className="button-yellow text-xl p-5 ">
                       Request Custom Project
                     </Button>
                   </motion.div>

@@ -50,7 +50,7 @@ export default function VoucherPage() {
     }
 
     const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('id-ID', {
+        return new Date(dateString).toLocaleDateString('en-US', {
             day: 'numeric',
             month: 'long',
             year: 'numeric'
@@ -110,8 +110,8 @@ export default function VoucherPage() {
                                 <Ticket className="w-8 h-8 text-green-400" />
                                 <span className="text-3xl font-bold text-green-400">{availableVouchers.length}</span>
                             </div>
-                            <p className="text-gray-300 font-medium">Voucher Tersedia</p>
-                            <p className="text-gray-500 text-sm mt-1">Siap digunakan</p>
+                            <p className="text-gray-300 font-medium">Available Vouchers</p>
+                            <p className="text-gray-500 text-sm mt-1">Ready to use</p>
                         </div>
 
                         <div className="bg-white shadow-lg rounded-xl p-6">
@@ -119,8 +119,8 @@ export default function VoucherPage() {
                                 <Check className="w-8 h-8 text-gray-400" />
                                 <span className="text-3xl font-bold text-gray-400">{usedVouchers.length}</span>
                             </div>
-                            <p className="text-gray-300 font-medium">Voucher Terpakai</p>
-                            <p className="text-gray-500 text-sm mt-1">Sudah digunakan</p>
+                            <p className="text-gray-300 font-medium">Used Vouchers</p>
+                            <p className="text-gray-500 text-sm mt-1">Already used</p>
                         </div>
 
                         <div className="bg-white shadow-lg rounded-xl p-6">
@@ -128,8 +128,8 @@ export default function VoucherPage() {
                                 <AlertCircle className="w-8 h-8 text-red-400" />
                                 <span className="text-3xl font-bold text-red-400">{expiredVouchers.length}</span>
                             </div>
-                            <p className="text-gray-300 font-medium">Voucher Kadaluarsa</p>
-                            <p className="text-gray-500 text-sm mt-1">Sudah tidak berlaku</p>
+                            <p className="text-gray-300 font-medium">Expired Vouchers</p>
+                            <p className="text-gray-500 text-sm mt-1">No longer valid</p>
                         </div>
                     </div>
                 </div>
@@ -155,7 +155,7 @@ export default function VoucherPage() {
                             : 'text-gray-400 hover:text-gray-300'
                             }`}
                     >
-                        Tersedia ({availableVouchers.length})
+                        Available ({availableVouchers.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('used')}
@@ -164,7 +164,7 @@ export default function VoucherPage() {
                             : 'text-gray-400 hover:text-gray-300'
                             }`}
                     >
-                        Terpakai ({usedVouchers.length})
+                        Used ({usedVouchers.length})
                     </button>
                     <button
                         onClick={() => setActiveTab('expired')}
@@ -173,7 +173,7 @@ export default function VoucherPage() {
                             : 'text-gray-400 hover:text-gray-300'
                             }`}
                     >
-                        Kadaluarsa ({expiredVouchers.length})
+                        Expired ({expiredVouchers.length})
                     </button>
                 </div>
 
@@ -210,7 +210,7 @@ export default function VoucherPage() {
                                 {daysLeft <= 7 && daysLeft > 0 && (
                                     <div className="mt-2 bg-yellow-500/20 border border-yellow-500/50 rounded-lg p-2">
                                         <p className="text-yellow-400 text-xs font-semibold">
-                                            ⚠️ is Over After {daysLeft} Days!
+                                            ⚠️ Expires in {daysLeft} Days!
                                         </p>
                                     </div>
                                 )}
@@ -225,7 +225,7 @@ export default function VoucherPage() {
                             className="relative bg-gradient-to-br from-gray-800/20 to-gray-700/10 border-2 border-gray-700/50 rounded-2xl p-6 opacity-70"
                         >
                             <div className="absolute top-4 right-4 bg-gray-600 text-white text-xs font-bold px-3 py-1 rounded-full">
-                                TERPAKAI
+                                USED
                             </div>
 
                             <div className="mb-4">
@@ -245,7 +245,7 @@ export default function VoucherPage() {
 
                             <div className="flex items-center gap-2 text-gray-500 text-sm">
                                 <Check className="w-4 h-4" />
-                                <span>Sudah digunakan</span>
+                                <span>Already used</span>
                             </div>
                         </div>
                     ))}
@@ -291,12 +291,12 @@ export default function VoucherPage() {
                                     <Ticket className="w-12 h-12 text-gray-500" />
                                 </div>
                                 <h3 className="text-2xl font-bold text-gray-400 mb-2">
-                                    Tidak ada voucher
+                                    No vouchers
                                 </h3>
                                 <p className="text-gray-500 text-center max-w-md mb-6">
-                                    {activeTab === 'available' && 'Belum ada voucher yang tersedia. Selesaikan pesanan untuk mendapatkan voucher.'}
-                                    {activeTab === 'used' && 'Belum ada voucher yang digunakan.'}
-                                    {activeTab === 'expired' && 'Tidak ada voucher yang kadaluarsa.'}
+                                    {activeTab === 'available' && 'No vouchers available yet. Complete an order to get a voucher.'}
+                                    {activeTab === 'used' && 'No vouchers have been used yet.'}
+                                    {activeTab === 'expired' && 'No expired vouchers.'}
                                 </p>
                                 {activeTab === 'available' && (
                                     <Link
@@ -304,7 +304,7 @@ export default function VoucherPage() {
                                         className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D78FEE] to-[#8B5CF6] text-white px-6 py-3 rounded-lg font-semibold hover:scale-105 transition-transform"
                                     >
                                         <Sparkles className="w-5 h-5" />
-                                        Mulai Order Sekarang
+                                        Start Ordering Now
                                     </Link>
                                 )}
                             </div>
