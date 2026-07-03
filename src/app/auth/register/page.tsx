@@ -327,167 +327,167 @@ export default function Register(): React.ReactElement {
     return (
         <div className="min-h-screen bg-radial from-transparent to-white text-primary flex items-center justify-center p-4">
             <div className="relative z-10 w-full max-w-4xl  mx-auto">
-                <Card className="bg-white border-primary/30 grid grid-cols-2 shadow-lg rounded-4xl">
-                    <div className="relative overflow-hidden">
-                             <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
+                <Card className="bg-white border-0 shadow-none sm:border-primary/30 grid sm:grid-cols-2 sm:shadow-lg rounded-4xl">
+                    <div className="relative overflow-hidden ">
+                        <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
                         <img
                             src="/images/airi.png"
                             alt="Login Illustration"
-                            className="w-full absolute left-1/2 max-w-sm -translate-x-1/2"
+                            className="w-full hidden sm:block absolute left-1/2 max-w-sm -translate-x-1/2"
                         />
                     </div>
-                    <div className='p-5'>
-                    <CardHeader className="space-y-1 pb-4">
-                        <CardTitle className="text-2xl text-primary">
-                            Create New Account
-                        </CardTitle>
-                        <CardDescription className="text-gray-500">
-                            Fill in the information below to get started
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {error && (
-                            <Alert className="mb-4 bg-red-500/10 border-red-500/50 text-red-400">
-                                <AlertCircle className="w-4 h-4" />
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
-                        )}
+                    <div className='pY-5 sm:px-5'>
+                        <CardHeader className="space-y-1 pb-4">
+                            <CardTitle className="text-2xl text-primary">
+                                Create New Account
+                            </CardTitle>
+                            <CardDescription className="text-gray-500">
+                                Fill in the information below to get started
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {error && (
+                                <Alert className="mb-4 bg-red-500/10 border-red-500/50 text-red-400">
+                                    <AlertCircle className="w-4 h-4" />
+                                    <AlertDescription>{error}</AlertDescription>
+                                </Alert>
+                            )}
 
-                        {success && (
-                            <Alert className="mb-4 bg-green-500/10 border-green-500/50 text-green-400">
-                                <CheckCircle2 className="w-4 h-4" />
-                                <AlertDescription>{success}</AlertDescription>
-                            </Alert>
-                        )}
+                            {success && (
+                                <Alert className="mb-4 bg-green-500/10 border-green-500/50 text-green-400">
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    <AlertDescription>{success}</AlertDescription>
+                                </Alert>
+                            )}
 
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <label className="text-sm text-gray-500 flex items-center">
-                                    <User className="w-4 h-4 mr-2" />
-                                    Full Name
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="John Doe"
-                                    {...registerForm.register('full_name', {
-                                        required: 'Full name is required',
-                                        minLength: { value: 3, message: 'Name must be at least 3 characters' }
-                                    })}
-                                    className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
-                                />
-                                {registerForm.formState.errors.full_name && (
-                                    <p className="text-sm text-red-400 flex items-center mt-1">
-                                        <AlertCircle className="w-3 h-3 mr-1" />
-                                        {registerForm.formState.errors.full_name.message}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm text-gray-500 flex items-center">
-                                    <Mail className="w-4 h-4 mr-2" />
-                                    Email
-                                </label>
-                                <input
-                                    type="email"
-                                    placeholder="hello@example.com"
-                                    {...registerForm.register('email', {
-                                        required: 'Email is required',
-                                        pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' }
-                                    })}
-                                    className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
-                                />
-                                {registerForm.formState.errors.email && (
-                                    <p className="text-sm text-red-400 flex items-center mt-1">
-                                        <AlertCircle className="w-3 h-3 mr-1" />
-                                        {registerForm.formState.errors.email.message}
-                                    </p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm text-gray-500 flex items-center">
-                                    <Lock className="w-4 h-4 mr-2" />
-                                    Password
-                                </label>
-                                <div className="relative">
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm text-gray-500 flex items-center">
+                                        <User className="w-4 h-4 mr-2" />
+                                        Username
+                                    </label>
                                     <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        placeholder="••••••••"
-                                        {...registerForm.register('password', {
-                                            required: 'Password is required',
-                                            minLength: { value: 8, message: 'Password must be at least 8 characters' },
-                                            pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Password must contain uppercase, lowercase and number' }
+                                        type="text"
+                                        placeholder="Enter Username"
+                                        {...registerForm.register('full_name', {
+                                            required: 'Username is required',
+                                            minLength: { value: 3, message: 'Name must be at least 3 characters' }
                                         })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
+                                    {registerForm.formState.errors.full_name && (
+                                        <p className="text-sm text-red-400 flex items-center mt-1">
+                                            <AlertCircle className="w-3 h-3 mr-1" />
+                                            {registerForm.formState.errors.full_name.message}
+                                        </p>
+                                    )}
                                 </div>
-                                {registerForm.formState.errors.password && (
-                                    <p className="text-sm text-red-400 flex items-center mt-1">
-                                        <AlertCircle className="w-3 h-3 mr-1" />
-                                        {registerForm.formState.errors.password.message}
-                                    </p>
-                                )}
-                            </div>
 
-                            <div className="space-y-2">
-                                <label className="text-sm text-gray-500 flex items-center">
-                                    <Lock className="w-4 h-4 mr-2" />
-                                    Confirm Password
-                                </label>
-                                <div className="relative">
+                                <div className="space-y-2">
+                                    <label className="text-sm text-gray-500 flex items-center">
+                                        <Mail className="w-4 h-4 mr-2" />
+                                        Email
+                                    </label>
                                     <input
-                                        type={showConfirmPassword ? 'text' : 'password'}
-                                        placeholder="••••••••"
-                                        {...registerForm.register('confirmPassword', { required: 'Please confirm your password' })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                        type="email"
+                                        placeholder="Enter Email"
+                                        {...registerForm.register('email', {
+                                            required: 'Email is required',
+                                            pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' }
+                                        })}
+                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
-                                    >
-                                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
+                                    {registerForm.formState.errors.email && (
+                                        <p className="text-sm text-red-400 flex items-center mt-1">
+                                            <AlertCircle className="w-3 h-3 mr-1" />
+                                            {registerForm.formState.errors.email.message}
+                                        </p>
+                                    )}
                                 </div>
-                                {registerForm.formState.errors.confirmPassword && (
-                                    <p className="text-sm text-red-400 flex items-center mt-1">
-                                        <AlertCircle className="w-3 h-3 mr-1" />
-                                        {registerForm.formState.errors.confirmPassword.message}
-                                    </p>
-                                )}
+
+                                <div className="space-y-2">
+                                    <label className="text-sm text-gray-500 flex items-center">
+                                        <Lock className="w-4 h-4 mr-2" />
+                                        Password
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? 'text' : 'password'}
+                                            placeholder="Enter Password"
+                                            {...registerForm.register('password', {
+                                                required: 'Password is required',
+                                                minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                                                pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Password must contain uppercase, lowercase and number' }
+                                            })}
+                                            className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                                        >
+                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        </button>
+                                    </div>
+                                    {registerForm.formState.errors.password && (
+                                        <p className="text-sm text-red-400 flex items-center mt-1">
+                                            <AlertCircle className="w-3 h-3 mr-1" />
+                                            {registerForm.formState.errors.password.message}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm text-gray-500 flex items-center">
+                                        <Lock className="w-4 h-4 mr-2" />
+                                        Confirm Password
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showConfirmPassword ? 'text' : 'password'}
+                                            placeholder="Enter Confirm Password"
+                                            {...registerForm.register('confirmPassword', { required: 'Please confirm your password' })}
+                                            className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        </button>
+                                    </div>
+                                    {registerForm.formState.errors.confirmPassword && (
+                                        <p className="text-sm text-red-400 flex items-center mt-1">
+                                            <AlertCircle className="w-3 h-3 mr-1" />
+                                            {registerForm.formState.errors.confirmPassword.message}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <label className="flex items-start space-x-2 cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        {...registerForm.register('agreeTerms', { required: 'You must agree to the terms' })}
+                                        className="w-4 h-4 mt-0.5 rounded border-[#9B5DE0]/30 bg-white/5 text-[#D78FEE] focus:ring-[#D78FEE] focus:ring-offset-0"
+                                    />
+                                    <span className="text-sm text-gray-500">
+                                        I agree to the{' '}
+                                        <a href="#" className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors">Terms of Service</a>{' '}
+                                        and{' '}
+                                        <a href="#" className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors">Privacy Policy</a>
+                                    </span>
+                                </label>
+
+                                <Button
+                                    onClick={() => void registerForm.handleSubmit(handleRegister)()}
+                                    disabled={isSubmitting}
+                                    className="w-full bg-primary hover:from-[#8B4DD0] hover:to-[#C77FDE] text-white py-6"
+                                >
+                                    {isSubmitting ? 'Creating account...' : 'Create Account'}
+                                </Button>
                             </div>
-
-                            <label className="flex items-start space-x-2 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    {...registerForm.register('agreeTerms', { required: 'You must agree to the terms' })}
-                                    className="w-4 h-4 mt-0.5 rounded border-[#9B5DE0]/30 bg-white/5 text-[#D78FEE] focus:ring-[#D78FEE] focus:ring-offset-0"
-                                />
-                                <span className="text-sm text-gray-500">
-                                    I agree to the{' '}
-                                    <a href="#" className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors">Terms of Service</a>{' '}
-                                    and{' '}
-                                    <a href="#" className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors">Privacy Policy</a>
-                                </span>
-                            </label>
-
-                            <Button
-                                onClick={() => void registerForm.handleSubmit(handleRegister)()}
-                                disabled={isSubmitting}
-                                className="w-full bg-primary hover:from-[#8B4DD0] hover:to-[#C77FDE] text-white py-6"
-                            >
-                                {isSubmitting ? 'Creating account...' : 'Create Account'}
-                            </Button>
-                        </div>
-                    </CardContent>
+                        </CardContent>
                     </div>
                 </Card>
 

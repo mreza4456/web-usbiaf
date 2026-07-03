@@ -126,16 +126,16 @@ export default function Login(): React.ReactElement {
   return (
     <div className="min-h-screen bg-radial from-transparent to-white text-primary flex items-center justify-center p-4">
       <div className="relative z-10 w-full max-w-4xl  mx-auto">
-        <Card className="bg-white border-primary/30 grid grid-cols-2 shadow-lg rounded-4xl">
+        <Card className="bg-white border-0 shadow-none sm:border-primary/30 grid sm:grid-cols-2 sm:shadow-lg rounded-4xl">
         <div className="relative overflow-hidden ">
           <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
           <img
             src="/images/airi.png"
             alt="Login Illustration"
-            className="w-full absolute left-1/2 max-w-sm -translate-x-1/2"
+            className="w-full hidden sm:block absolute left-1/2 max-w-sm -translate-x-1/2"
           />
         </div>
-          <div className="p-5">
+          <div className="py-5 sm:px-5 ">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-2xl text-primary">Sign In</CardTitle>
               <CardDescription className="text-gray-500">
@@ -165,7 +165,7 @@ export default function Login(): React.ReactElement {
                   </label>
                   <input
                     type="email"
-                    placeholder="hello@example.com"
+                    placeholder="Enter Email"
                     onKeyDown={handleKeyPress}
                     {...loginForm.register("email")}
                     className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
@@ -180,7 +180,7 @@ export default function Login(): React.ReactElement {
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder="Enter Password"
                       onKeyDown={handleKeyPress}
                       {...loginForm.register("password")}
                       className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
@@ -218,23 +218,16 @@ export default function Login(): React.ReactElement {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className=" gap-4">
                 <Button
                   type="button"
                   onClick={() => void handleOAuthLogin("google")}
-                  className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors"
+                  className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors w-full py-5 my-3"
                 >
                   <Chrome className="w-5 h-5 mr-2" />
                   Google
                 </Button>
-                <Button
-                  type="button"
-                  onClick={() => void handleOAuthLogin("twitch")}
-                  className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors"
-                >
-                  <Twitch className="w-5 h-5 mr-2" />
-                  Twitch
-                </Button>
+               
               </div>
               </div>
             </CardContent>
