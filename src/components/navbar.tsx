@@ -197,7 +197,7 @@ export default function Navbar(): React.ReactElement {
 
             <motion.div variants={logoVariants} initial="hidden" animate="visible">
               <Link href="/" className="flex items-center space-x-2 group">
-                <Image alt="logo" src="/images/logonav.png" width={150} height={42} />
+                <Image alt="logo" src="/images/logonav.webp" width={150} height={42} />
               </Link>
             </motion.div>
 
@@ -475,7 +475,7 @@ export default function Navbar(): React.ReactElement {
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <Image alt="logo" src="/images/logonav.png" width={130} height={36} />
+              <Image alt="logo" src="/images/logonav.webp" width={130} height={36} />
               <div className="flex items-center space-x-3">
                 <UserChat />
                 <img src="/icon/bellicon.svg" className="w-5 h-5" alt="" />
