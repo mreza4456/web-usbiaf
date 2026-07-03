@@ -15,6 +15,21 @@ type LoginFormValues = {
   remember: boolean;
 };
 
+// X (Twitter) doesn't have an official lucide-react icon anymore since the rebrand,
+// so we use a small inline SVG that matches the current X logo.
+function XIcon({ className }: { className?: string }): React.ReactElement {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
 export default function Login(): React.ReactElement {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
@@ -97,8 +112,10 @@ export default function Login(): React.ReactElement {
     }
   };
 
+  // "twitter" is Supabase's provider key for X login (the provider was renamed
+  // in the dashboard/UI, but the API key is still "twitter").
   const handleOAuthLogin = async (
-    provider: "twitch" | "google"
+    provider: "twitch" | "google" | "twitter" | "x"
   ): Promise<void> => {
     setError("");
     try {
@@ -130,7 +147,7 @@ export default function Login(): React.ReactElement {
         <div className="relative overflow-hidden ">
           <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
           <img
-            src="/images/airi.png"
+            src="/images/airi.webp"
             alt="Login Illustration"
             className="w-full hidden sm:block absolute left-1/2 max-w-sm -translate-x-1/2"
           />
@@ -218,17 +235,34 @@ export default function Login(): React.ReactElement {
                   </div>
                 </div>
 
-                <div className=" gap-4">
-                <Button
-                  type="button"
-                  onClick={() => void handleOAuthLogin("google")}
-                  className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors w-full py-5 my-3"
-                >
-                  <Chrome className="w-5 h-5 mr-2" />
-                  Google
-                </Button>
-               
-              </div>
+                <div className="grid grid-cols-3 gap-3 my-3">
+                  <Button
+                    type="button"
+                    onClick={() => void handleOAuthLogin("google")}
+                    className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors w-full py-5"
+                    aria-label="Sign in with Google"
+                  >
+                    <Chrome className="w-5 h-5" />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => void handleOAuthLogin("twitch")}
+                    className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors w-full py-5"
+                    aria-label="Sign in with Twitch"
+                  >
+                    <Twitch className="w-5 h-5" />
+                  </Button>
+
+                  <Button
+                    type="button"
+                    onClick={() => void handleOAuthLogin("x")}
+                    className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors w-full py-5"
+                    aria-label="Sign in with X"
+                  >
+                    <XIcon className="w-5 h-5" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           

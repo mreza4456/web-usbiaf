@@ -253,7 +253,7 @@ function FeaturesSection() {
                   className="flex items-center px-5 bg-white overflow-hidden rounded-full shadow-sm hover:shadow-md transition-all"
                 >
                   <div className="bg-gray-100 p-3 aspect-square h-full flex items-center justify-center">
-                    <img src="images/stars.png" alt="star" className="w-7 h-7" />
+                    <Image width={28} height={28} src="/images/stars.png" alt="star" className="w-7 h-7" />
                   </div>
                   <span className="text-arial text-primary p-3">{feature}</span>
                 </motion.div>
@@ -263,7 +263,7 @@ function FeaturesSection() {
 
           <AnimateWhenVisible variants={fadeRight} className="relative col-span-3">
             <div className="flex items-center justify-center">
-              <Image src="/images/why.png" alt="why" width={1000} height={1000} />
+              <Image src="/images/why.webp" alt="why" width={1000} height={1000} />
             </div>
             <div className="absolute right-1/3 sm:right-35 bottom-[12%]">
               <Link className="button-yellow text-xl py-2 px-7" href="/contact">ABOUT ME</Link>

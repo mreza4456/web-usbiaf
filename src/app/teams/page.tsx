@@ -62,7 +62,7 @@ export default function Teams() {
       benefits: ["Direct Integration", "Premium Support", "Early Access"],
       flex: true
     },
-     {
+    {
       id: 2,
       name: "StreamElements",
       logo: "⚡",
@@ -89,8 +89,8 @@ export default function Teams() {
       benefits: ["Extension Support", "API Access", "flex Status"],
       flex: false
     },
-   
-    
+
+
   ];
   const handleClick = (teamsId: string) => {
     router.push(`/teams/${teamsId}`)
@@ -120,7 +120,7 @@ export default function Teams() {
               transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
               className="text-lg md:text-xl  arial"
             >
-              Nemuneko Studio is house of creativity, full of talented artist and partners 
+              Nemuneko Studio is house of creativity, full of talented artist and partners
             </motion.p>
           </div>
 
@@ -188,7 +188,7 @@ export default function Teams() {
 
 
 
-            <div className="pt-10">
+            <div className="pt-10 px-5">
 
               <TeamsCard />
             </div>
@@ -207,30 +207,63 @@ export default function Teams() {
             <div className="mb-12">
 
               <div className="flex flex-col  gap-15">
-            {partners.map((partner, index) => (
-  <div key={partner.id} className="relative max-w-6xl mb-10">
-    
+               {partners.map((partner, index) => (
+  <div key={partner.id} className="relative max-w-6xl mx-auto mb-16 lg:mb-24">
+
     {/* Card */}
-    <Card className={`bg-muted/50 backdrop-blur-sm rounded-[50px] ${index % 2 === 0 ? "pl-70" : "pr-70"}`}>
-      <div className={`flex ${index % 2 === 0 ? "" : "flex-row-reverse"} items-center`}>
-        <CardContent className="space-y-4 flex-1 px-10 py-3">
-          <CardTitle className="arial text-2xl">
+    <Card
+      className={`
+        bg-muted/50 backdrop-blur-sm rounded-[30px] lg:rounded-[50px]
+        overflow-hidden
+        ${index % 2 === 0 ? "lg:pl-60" : "lg:pr-60"}
+      `}
+    >
+      <div
+        className={`
+          flex flex-col lg:items-center
+          ${index % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"}
+        `}
+      >
+        {/* Mobile Image */}
+        <div className="relative w-full h-[250px] lg:hidden">
+          <Image
+            src="/images/airi.webp"
+            alt={partner.name}
+            fill
+            className="object-contain"
+          />
+        </div>
+
+        {/* Content */}
+        <CardContent className="flex-1 px-6 py-6 lg:px-10 lg:py-8">
+          <CardTitle className="arial text-xl lg:text-2xl">
             {partner.name}
           </CardTitle>
-          <CardDescription className="text-arial text-lg">
+
+          <CardDescription className="text-base lg:text-lg mt-3">
             {partner.description}
           </CardDescription>
-          <Button className="rounded-full bg-primary px-10 mt-5 text-font-arial text-white">
+
+          <Button className="rounded-full bg-primary px-6 lg:px-10 mt-5 text-white">
             Learn More
           </Button>
         </CardContent>
       </div>
     </Card>
 
-    {/* Image keluar dari card */}
-    <div className={`absolute bottom-[-175px] ${index % 2 === 0 ? "-left-20" : "-right-20"} w-[500px] h-[500px] clip-image`}>
+    {/* Desktop Floating Image */}
+    <div
+      className={`
+        hidden lg:block absolute
+        bottom-[-120px]
+        ${index % 2 === 0 ? "-left-10 xl:-left-20" : "-right-10 xl:-right-20"}
+        w-[300px] xl:w-[450px]
+        h-[300px] xl:h-[450px]
+        clip-image
+      `}
+    >
       <Image
-        src="/images/airi.png"
+        src="/images/airi.webp"
         alt={partner.name}
         fill
         className="object-contain drop-shadow-xl"
@@ -239,30 +272,30 @@ export default function Teams() {
 
   </div>
 ))}
+              </div>
             </div>
+
+
+
+            {/* Partnership CTA */}
+            <Card className="mt-12 sm:mt-16 bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30">
+              <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
+                <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">
+                  Become a <span className="relative">Partner</span>
+                </h2>
+                <p className="text-gray-800 text-base sm:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto">
+                  Interested in partnering dengan Nemuneko Studio? Let's collaborate dan grow together!
+                </p>
+                <Button size="lg" className="bg-primary rounded-full py-5 px-10 text-white">
+                  <MessageCircle className="w-5 h-5 mr-2" />
+                  Contact Partnership Team
+                </Button>
+              </CardContent>
+            </Card>
           </div>
-
-
-
-          {/* Partnership CTA */}
-          <Card className="mt-12 sm:mt-16 bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30">
-            <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
-              <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">
-                Become a <span className="relative">Partner</span>
-              </h2>
-              <p className="text-gray-800 text-base sm:text-lg mb-6 sm:mb-8 max-w-2xl mx-auto">
-                Interested in partnering dengan Nemuneko Studio? Let's collaborate dan grow together!
-              </p>
-              <Button size="lg" className="bg-primary rounded-full py-5 px-10 text-white">
-                <MessageCircle className="w-5 h-5 mr-2" />
-                Contact Partnership Team
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
         </section>
-  )
-}
+      )
+      }
     </div >
   );
 }

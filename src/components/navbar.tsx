@@ -573,7 +573,7 @@ export default function Navbar(): React.ReactElement {
               </motion.button>
 
               <Link href="/" onClick={() => setIsMenuOpen(false)}>
-                <Image alt="logo" src="/images/logonav.png" width={130} height={36} />
+                <Image alt="logo" src="/images/logonav.webp" width={130} height={36} />
               </Link>
 
               <div className="flex items-center space-x-3">

@@ -331,7 +331,7 @@ export default function Register(): React.ReactElement {
                     <div className="relative overflow-hidden ">
                         <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
                         <img
-                            src="/images/airi.png"
+                            src="/images/airi.webp"
                             alt="Login Illustration"
                             className="w-full hidden sm:block absolute left-1/2 max-w-sm -translate-x-1/2"
                         />
