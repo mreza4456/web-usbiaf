@@ -262,7 +262,7 @@ export default function Navbar(): React.ReactElement {
                     </AnimatePresence>
                   </button>
 
-                  <AnimatePresence>
+                  <AnimatePresence> 
                     {showVoucherMenu && (
                       <motion.div
                         key="voucher-dropdown"
