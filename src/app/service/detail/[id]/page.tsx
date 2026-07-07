@@ -400,7 +400,55 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             </div>
           </div>
         </div>
+   {isMobile && packages.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Package</h2>
+            <p className="text-gray-600 mb-6">Select the perfect package for your needs</p>
 
+            <div className="grid grid-cols-1 gap-6">
+              {packages.map((pkg) => (
+                <Card
+                  key={pkg.id}
+                  className="transition-all hover:shadow-xl bg-white"
+                >
+                  <CardHeader className="pb-3">
+                    <Badge className="w-fit mb-2 bg-purple-100 text-purple-700">
+                      {pkg.package}
+                    </Badge>
+                    <CardTitle className="text-xl">{pkg.name}</CardTitle>
+                    <div className="text-3xl font-bold text-secondary mt-2">
+                      {formatCurrency(pkg.price)}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {pkg.description && (
+                      <p className="text-gray-600 text-sm">{pkg.description}</p>
+                    )}
+
+                    <Button
+                      onClick={() => handleAddToCart(pkg.id.toString())}
+                      disabled={isAddingToCart && selectedPackage === pkg.id.toString()}
+                      className="w-full bg-primary hover:bg-purple-700 text-white"
+                      size="lg"
+                    >
+                      {isAddingToCart && selectedPackage === pkg.id.toString() ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart className="w-5 h-5 mr-2" />
+                          Add to Cart
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="mt-20 p-5">
           <h3 className="text-2xl md:text-4xl font-bold mb-4 text-[#50398e] relative inline-block">
             How To Order
@@ -615,55 +663,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
         )}
 
         {/* Package Selection - Mobile Only (Inline) */}
-        {isMobile && packages.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Package</h2>
-            <p className="text-gray-600 mb-6">Select the perfect package for your needs</p>
-
-            <div className="grid grid-cols-1 gap-6">
-              {packages.map((pkg) => (
-                <Card
-                  key={pkg.id}
-                  className="transition-all hover:shadow-xl bg-white"
-                >
-                  <CardHeader className="pb-3">
-                    <Badge className="w-fit mb-2 bg-purple-100 text-purple-700">
-                      {pkg.package}
-                    </Badge>
-                    <CardTitle className="text-xl">{pkg.name}</CardTitle>
-                    <div className="text-3xl font-bold text-secondary mt-2">
-                      {formatCurrency(pkg.price)}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {pkg.description && (
-                      <p className="text-gray-600 text-sm">{pkg.description}</p>
-                    )}
-
-                    <Button
-                      onClick={() => handleAddToCart(pkg.id.toString())}
-                      disabled={isAddingToCart && selectedPackage === pkg.id.toString()}
-                      className="w-full bg-primary hover:bg-purple-700 text-white"
-                      size="lg"
-                    >
-                      {isAddingToCart && selectedPackage === pkg.id.toString() ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Adding...
-                        </>
-                      ) : (
-                        <>
-                          <ShoppingCart className="w-5 h-5 mr-2" />
-                          Add to Cart
-                        </>
-                      )}
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
+     
 
         <div className="mt-20">
           <CategoryCarousel />

@@ -447,7 +447,7 @@ export default function Navbar(): React.ReactElement {
             ) : (
               <Link href="/auth/login">
                 <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="ghost" className="text-primary hover:text-[#D78FEE]">
+                  <Button variant="ghost" className="text-primary cursor-pointer hover:bg-transparent  arial font-medium  hover:text-[#D78FEE]">
                     Login
                   </Button>
                 </motion.div>
