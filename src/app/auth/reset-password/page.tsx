@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Lock, Eye, EyeOff, CheckCircle2, AlertCircle, KeyRound, Shield } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 // Initialize Supabase client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -17,7 +17,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 function LoadingState() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e] flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-background border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+            <div className="w-full max-w-md bg-background  rounded-2xl p-8 shadow-2xl">
                 <div className="text-center space-y-4">
                     <div className="flex justify-center">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9B5DE0]"></div>
@@ -29,7 +29,7 @@ function LoadingState() {
     );
 }
 
-// Main component that uses useSearchParams
+// Main component
 function ResetPasswordContent(): React.ReactElement {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -38,7 +38,6 @@ function ResetPasswordContent(): React.ReactElement {
     const [success, setSuccess] = useState<string>('');
     const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
     const router = useRouter();
-    const searchParams = useSearchParams();
 
     const resetForm = useForm({
         defaultValues: {
@@ -48,49 +47,60 @@ function ResetPasswordContent(): React.ReactElement {
     });
 
     useEffect(() => {
-        // Check if user came from email link with access token
-        checkSession();
+        // NOTE: Supabase mengirim token recovery sebagai URL *hash fragment*
+        // (contoh: /auth/reset-password#access_token=xxx&type=recovery),
+        // BUKAN sebagai query string (?access_token=xxx). Karena itu,
+        // `useSearchParams()` / `searchParams.get('access_token')` TIDAK
+        // PERNAH bisa membaca token ini — hash tidak pernah dikirim ke
+        // server dan tidak dianggap bagian dari query params.
+        //
+        // Cara yang benar: andalkan Supabase client (detectSessionInUrl,
+        // default true) yang otomatis mem-parsing hash saat halaman ini
+        // di-load, lalu memicu event 'PASSWORD_RECOVERY' lewat
+        // onAuthStateChange. Kita beri sedikit waktu (timeout) sebagai
+        // fallback sebelum memvonis link tidak valid, supaya proses
+        // parsing hash yang bersifat async itu sempat selesai.
 
-        // Listen for auth state changes
+        let resolved = false;
+
+        // 1. Dengarkan event auth state, termasuk PASSWORD_RECOVERY
         const { data } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'PASSWORD_RECOVERY') {
+                resolved = true;
+                setIsValidToken(true);
+            } else if (event === 'SIGNED_IN' && session) {
+                // Beberapa versi SDK/flow bisa memicu SIGNED_IN alih-alih
+                // PASSWORD_RECOVERY saat token di-hash berhasil diproses
+                resolved = true;
                 setIsValidToken(true);
             }
         });
 
-        const subscription = data?.subscription;
-        return () => subscription?.unsubscribe();
-    }, []);
+        // 2. Cek juga apakah session sudah tersedia (misal reload halaman
+        //    setelah proses recovery sempat berjalan)
+        supabase.auth.getSession().then(({ data: sessionData, error: sessionError }) => {
+            if (sessionError) return;
+            if (sessionData.session && !resolved) {
+                resolved = true;
+                setIsValidToken(true);
+            }
+        });
 
-    const checkSession = async () => {
-        try {
-            const { data, error } = await supabase.auth.getSession();
-            
-            if (error) {
+        // 3. Fallback: kalau setelah beberapa detik tidak ada session/event
+        //    recovery yang terdeteksi, baru anggap link tidak valid/expired
+        const timeout = setTimeout(() => {
+            if (!resolved) {
                 setIsValidToken(false);
                 setError('Invalid or expired reset link. Please request a new one.');
-                return;
             }
+        }, 3000);
 
-            if (data.session) {
-                setIsValidToken(true);
-            } else {
-                // Check if there's a recovery token in the URL
-                const accessToken = searchParams?.get('access_token');
-                const type = searchParams?.get('type');
-                
-                if (accessToken && type === 'recovery') {
-                    setIsValidToken(true);
-                } else {
-                    setIsValidToken(false);
-                    setError('Invalid or expired reset link. Please request a new one.');
-                }
-            }
-        } catch (err) {
-            setIsValidToken(false);
-            setError('Something went wrong. Please try again.');
-        }
-    };
+        const subscription = data?.subscription;
+        return () => {
+            subscription?.unsubscribe();
+            clearTimeout(timeout);
+        };
+    }, []);
 
     const handleResetPassword = async (values: any) => {
         setError('');
@@ -112,7 +122,7 @@ function ResetPasswordContent(): React.ReactElement {
             if (updateError) throw updateError;
 
             setSuccess('Password updated successfully! Redirecting to login...');
-            
+
             // Sign out user and redirect to login
             setTimeout(async () => {
                 await supabase.auth.signOut();
@@ -131,7 +141,7 @@ function ResetPasswordContent(): React.ReactElement {
     if (isValidToken === null) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e] flex items-center justify-center p-4">
-                <div className="w-full max-w-md bg-background border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="w-full max-w-md bg-background  rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-4">
                         <div className="flex justify-center">
                             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#9B5DE0]"></div>
@@ -146,21 +156,21 @@ function ResetPasswordContent(): React.ReactElement {
     // Invalid token state
     if (isValidToken === false) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-radial from-transparent to-white flex items-center justify-center p-4">
                 {/* Animated Background */}
                 <div className="fixed inset-0 overflow-hidden pointer-events-none">
                     <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-[#9B5DE0] rounded-full blur-[120px] opacity-30 animate-pulse"></div>
                     <div className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#D78FEE] rounded-full blur-[100px] opacity-25 animate-pulse" style={{ animationDelay: '2s' }}></div>
                 </div>
 
-                <div className="relative z-10 w-full max-w-md bg-background border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="relative z-10 w-full max-w-md bg-background  rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-6">
                         <div className="flex justify-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-rose-600 rounded-full flex items-center justify-center">
                                 <AlertCircle className="w-8 h-8 text-primary" />
                             </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                             <h2 className="text-2xl font-bold text-primary">Link Expired</h2>
                             <p className="text-gray-600">
@@ -183,21 +193,21 @@ function ResetPasswordContent(): React.ReactElement {
     // Success state
     if (success) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-[#1a0b2e] via-[#2d1b4e] to-[#1a0b2e] flex items-center justify-center p-4">
+            <div className="min-h-screen bg-radial from-transparent to-white flex items-center justify-center p-4">
                 {/* Animated Background */}
                 <div className="fixed inset-0 overflow-hidden pointer-events-none">
                     <div className="absolute top-[10%] left-[10%] w-[500px] h-[500px] bg-[#9B5DE0] rounded-full blur-[120px] opacity-30 animate-pulse"></div>
                     <div className="absolute bottom-[20%] right-[15%] w-[400px] h-[400px] bg-[#D78FEE] rounded-full blur-[100px] opacity-25 animate-pulse" style={{ animationDelay: '2s' }}></div>
                 </div>
 
-                <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="relative z-10 w-full max-w-md bg-white/5 backdrop-blur-xl  rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-6">
                         <div className="flex justify-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
                                 <CheckCircle2 className="w-8 h-8 text-primary" />
                             </div>
                         </div>
-                        
+
                         <div className="space-y-2">
                             <h2 className="text-2xl font-bold text-primary">Password Reset Successfully!</h2>
                             <p className="text-gray-600">{success}</p>
@@ -213,7 +223,7 @@ function ResetPasswordContent(): React.ReactElement {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2d1b4e] to-[#1a1a2e] text-primary flex items-center justify-center p-4">
+        <div className="min-h-screen bg-radial from-transparent to-white text-primary flex items-center justify-center p-4">
             <div className="relative z-10 w-full max-w-md">
                 <Card className="bg-white/5 backdrop-blur-sm border-[#9B5DE0]/30">
                     <CardHeader className="space-y-1 pb-4">
@@ -252,12 +262,12 @@ function ResetPasswordContent(): React.ReactElement {
                                         {...resetForm.register('password', {
                                             required: 'Password is required',
                                             minLength: { value: 8, message: 'Password must be at least 8 characters' },
-                                            pattern: { 
-                                                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 
-                                                message: 'Password must contain uppercase, lowercase and number' 
+                                            pattern: {
+                                                value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+                                                message: 'Password must contain uppercase, lowercase and number'
                                             }
                                         })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                        className="w-full px-4 py-3 bg-white/5  rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
                                     />
                                     <button
                                         type="button"
@@ -285,10 +295,10 @@ function ResetPasswordContent(): React.ReactElement {
                                     <input
                                         type={showConfirmPassword ? 'text' : 'password'}
                                         placeholder="••••••••"
-                                        {...resetForm.register('confirmPassword', { 
-                                            required: 'Please confirm your password' 
+                                        {...resetForm.register('confirmPassword', {
+                                            required: 'Please confirm your password'
                                         })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
+                                        className="w-full px-4 py-3 bg-white/5  rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
                                     />
                                     <button
                                         type="button"

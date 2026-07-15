@@ -56,7 +56,7 @@ export default function ForgotPassword(): React.ReactElement {
             <div className="min-h-screen bg-radial from-transparent to-white flex items-center justify-center p-4">
                 {/* Animated Background */}
               
-                <div className="relative z-10 w-full max-w-md bg-background border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
+                <div className="relative z-10 w-full max-w-md bg-white border border-[#9B5DE0]/30 rounded-2xl p-8 shadow-2xl">
                     <div className="text-center space-y-6">
                         <div className="flex justify-center">
                             <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
@@ -97,12 +97,12 @@ export default function ForgotPassword(): React.ReactElement {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#1a1a2e] via-[#2d1b4e] to-[#1a1a2e] text-white flex items-center justify-center p-4">
+        <div className="min-h-screen bg-radial from-transparent to-white flex items-center justify-center p-4">
             {/* Animated Background */}
            
 
             <div className="relative z-10 w-full max-w-md">
-                <Card className="bg-background backdrop-blur-sm border-[#9B5DE0]/30">
+                <Card className="bg-white shadow-lg ">
                     <CardHeader className="space-y-1 pb-4">
                         <div className="flex justify-center mb-4">
                             <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center">
@@ -142,7 +142,7 @@ export default function ForgotPassword(): React.ReactElement {
                                 </label>
                                 <input
                                     type="email"
-                                    placeholder="hello@example.com"
+                                    placeholder="Enter Your Email"
                                     {...emailForm.register('email', {
                                         required: 'Email is required',
                                         pattern: { 

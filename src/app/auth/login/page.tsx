@@ -144,14 +144,14 @@ export default function Login(): React.ReactElement {
     <div className="min-h-screen bg-radial from-transparent to-white text-primary flex items-center justify-center p-4">
       <div className="relative z-10 w-full max-w-4xl  mx-auto">
         <Card className="bg-white border-0 shadow-none sm:border-primary/30 grid sm:grid-cols-2 sm:shadow-lg rounded-4xl">
-        <div className="relative overflow-hidden ">
-          <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
-          <img
-            src="/images/airi.webp"
-            alt="Login Illustration"
-            className="w-full hidden sm:block absolute left-1/2 max-w-sm -translate-x-1/2"
-          />
-        </div>
+          <div className="relative overflow-hidden ">
+            <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
+            <img
+              src="/images/airi.webp"
+              alt="Login Illustration"
+              className="w-full hidden sm:block absolute left-1/2 max-w-sm -translate-x-1/2"
+            />
+          </div>
           <div className="py-5 sm:px-5 ">
             <CardHeader className="space-y-1 pb-4">
               <CardTitle className="text-2xl text-primary">Sign In</CardTitle>
@@ -215,6 +215,14 @@ export default function Login(): React.ReactElement {
                     </button>
                   </div>
                 </div>
+       
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors font-medium my-3"
+                  >
+                    Forgot Password ?
+                  </Link>
+        
 
                 <Button
                   onClick={() => void handleLogin()}
@@ -265,10 +273,10 @@ export default function Login(): React.ReactElement {
                 </div>
               </div>
             </CardContent>
-          
+
           </div >
         </Card>
-  <div className="mt-6 text-center text-sm text-gray-400">
+        <div className="mt-6 text-center text-sm text-gray-400">
           <p>
             Don't have an account?{" "}
             <Link
@@ -288,7 +296,7 @@ export default function Login(): React.ReactElement {
             ← Back to Home
           </Link>
         </div>
-        
+
       </div>
     </div>
 
