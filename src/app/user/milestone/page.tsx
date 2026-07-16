@@ -19,11 +19,13 @@ export default function MilestonePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    
     if (user?.id) {
       loadUserOrders();
       loadMilestoneRewards();
     }
   }, [user?.id]);
+  
 
   const loadUserOrders = async () => {
     try {

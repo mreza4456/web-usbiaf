@@ -42,6 +42,7 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
+    
     if (user?.id) {
       loadUserData();
       loadUserOrders();

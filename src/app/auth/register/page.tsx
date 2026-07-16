@@ -87,6 +87,15 @@ export default function Register(): React.ReactElement {
             if (signUpError) throw signUpError;
 
             if (signUpData?.user) {
+                // Supabase tidak melempar error jika email sudah terdaftar
+                // (untuk mencegah email enumeration attack).
+                // Cirinya: identities akan berupa array kosong.
+                if (signUpData.user.identities && signUpData.user.identities.length === 0) {
+                    setError('This email is already registered. Please login instead.');
+                    setIsSubmitting(false);
+                    return;
+                }
+
                 // Trigger will automatically create user record with social_media_completed = false
 
                 if (signUpData.user.email_confirmed_at) {

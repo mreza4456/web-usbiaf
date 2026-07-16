@@ -217,7 +217,7 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
       if (result.success) {
         setSuccess('Order placed successfully! We will contact you shortly to discuss your project.');
         setTimeout(() => {
-          router.push('/myorder');
+          router.push('/user/user-order');
         }, 2000);
       } else {
         setError(result.message || 'Failed to place order. Please try again.');

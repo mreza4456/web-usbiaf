@@ -62,7 +62,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // 🔐 Protected routes that require login
-  const protectedRoutes = ['/order', '/myorder', '/profile', '/voucher']
+  const protectedRoutes = ['/order', '/user/user-order', '/user/profile', '/user/voucher','/user/milestone']
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
 
   // Redirect to login if not authenticated
