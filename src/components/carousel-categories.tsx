@@ -79,22 +79,21 @@ export default function CategoryCarousel() {
                             <div></div>
                         ) : (
                             <Carousel>
-                                <CarouselContent>
+                                <CarouselContent className="items-stretch">
                                     {categories.map((category) => {
                                         // Ambil gambar pertama saja
                                         const primaryImage = category.images?.[0]?.image_url || "";
                                         const imageCount = category.images?.length || 0
                                         return (
-                                            <CarouselItem key={category.id} className="md:basis-1/2 lg:basis-1/3">
-                                                <div >
+                                            <CarouselItem
+                                                key={category.id}
+                                                className="md:basis-1/2 lg:basis-1/3 flex"
+                                            >
+                                                <Card className="bg-white p-0 shadow-lg flex flex-col w-full overflow-hidden group">
 
-                                                    <Card
-
-                                                        className="bg-white border-primary/30 p-0 shadow-lg  hover:border-primary transition-all duration-300  overflow-hidden group"
-                                                    >
-                                                        <CardHeader className=" p-0">
-                                                            <div className="relative h-60 bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 overflow-hidden">
-                                                                {primaryImage ? (
+                                                    <CardHeader className="p-0">
+                                                        <div className="relative h-60 overflow-hidden">
+                                                             {primaryImage ? (
                                                                     <>
                                                                         <img
                                                                             className='w-full h-full object-cover hover:scale-105 transition-all duration-300'
@@ -112,40 +111,35 @@ export default function CategoryCarousel() {
                                                                         <ImageIcon className="w-16 h-16 text-gray-400" />
                                                                     </div>
                                                                 )}
-                                                            </div>
-                                                        </CardHeader>
+                                                        </div>
+                                                    </CardHeader>
 
-                                                        <CardContent className="p-3 h-full">
-                                                            <CardTitle className="text-xl text-primary mb-3 line-clamp-2 group-hover:text-primary/80 transition-colors">
-                                                                {category.name}
-                                                            </CardTitle>
-                                                            <CardDescription className="text-gray-800 text-sm line-clamp-3 mb-4">
-                                                                {category.description || 'No description available'}
-                                                            </CardDescription>
+                                                    <CardContent className="p-3 flex-1">
+                                                        <CardTitle className="text-xl text-primary mb-3 line-clamp-2">
+                                                            {category.name}
+                                                        </CardTitle>
 
+                                                        <CardDescription className="text-gray-800 text-sm line-clamp-3">
+                                                            {category.description || 'No description available'}
+                                                        </CardDescription>
+                                                    </CardContent>
 
-                                                        </CardContent>
+                                                    <CardFooter className="p-3 pt-0 mt-auto">
+                                                        <Link href={`/service/detail/${category.id}`} className="w-full">
+                                                            <Button size="lg" className="w-full">
+                                                                View
+                                                                <ArrowRight className="w-4 h-4 ml-1" />
+                                                            </Button>
+                                                        </Link>
+                                                    </CardFooter>
 
-                                                        <CardFooter className="p-3 pt-0 flex justify-end items-center">
-                                                            <Link href={`/service/detail/${category.id}`}>
-                                                                <Button
-
-                                                                    size="lg"
-                                                                    className="text-white cursor-pointer"
-                                                                >
-                                                                    View
-                                                                    <ArrowRight className="w-4 h-4 ml-1" />
-                                                                </Button>
-                                                            </Link>
-                                                        </CardFooter>
-                                                    </Card>
-
-                                                </div>
+                                                </Card>
                                             </CarouselItem>
-                                        );
+                                           );
                                     })}
-
                                 </CarouselContent>
+                            
+
 
                                 <CarouselPrevious />
                                 <CarouselNext />

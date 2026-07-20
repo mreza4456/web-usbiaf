@@ -270,16 +270,16 @@ export default function ServicesPage() {
               </Card>
             </AnimateWhenVisible>
           ) : (
-            <StaggerContainer className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StaggerContainer className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
               {categories.map((category, index) => {
                 const primaryImage = category.images?.[0]?.image_url || '';
                 return (
                   <motion.div key={category.id} variants={fadeUp} custom={index}>
                     <Card
                       onClick={(e) => { e.stopPropagation(); handleCategoryClick(category.id); }}
-                      className="bg-white p-0 m-0 relative overflow-hidden shadow-lg cursor-pointer rounded-[50px]"
+                      className="bg-white p-0 m-0 relative h-full overflow-hidden shadow-lg cursor-pointer rounded-[30px] lg:rounded-[50px]"
                     >
-                      <div className="relative h-70 overflow-hidden">
+                      <div className="relative aspect-square overflow-hidden">
                         {primaryImage ? (
                           <motion.img
                             whileHover={{ scale: 1.06 }}
@@ -295,16 +295,16 @@ export default function ServicesPage() {
                           </div>
                         )}
                       </div>
-                      <div className="p-0 px-10">
+                      <div className="p-0 px-3 lg:px-10 m-0">
                         <h3
                           onClick={(e) => { e.stopPropagation(); handleCategoryClick(category.id); }}
-                          className="text-xl text-borsok text-dark line-clamp-2 group-hover:text-primary/80 transition-colors"
+                          className="lg:text-xl text-borsok text-dark line-clamp-2 group-hover:text-primary/80 transition-colors"
                         >
                           {category.name}
                         </h3>
-                        <p className="text-gray-400 text-arial text-sm line-clamp-3">
+                        {/* <p className="text-gray-400 text-arial text-sm line-clamp-3">
                           {category.description || 'No description available'}
-                        </p>
+                        </p> */}
                       </div>
                       <CardContent />
                       <div className="absolute top-0 right-10 h-18 rounded-b-full w-12 bg-white/50 flex flex-col justify-end items-center">

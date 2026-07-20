@@ -57,7 +57,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
   const [notificationMessage, setNotificationMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-
+const DESCRIPTION_LIMIT = 400; // jumlah karakter sebelum dipotong
   // Image gallery states
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -383,23 +383,30 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                     </div>
                   )}
 
-                  {category.description && (
-                    <div className="py-4 md:py-8">
-                      <p
-                        className={`text-gray-600 text-base md:text-lg leading-relaxed whitespace-pre-line ${!showFullDescription ? 'line-clamp-6 md:line-clamp-none' : ''
-                          }`}
-                      >
-                        {category.description}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setShowFullDescription((v) => !v)}
-                        className="md:hidden text-purple-600 font-medium text-sm mt-2"
-                      >
-                        {showFullDescription ? 'Show less' : 'Show more'}
-                      </button>
-                    </div>
-                  )}
+                  {category.description && (() => {
+                    const isLong = category.description.length > DESCRIPTION_LIMIT;
+                    const displayText =
+                      isLong && !showFullDescription
+                        ? `${category.description.slice(0, DESCRIPTION_LIMIT).trimEnd()}...`
+                        : category.description;
+
+                    return (
+                      <div className="py-4 md:py-8">
+                        <p className="text-gray-600 text-base md:text-lg leading-relaxed whitespace-pre-line">
+                          {displayText}
+                        </p>
+                        {isLong && (
+                          <button
+                            type="button"
+                            onClick={() => setShowFullDescription((v) => !v)}
+                            className="text-purple-600 font-medium text-sm mt-2 hover:text-purple-700 transition-colors"
+                          >
+                            {showFullDescription ? 'Show less' : 'Show more'}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
