@@ -156,12 +156,19 @@ export interface IPackageCategories {
   categories_id: string;
   name: string;
   price: number;
-  package: string;
+
+  package_id:number;
   description?: string;
   created_at?: string;
 
   categories?: ICategory;
+  package?:IPackageName ;
 
+}
+export interface IPackageName {
+  id: string;
+  name: string;
+  created_at?: string;
 }
 
 // interface.ts

@@ -15,20 +15,23 @@ import {
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { ICategory, IPackageCategories, IImageCategories } from "@/interface"
-import { Plus, Trash2, Upload, X, Image as ImageIcon, GripVertical, ArrowUp, ArrowDown } from "lucide-react"
+import { getAllPackageNames } from "@/action/package_name"
+import { ICategory, IPackageCategories, IImageCategories, IPackageName } from "@/interface"
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { uploadImage, deleteImage } from "@/action/upload"
 import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select"
+import { Plus, Trash2, Upload, X, Image as ImageIcon, GripVertical, ArrowUp, ArrowDown, Settings } from "lucide-react"
+import { ManagePackageNamesModal } from "./page-modal"
 
 const packageSchema = z.object({
     id: z.union([z.string(), z.number()]).optional(),
     name: z.string().min(2, "Minimal 2 karakter"),
     price: z.number().min(1, "Harga harus diisi"),
-    package: z.string().min(1, "Paket harus diisi"),
+    package_id: z.union([z.string(), z.number(), z.literal("")]).refine(v => v !== "" && v !== undefined, "Paket harus dipilih"),
     description: z.string().optional(),
 })
 
@@ -65,10 +68,12 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
     const [uploadMethod, setUploadMethod] = React.useState<"upload" | "url">("upload")
     const [urlInput, setUrlInput] = React.useState("")
     const fileInputRef = React.useRef<HTMLInputElement>(null)
-
+    const [packageNameModalOpen, setPackageNameModalOpen] = React.useState(false)
     // state untuk drag & drop reorder gambar
     const [dragIndex, setDragIndex] = React.useState<number | null>(null)
     const [overIndex, setOverIndex] = React.useState<number | null>(null)
+    const [packageNames, setPackageNames] = React.useState<IPackageName[]>([])
+
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
@@ -91,7 +96,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                 id: pkg.id,
                 name: pkg.name,
                 price: pkg.price,
-                package: pkg.package,
+                package_id: pkg.package_id,
                 description: pkg.description || "",
             })) || [],
         },
@@ -116,6 +121,15 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
             }
         })
     }, [form])
+
+    const loadPackageNames = React.useCallback(async () => {
+        const res = await getAllPackageNames()
+        if (res.success) setPackageNames(res.data)
+    }, [])
+
+    React.useEffect(() => {
+        loadPackageNames()
+    }, [loadPackageNames])
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
@@ -238,7 +252,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
         appendPackage({
             name: "",
             price: 0,
-            package: "",
+            package_id: "",
             description: "",
         })
     }
@@ -373,13 +387,11 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                         onDragOver={handleDragOver}
                                         onDrop={handleDrop(index)}
                                         onDragEnd={handleDragEnd}
-                                        className={`relative group cursor-move transition-transform ${
-                                            dragIndex === index ? "opacity-40" : ""
-                                        } ${
-                                            overIndex === index && dragIndex !== null && dragIndex !== index
+                                        className={`relative group cursor-move transition-transform ${dragIndex === index ? "opacity-40" : ""
+                                            } ${overIndex === index && dragIndex !== null && dragIndex !== index
                                                 ? "ring-2 ring-slate-800 rounded-lg"
                                                 : ""
-                                        }`}
+                                            }`}
                                     >
                                         <div className="relative w-full h-48 border-2 rounded-lg overflow-hidden bg-gray-100">
                                             <img
@@ -460,20 +472,32 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                 <Card className="col-span-2 bg-white">
                     <CardHeader className="flex flex-row items-center justify-between">
                         <CardTitle>Package Categories</CardTitle>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={addPackage}
-                        >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Package
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPackageNameModalOpen(true)}
+                                title="Kelola Package Type"
+                            > 
+                                <Settings className="h-4 w-4" />
+                                Package Type
+                            </Button>
+                            <Button
+                                type="button"
+                                   size="sm"
+                               className="px-3 cursor-pointer bg-slate-800 hover:bg-slate-700"
+                                onClick={addPackage}
+                            >
+                                <Plus className="h-4 w-4 mr-1 " />
+                                Add Package
+                            </Button>
+                        </div>
                     </CardHeader>
                     <CardContent className={`space-y-1 gap-7 ${packageFields.length === 0 ? '' :
-                            packageFields.length === 1 ? 'grid grid-cols-1' :
-                                packageFields.length === 2 ? 'grid grid-cols-1 md:grid-cols-2' :
-                                    'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+                        packageFields.length === 1 ? 'grid grid-cols-1' :
+                            packageFields.length === 2 ? 'grid grid-cols-1 md:grid-cols-2' :
+                                'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
                         }`}>
                         {packageFields.length === 0 ? (
                             <p className="text-sm text-muted-foreground text-center py-8">
@@ -525,20 +549,31 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
 
                                             <FormField
                                                 control={form.control}
-                                                name={`packages.${index}.package`}
+                                                name={`packages.${index}.package_id`}
                                                 render={({ field }) => (
-                                                    <FormItem >
+                                                    <FormItem>
                                                         <FormLabel>Package Type *</FormLabel>
-                                                        <Select value={field.value} onValueChange={field.onChange}>
+                                                        <Select
+                                                            value={field.value ? String(field.value) : ""}
+                                                            onValueChange={(val) => field.onChange(val)}
+                                                        >
                                                             <SelectTrigger className="w-full">
                                                                 <SelectValue placeholder="Select a Package" />
                                                             </SelectTrigger>
                                                             <SelectContent>
                                                                 <SelectGroup>
                                                                     <SelectLabel>Package Type</SelectLabel>
-                                                                    <SelectItem value="basic">Basic</SelectItem>
-                                                                    <SelectItem value="standard">Standard</SelectItem>
-                                                                    <SelectItem value="premium">Premium</SelectItem>
+                                                                    {packageNames.length === 0 ? (
+                                                                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                                                            Belum ada package type
+                                                                        </div>
+                                                                    ) : (
+                                                                        packageNames.map((pn) => (
+                                                                            <SelectItem key={pn.id} value={String(pn.id)}>
+                                                                                {pn.name}
+                                                                            </SelectItem>
+                                                                        ))
+                                                                    )}
                                                                 </SelectGroup>
                                                             </SelectContent>
                                                         </Select>
@@ -586,6 +621,11 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
+                                        />
+                                        <ManagePackageNamesModal
+                                            open={packageNameModalOpen}
+                                            onOpenChange={setPackageNameModalOpen}
+                                            onChange={loadPackageNames}
                                         />
                                     </Card>
                                 </div>
