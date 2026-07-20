@@ -15,7 +15,7 @@ import {
 import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { getAllPackageNames } from "@/action/package_name"
+import { getAllPackageNames } from "@/action/package"
 import { ICategory, IPackageCategories, IImageCategories, IPackageName } from "@/interface"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -540,7 +540,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                                     <FormItem>
                                                         <FormLabel>Package Name *</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="Contoh: Basic Wedding Package" {...field} />
+                                                            <Input placeholder="Contoh: Basic Widget Package" {...field} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>

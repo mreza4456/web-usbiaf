@@ -61,6 +61,9 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
   // Image gallery states
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // Deskripsi panjang: collapse di mobile, full di desktop
+  const [showFullDescription, setShowFullDescription] = useState(false);
+
   // Detect mobile screen
   useEffect(() => {
     const checkMobile = () => {
@@ -230,7 +233,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
 
   if (loading) {
     return (
-      <div className="min-h-screen max-w-7xl w-full mx-auto mt-30">
+      <div className="min-h-screen max-w-7xl w-full mx-auto mt-20 md:mt-30">
         <SkeletonServiceDetail />
       </div>
     );
@@ -257,26 +260,33 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
   const ratingDistribution = getRatingDistribution();
 
   return (
-    <div className="min-h-screen  py-8  mt-20">
-      <div className="max-w-7xl mx-auto bg-white px-5">
+    <div className="min-h-screen py-6 md:py-8 mt-16 md:mt-20">
+      {/* Sembunyikan scrollbar horizontal pada strip thumbnail gambar */}
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
+
+      <div className="max-w-7xl mx-auto bg-white px-4 sm:px-5">
         {/* Header Navigation */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-6 md:mb-8">
           <Button
             onClick={() => router.push('/service')}
             variant="ghost"
-            className="text-purple-600 hover:text-purple-700"
+            className="text-purple-600 hover:text-purple-700 -ml-2 sm:ml-0"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Services
+            <span className="hidden sm:inline">Back to Services</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
 
-       <div className="grid md:grid-cols-2 mb-8">
+        <div className="grid md:grid-cols-2 gap-6 md:gap-10 mb-8">
           {/* Image Gallery */}
-          <div className="space-y-4 ">
+          <div className="space-y-3 md:space-y-4">
             {images.length > 0 ? (
               <>
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 aspect-[1/1]">
+                <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-gradient-to-br from-purple-100 to-pink-100 aspect-square">
                   <img
                     src={images[currentImageIndex]?.image_url}
                     alt={`${category.name} - Image ${currentImageIndex + 1}`}
@@ -290,31 +300,31 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                     <>
                       <button
                         onClick={prevImage}
-                        className="absolute left-4 top-1/2 -translate-y-1/2 bg-muted p-1 hover:bg-white cursor-pointer rounded-full shadow-lg transition-all"
+                        className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 bg-muted p-1 hover:bg-white cursor-pointer rounded-full shadow-lg transition-all"
                       >
-                        <ChevronLeft className="w-6 h-6 text-primary" />
+                        <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                       </button>
                       <button
                         onClick={nextImage}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 bg-muted p-1 hover:bg-white cursor-pointer rounded-full shadow-lg transition-all"
+                        className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 bg-muted p-1 hover:bg-white cursor-pointer rounded-full shadow-lg transition-all"
                       >
-                        <ChevronRight className="w-6 h-6 text-primary" />
+                        <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                       </button>
                     </>
                   )}
 
-                  <Badge className="absolute top-4 right-4 bg-purple-600 text-white">
+                  <Badge className="absolute top-3 right-3 sm:top-4 sm:right-4 bg-purple-600 text-white text-xs sm:text-sm">
                     {currentImageIndex + 1} / {images.length}
                   </Badge>
                 </div>
 
                 {hasMultipleImages && (
-                  <div className="flex gap-3 overflow-x-auto pb-2">
+                  <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 no-scrollbar">
                     {images.map((image, index) => (
                       <button
                         key={image.id}
                         onClick={() => goToImage(index)}
-                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${currentImageIndex === index
+                        className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border-2 transition-all ${currentImageIndex === index
                           ? 'border-purple-500 ring-4 ring-purple-200'
                           : 'opacity-50 hover:opacity-100 border-transparent'
                           }`}
@@ -330,67 +340,75 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                 )}
               </>
             ) : (
-              <div className="flex items-center justify-center h-96 bg-gray-100 rounded-2xl">
+              <div className="flex items-center justify-center h-72 sm:h-96 bg-gray-100 rounded-xl md:rounded-2xl">
                 <Image className="w-16 h-16 text-gray-400" />
               </div>
             )}
           </div>
 
           {/* Category Description */}
-          <div className="max-w-md mx-auto">
-            <div className="grid grid-rows-[1fr_auto] col-span-3">
-              <div className="space-y-6">
+          <div className="w-full">
+            <div className="flex flex-col h-full">
+              <div className="space-y-4 md:space-y-6 flex-1">
                 <div>
-                  <h1 className="text-4xl font-bold text-primary mb-4 mt-5">{category.name}</h1>
-                   {category.start_price && (
-                  <div className='flex items-end mb-3'>
-                    <p className="text-sm text-gray-500 items-end mx-2">Start From</p>
-                    <div className="text-xl font-bold text-secondary">
-                      {formatCurrency(category.start_price)}
-                    </div>
-                  </div>
-                )}
-                  {comments.length > 0 && (
-                    <div className="">
-                      <div className="flex items-center gap-4 mb-2">
-                        {/* <div className="text-4xl font-bold text-primary"></div> */}
-                        <div>
-                          <div className="flex items-center gap-1 mb-1">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`w-5 h-5 ${i < Math.round(parseFloat(averageRating as any))
-                                  ? 'fill-[#FFE66D] text-[#FFE66D]'
-                                  : 'text-gray-300'
-                                  }`}
-                              />
-                            ))}
-                             <p className="text-sm text-gray-600 mx-2">
-                           ({averageRating}) {comments.length} {comments.length === 1 ? 'review' : 'reviews'}
-                          </p>
-                          </div>
-                         
-                        </div>
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 md:mb-4 mt-1 md:mt-5">
+                    {category.name}
+                  </h1>
+
+                  {category.start_price && (
+                    <div className="flex items-end flex-wrap gap-1 mb-3">
+                      <p className="text-sm text-gray-500 mx-2">Start From</p>
+                      <div className="text-lg sm:text-xl font-bold text-secondary">
+                        {formatCurrency(category.start_price)}
                       </div>
                     </div>
                   )}
+
+                  {comments.length > 0 && (
+                    <div className="flex items-center gap-4 mb-2 flex-wrap">
+                      <div className="flex items-center gap-1 flex-wrap">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 sm:w-5 sm:h-5 ${i < Math.round(parseFloat(averageRating as any))
+                              ? 'fill-[#FFE66D] text-[#FFE66D]'
+                              : 'text-gray-300'
+                              }`}
+                          />
+                        ))}
+                        <p className="text-sm text-gray-600 mx-2">
+                          ({averageRating}) {comments.length} {comments.length === 1 ? 'review' : 'reviews'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
                   {category.description && (
-                    <p className="text-gray-600 text-lg leading-relaxed py-8">{category.description}</p>
+                    <div className="py-4 md:py-8">
+                      <p
+                        className={`text-gray-600 text-base md:text-lg leading-relaxed whitespace-pre-line ${!showFullDescription ? 'line-clamp-6 md:line-clamp-none' : ''
+                          }`}
+                      >
+                        {category.description}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowFullDescription((v) => !v)}
+                        className="md:hidden text-purple-600 font-medium text-sm mt-2"
+                      >
+                        {showFullDescription ? 'Show less' : 'Show more'}
+                      </button>
+                    </div>
                   )}
                 </div>
-               
-                {/* Rating Summary */}
-
               </div>
 
-
-
               {/* CTA Button - Only on Desktop */}
-              <div className="mt-8 w-full">
+              <div className="mt-6 md:mt-8 w-full">
                 <Button
                   size="lg"
                   onClick={() => setIsModalOpen(true)}
-                  className="w-full bg-primary text-white rounded-full text-lg py-6 hidden md:flex items-center justify-center"
+                  className="w-full bg-primary text-white rounded-full text-base md:text-lg py-5 md:py-6 hidden md:flex items-center justify-center"
                   disabled={packages.length === 0}
                 >
                   <Package className="w-5 h-5 mr-2" />
@@ -400,12 +418,13 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             </div>
           </div>
         </div>
-   {isMobile && packages.length > 0 && (
-          <div className="mt-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Package</h2>
-            <p className="text-gray-600 mb-6">Select the perfect package for your needs</p>
 
-            <div className="grid grid-cols-1 gap-6">
+        {isMobile && packages.length > 0 && (
+          <div className="mt-6 md:mt-8">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-4">Choose Your Package</h2>
+            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">Select the perfect package for your needs</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {packages.map((pkg) => (
                 <Card
                   key={pkg.id}
@@ -413,10 +432,10 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                 >
                   <CardHeader className="pb-3">
                     <Badge className="w-fit mb-2 bg-purple-100 text-purple-700">
-                      {pkg.package}
+                      {pkg.package?.name}
                     </Badge>
-                    <CardTitle className="text-xl">{pkg.name}</CardTitle>
-                    <div className="text-3xl font-bold text-secondary mt-2">
+                    <CardTitle className="text-lg sm:text-xl">{pkg.name}</CardTitle>
+                    <div className="text-2xl sm:text-3xl font-bold text-secondary mt-2">
                       {formatCurrency(pkg.price)}
                     </div>
                   </CardHeader>
@@ -449,14 +468,15 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             </div>
           </div>
         )}
-        <div className="mt-20 p-5">
-          <h3 className="text-2xl md:text-4xl font-bold mb-4 text-[#50398e] relative inline-block">
+
+        <div className="mt-12 md:mt-20 p-2 sm:p-5">
+          <h3 className="text-xl sm:text-2xl md:text-4xl font-bold mb-4 text-[#50398e] relative inline-block">
             How To Order
-            <span className="absolute -top-3 -right-5 text-3xl">✦</span>
+            <span className="absolute -top-2 sm:-top-3 -right-4 sm:-right-5 text-2xl sm:text-3xl">✦</span>
           </h3>
         </div>
 
-        <section className='py-3 mb-20'>
+        <section className="py-3 mb-12 md:mb-20">
           <div className="relative">
             {/* Desktop Timeline */}
             <div className="hidden md:flex justify-between items-start p-5">
@@ -519,9 +539,9 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
         </section>
 
         {/* Features Section */}
-        <Card className="bg-muted/50 mb-15">
+        <Card className="bg-muted/50 mb-10 md:mb-15">
           <CardHeader>
-            <CardTitle className="text-2xl text-primary">What's Included</CardTitle>
+            <CardTitle className="text-xl sm:text-2xl text-primary">What's Included</CardTitle>
             <CardDescription>All packages include these premium features</CardDescription>
           </CardHeader>
           <CardContent>
@@ -536,7 +556,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
               ].map((feature, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <CheckCircle2 className="w-5 h-5 text-purple-600 flex-shrink-0" />
-                  <span className="text-gray-700">{feature}</span>
+                  <span className="text-gray-700 text-sm sm:text-base">{feature}</span>
                 </div>
               ))}
             </div>
@@ -545,30 +565,28 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
 
         {/* Customer Reviews Section */}
         {comments.length > 0 && (
-          <div className="mb-20">
-            <h2 className="text-3xl font-bold text-primary mb-2 flex items-center gap-3">
-              <MessageSquare className="w-8 h-8" />
+          <div className="mb-12 md:mb-20">
+            <h2 className="text-2xl sm:text-3xl font-bold text-primary mb-2 flex items-center gap-2 sm:gap-3">
+              <MessageSquare className="w-6 h-6 sm:w-8 sm:h-8" />
               Customer Reviews
             </h2>
-            <div className="flex justify-between items-center mb-8">
-              <div className="">
-
-                <p className="text-gray-600">See what our customers are saying</p>
-              </div>
-              <Link className='text-secondary' href="/reviews">Show All Reviews</Link>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-6 md:mb-8">
+              <p className="text-gray-600 text-sm sm:text-base">See what our customers are saying</p>
+              <Link className="text-secondary text-sm sm:text-base" href="/reviews">Show All Reviews</Link>
             </div>
+
             {/* Rating Breakdown */}
             <Card className="mb-6">
               <CardContent className="pt-6">
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="flex items-center justify-center gap-6">
                     <div className="text-center">
-                      <div className="text-5xl font-bold text-primary mb-2">{averageRating}</div>
+                      <div className="text-4xl sm:text-5xl font-bold text-primary mb-2">{averageRating}</div>
                       <div className="flex items-center justify-center gap-1 mb-2">
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-5 h-5 ${i < Math.round(parseFloat(averageRating as any))
+                            className={`w-4 h-4 sm:w-5 sm:h-5 ${i < Math.round(parseFloat(averageRating as any))
                               ? 'fill-[#FFE66D] text-[#FFE66D]'
                               : 'text-gray-300'
                               }`}
@@ -579,10 +597,10 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                     </div>
                   </div>
 
-                  <div className="space-y-2 col-span-2">
+                  <div className="space-y-2 md:col-span-2">
                     {[5, 4, 3, 2, 1].map((rating) => (
                       <div key={rating} className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 w-20">
+                        <div className="flex items-center gap-1 w-16 sm:w-20">
                           <span className="text-sm font-medium">{rating}</span>
                           <Star className="w-4 h-4 fill-[#FFE66D] text-[#FFE66D]" />
                         </div>
@@ -597,7 +615,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                             }}
                           />
                         </div>
-                        <span className="text-sm text-gray-600 w-12 text-right">
+                        <span className="text-sm text-gray-600 w-10 sm:w-12 text-right">
                           {ratingDistribution[rating as keyof typeof ratingDistribution]}
                         </span>
                       </div>
@@ -612,21 +630,21 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
               {comments.map((comment) => (
                 <Card key={comment.id} className="bg-white">
                   <CardHeader>
-                    <div className="flex items-start justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <img
                           src={comment.users?.avatar_url || '/default-avatar.png'}
                           alt={comment.users?.full_name}
-                          className="w-12 h-12 rounded-full border-2 border-purple-200"
+                          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-purple-200"
                           onError={(e) => {
                             e.currentTarget.src = '/default-avatar.png';
                           }}
                         />
                         <div>
-                          <div className="font-semibold text-primary">
+                          <div className="font-semibold text-primary text-sm sm:text-base">
                             {comment.users?.full_name || 'Anonymous'}
                           </div>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <div className="flex items-center gap-1">
                               {[...Array(5)].map((_, i) => (
                                 <Star
@@ -638,7 +656,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                                 />
                               ))}
                             </div>
-                            <span className="text-sm text-gray-500">
+                            <span className="text-xs sm:text-sm text-gray-500">
                               {new Date(comment.created_at).toLocaleDateString('en-US', {
                                 year: 'numeric',
                                 month: 'long',
@@ -648,13 +666,13 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                           </div>
                         </div>
                       </div>
-                      <Badge className="bg-purple-100 text-purple-700">
+                      <Badge className="bg-purple-100 text-purple-700 w-fit">
                         {comment.order_items?.package_name || 'Verified Purchase'}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700 leading-relaxed">{comment.message}</p>
+                    <p className="text-gray-700 leading-relaxed text-sm sm:text-base">{comment.message}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -662,10 +680,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
           </div>
         )}
 
-        {/* Package Selection - Mobile Only (Inline) */}
-     
-
-        <div className="mt-20">
+        <div className="mt-12 md:mt-20">
           <CategoryCarousel />
         </div>
       </div>
@@ -682,23 +697,23 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
           >
             <div className="container mx-auto px-4 py-8 max-w-7xl">
               {/* Modal Header */}
-              <div className="flex justify-between items-start mb-8">
+              <div className="flex justify-between items-start mb-8 gap-4">
                 <div>
-                  <h2 className="text-3xl font-bold text-white mb-2">Choose Your Package</h2>
-                  <p className="text-gray-300 text-lg">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Choose Your Package</h2>
+                  <p className="text-gray-300 text-base sm:text-lg">
                     Select the perfect package for your needs and add it to order
                   </p>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}
-                  className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-all"
+                  className="bg-white/10 hover:bg-white/20 text-white p-3 rounded-full transition-all shrink-0"
                 >
                   <X className="w-6 h-6" />
                 </button>
               </div>
 
               {/* Package Grid */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {packages.map((pkg) => (
                   <Card
                     key={pkg.id}
@@ -706,10 +721,10 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                   >
                     <CardHeader className="pb-3">
                       <Badge className="w-fit mb-2 bg-purple-100 text-purple-700">
-                        {pkg.package}
+                        {pkg.package?.name}
                       </Badge>
                       <CardTitle className="text-xl">{pkg.name}</CardTitle>
-                      <div className="text-5xl font-bold text-primary mt-2">
+                      <div className="text-4xl sm:text-5xl font-bold text-primary mt-2">
                         ${pkg.price}<span className='text-xl'>.00</span>
                       </div>
                     </CardHeader>

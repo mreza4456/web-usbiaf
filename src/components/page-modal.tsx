@@ -19,7 +19,7 @@ import {
     updatePackageName,
     deletePackageName,
     getAllPackageNames,
-} from "@/action/package_name"
+} from "@/action/package"
 
 interface ManagePackageNamesModalProps {
     open: boolean
