@@ -201,7 +201,6 @@ export const updateCategories = async (
     return { success: false, message: error.message || "Terjadi kesalahan", data: null };
   }
 };
-
 export const deleteCategories = async (id: string) => {
   try {
     // Verify user is authenticated and is admin
@@ -229,7 +228,42 @@ export const deleteCategories = async (id: string) => {
       };
     }
 
-    // 2. Hapus semua relasi di categories_package
+    // 2. Ambil dulu id-id categories_package yang terkait,
+    // karena carts merefer ke categories_package.id (bukan langsung ke categories.id)
+    const { data: packageRelations, error: packageRelationsError } = await supabase
+      .from("categories_package")
+      .select("id")
+      .eq("categories_id", id);
+
+    if (packageRelationsError) {
+      console.error("Fetch package relations error:", packageRelationsError);
+      return { 
+        success: false, 
+        message: `Gagal mengambil relasi package: ${packageRelationsError.message}`, 
+        data: null 
+      };
+    }
+
+    const packageIds = packageRelations?.map(p => p.id) || [];
+
+    // 3. Hapus carts yang masih merefer ke categories_package ini
+    if (packageIds.length > 0) {
+      const { error: cartsError } = await supabase
+        .from("carts")
+        .delete()
+        .in("package_id", packageIds); // sesuaikan nama kolom FK jika berbeda
+
+      if (cartsError) {
+        console.error("Carts delete error:", cartsError);
+        return { 
+          success: false, 
+          message: `Gagal menghapus carts terkait: ${cartsError.message}`, 
+          data: null 
+        };
+      }
+    }
+
+    // 4. Hapus semua relasi di categories_package
     const { error: packagesError } = await supabase
       .from("categories_package")
       .delete()
@@ -244,7 +278,7 @@ export const deleteCategories = async (id: string) => {
       };
     }
 
-    // 3. Hapus category itu sendiri
+    // 5. Hapus category itu sendiri
     const { data, error } = await supabase
       .from("categories")
       .delete()
