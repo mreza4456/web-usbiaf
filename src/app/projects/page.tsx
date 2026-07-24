@@ -301,9 +301,9 @@ export default function Projects() {
                             <h3 className="text-xl text-borsok text-dark line-clamp-2 group-hover:text-primary/80 transition-colors">
                               {project.name}
                             </h3>
-                            <p className="text-gray-400 text-arial text-sm line-clamp-3 ">
-                              {project.description || 'No description available'}
-                            </p>
+          
+                                  <div className="prose prose-neutral text-gray-400 text-arial text-sm line-clamp-3"  dangerouslySetInnerHTML={{ __html: project.description || 'No description available' }} />
+                            
 
 
 

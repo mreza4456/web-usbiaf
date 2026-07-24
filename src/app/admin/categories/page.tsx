@@ -158,7 +158,7 @@ export default function CategoriesPage() {
             accessorKey: "name",
             header: "Name",
             cell: ({ row }) => (
-                <div className="font-medium">{row.original.name}</div>
+                <div className="font-medium max-w-2xl text-wrap">{row.original.name}</div>
             )
         },
         {
@@ -169,8 +169,8 @@ export default function CategoriesPage() {
                 const short = truncateText(desc, 60)
 
                 return (
-                    <span title={desc} className="cursor-help text-sm text-gray-600">
-                        {short}
+                    <span title={desc} dangerouslySetInnerHTML={{ __html: short }} className="cursor-help text-sm text-gray-600">
+                       
                     </span>
                 )
             }

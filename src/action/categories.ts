@@ -1,7 +1,7 @@
 "use server";
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { ICategory, IImageCategories } from "@/interface";
+import { ICategory, IImageCategories, IIncludes } from "@/interface";
 
 // Create Supabase client dengan cookie support untuk server actions
 const createClient = async () => {
@@ -277,6 +277,19 @@ export const deleteCategories = async (id: string) => {
         data: null 
       };
     }
+    const { error: IncludesError } = await supabase
+      .from("categories_include")
+      .delete()
+      .eq("categories_id", id);
+
+    if (IncludesError) {
+      console.error("Packages delete error:", IncludesError);
+      return { 
+        success: false, 
+        message: `Gagal menghapus relasi package: ${IncludesError.message}`, 
+        data: null 
+      };
+    }
 
     // 5. Hapus category itu sendiri
     const { data, error } = await supabase
@@ -319,7 +332,8 @@ export const getCategoriesById = async (id: string) => {
       .select(`
         *,
         images:image_categories(*),
-        packages:categories_package(*)
+        packages:categories_package(*),
+        includes:categories_include(*)
       `)
       .eq("id", id)
       // urutkan nested images berdasarkan sort_order (ascending)
@@ -331,7 +345,7 @@ export const getCategoriesById = async (id: string) => {
       return { success: false, message: error.message, data: null };
     }
 
-    return { success: true, data: data as ICategory & { images: IImageCategories[] } };
+    return { success: true, data: data as ICategory & { images: IImageCategories[] , includes: IIncludes[]} };
   } catch (error: any) {
     console.error("getCategoriesById catch error:", error);
     return { success: false, message: error.message || "Terjadi kesalahan", data: null };

@@ -171,6 +171,15 @@ export interface IPackageName {
   created_at?: string;
 }
 
+export interface IIncludes {
+  id: string;
+  include_name: string;
+  categories_id:string;
+  created_at?: string;
+
+  categories:ICategory
+}
+
 // interface.ts
 export interface ICategory {
   id: string;

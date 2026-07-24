@@ -9,79 +9,80 @@ import { addPackageCategory } from "@/action/package"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { SiteHeader } from "@/components/site-header"
+import { addInclude } from "@/action/includes"
 
 export default function AddCategoryPage() {
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = React.useState(false)
 
-    const handleSubmit = async (values: any) => {
-        console.log("🚀 ADD CATEGORY - HANDLE SUBMIT CALLED!")
-        console.log("=== FORM VALUES ===", values)
+   const handleSubmit = async (values: any) => {
+    try {
+        setIsSubmitting(true)
 
-        try {
-            setIsSubmitting(true)
+        // 1. Pisahkan images, packages, DAN includes dari category data
+        const { images, packages, includes, ...categoryData } = values
 
-            // 1. Pisahkan images dan packages dari category data
-            const { images, packages, ...categoryData } = values
+        // 2. Create Category dengan images
+        const categoryRes = await addCategories(categoryData, images || [])
 
-            console.log("=== CATEGORY DATA ===", categoryData)
-            console.log("=== IMAGES ===", images)
-            console.log("=== PACKAGES ===", packages)
-
-            // 2. Create Category dengan images
-            const categoryRes = await addCategories(categoryData, images || [])
-
-            if (!categoryRes.success) {
-                throw new Error(categoryRes.message)
-            }
-
-            if (!categoryRes.data) {
-                throw new Error("Kategori dibuat tetapi data kosong")
-            }
-
-            const createdCategory = categoryRes.data
-            console.log("✅ Category created:", createdCategory.id)
-
-            // 3. Create Packages jika ada
-            if (packages && packages.length > 0) {
-                console.log(`Creating ${packages.length} packages...`)
-
-                const packagePromises = packages.map((pkg: any, idx: number) => {
-                    const packageData = {
-                        categories_id: createdCategory.id,
-                        name: pkg.name,
-                        price: pkg.price,
-                        package: pkg.package,
-                        description: pkg.description || "",
-                    }
-                    console.log(`[${idx}] Creating package:`, packageData)
-                    return addPackageCategory(packageData)
-                })
-
-                const packageResults = await Promise.all(packagePromises)
-                console.log("=== PACKAGE RESULTS ===", packageResults)
-
-                // Check if any package creation failed
-                const failedPackage = packageResults.find(res => !res.success)
-                if (failedPackage) {
-                    toast.warning(`Services dan gambar dibuat, namun ada paket yang gagal: ${failedPackage.message}`)
-                    router.push("/admin/categories")
-                    return
-                }
-
-                toast.success(`Services, ${images?.length || 0} gambar, dan ${packages.length} paket berhasil dibuat`)
-            } else {
-                toast.success(`Services dan ${images?.length || 0} gambar berhasil dibuat`)
-            }
-
-            router.push("/admin/categories")
-        } catch (err: any) {
-            console.error("=== ERROR ===", err)
-            toast.error(err.message || "Terjadi kesalahan")
-        } finally {
-            setIsSubmitting(false)
+        if (!categoryRes.success) {
+            throw new Error(categoryRes.message)
         }
+
+        if (!categoryRes.data) {
+            throw new Error("Kategori dibuat tetapi data kosong")
+        }
+
+        const createdCategory = categoryRes.data
+
+        // 3. Create Includes jika ada
+        if (includes && includes.length > 0) {
+            const validIncludes = includes.filter((inc: any) => inc.include_name?.trim())
+
+            const includePromises = validIncludes.map((inc: any) =>
+                addInclude(createdCategory.id, inc.include_name)
+            )
+
+            const includeResults = await Promise.all(includePromises)
+            const failedInclude = includeResults.find(res => !res.success)
+            if (failedInclude) {
+                toast.warning(`Kategori dibuat, namun ada feature yang gagal: ${failedInclude.message}`)
+            }
+        }
+
+        // 4. Create Packages jika ada
+        if (packages && packages.length > 0) {
+            const packagePromises = packages.map((pkg: any) => {
+                const packageData = {
+                    categories_id: createdCategory.id,
+                    name: pkg.name,
+                    price: pkg.price,
+                    package: pkg.package,
+                    description: pkg.description || "",
+                }
+                return addPackageCategory(packageData)
+            })
+
+            const packageResults = await Promise.all(packagePromises)
+            const failedPackage = packageResults.find(res => !res.success)
+            if (failedPackage) {
+                toast.warning(`Services dan gambar dibuat, namun ada paket yang gagal: ${failedPackage.message}`)
+                router.push("/admin/categories")
+                return
+            }
+
+            toast.success(`Services, ${images?.length || 0} gambar, ${includes?.length || 0} feature, dan ${packages.length} paket berhasil dibuat`)
+        } else {
+            toast.success(`Services dan ${images?.length || 0} gambar berhasil dibuat`)
+        }
+
+        router.push("/admin/categories")
+    } catch (err: any) {
+        toast.error(err.message || "Terjadi kesalahan")
+    } finally {
+        setIsSubmitting(false)
     }
+}
 
     return (
         <div>

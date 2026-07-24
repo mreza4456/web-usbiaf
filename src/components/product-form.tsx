@@ -33,6 +33,7 @@ import { getAllCategories } from "@/action/categories"
 import { Card } from "@/components/ui/card"
 import { ImageUpload } from "@/components/image-upload"
 import { addImage, deleteImage } from "@/action/image"
+import { RichTextEditor } from "./text-editor"
 
 const productSchema = z.object({
   name: z.string().min(2, "min 2 characters"),
@@ -54,7 +55,7 @@ export default function ProductFormPage({
 }: ProductFormProps) {
   const params = useParams()
   const router = useRouter()
-  
+
   // Only get productId if in edit mode
   const productId = formType === "edit" ? (params?.id as string) : undefined
 
@@ -92,14 +93,14 @@ export default function ProductFormPage({
       console.warn("No product ID provided for edit mode")
       return
     }
-    
+
     try {
       setLoading(true)
       const response = await getProductById(productId)
       if (!response || !response.success) {
         throw new Error(response?.message || "Failed to fetch product")
       }
-      
+
       const product = response.data
       if (!product) {
         throw new Error("Product not found")
@@ -135,130 +136,130 @@ export default function ProductFormPage({
       fetchProduct()
     }
   }, [formType, productId])
-const handleSubmit = async (values: ProductForm) => {
-  console.log("=== SUBMIT STARTED ===")
-  console.log("Form Type:", formType)
-  console.log("Form values:", values)
-  console.log("Image files:", imageFiles.length)
-  console.log("Product ID:", productId)
+  const handleSubmit = async (values: ProductForm) => {
+    console.log("=== SUBMIT STARTED ===")
+    console.log("Form Type:", formType)
+    console.log("Form values:", values)
+    console.log("Image files:", imageFiles.length)
+    console.log("Product ID:", productId)
 
-  try {
-    setLoading(true)
-    
-    // Validate categories_id (remove parseInt, use as string/UUID)
-    if (!values.categories_id || values.categories_id.trim() === '') {
-      throw new Error("Category is required")
-    }
-    
-    // Parse and validate price
-    const price = parseFloat(values.price)
-    if (isNaN(price) || price <= 0) {
-      throw new Error("Invalid price")
-    }
+    try {
+      setLoading(true)
 
-    const payload = {
-      name: values.name,
-      categories_id: values.categories_id, // Keep as string (UUID)
-      price: price,
-      description: values.description || "",
-    }
-
-    console.log("Payload:", payload)
-
-    let res
-    let savedProductId = productId
-
-    // Step 1: Save or Update Product
-    if (formType === "edit") {
-      // Edit mode - productId must exist
-      if (!productId) {
-        throw new Error("Product ID is required for edit mode")
+      // Validate categories_id (remove parseInt, use as string/UUID)
+      if (!values.categories_id || values.categories_id.trim() === '') {
+        throw new Error("Category is required")
       }
-      console.log("Updating product...")
-      res = await updateProducts(productId, payload as any)
-      console.log("Update response:", res)
-    } else {
-      // Add mode - create new product
-      console.log("Creating new product...")
-      res = await addProducts(payload as any)
-      console.log("Add response:", res)
-      
-      // Get the new product ID from response
-      if (res.success && res.data?.id) {
-        savedProductId = res.data.id
-        console.log("New product ID:", savedProductId)
+
+      // Parse and validate price
+      const price = parseFloat(values.price)
+      if (isNaN(price) || price <= 0) {
+        throw new Error("Invalid price")
       }
-    }
 
-    if (!res || !res.success) {
-      throw new Error(res?.message || "Failed to save product")
-    }
+      const payload = {
+        name: values.name,
+        categories_id: values.categories_id, // Keep as string (UUID)
+        price: price,
+        description: values.description || "",
+      }
 
-    // Step 2: Delete marked images (only in edit mode)
-    if (formType === "edit" && imagesToDelete.length > 0) {
-      console.log("Deleting images:", imagesToDelete)
-      for (const imageId of imagesToDelete) {
-        try {
-          await deleteImage(imageId)
-        } catch (err) {
-          console.error("Failed to delete image:", imageId, err)
+      console.log("Payload:", payload)
+
+      let res
+      let savedProductId = productId
+
+      // Step 1: Save or Update Product
+      if (formType === "edit") {
+        // Edit mode - productId must exist
+        if (!productId) {
+          throw new Error("Product ID is required for edit mode")
+        }
+        console.log("Updating product...")
+        res = await updateProducts(productId, payload as any)
+        console.log("Update response:", res)
+      } else {
+        // Add mode - create new product
+        console.log("Creating new product...")
+        res = await addProducts(payload as any)
+        console.log("Add response:", res)
+
+        // Get the new product ID from response
+        if (res.success && res.data?.id) {
+          savedProductId = res.data.id
+          console.log("New product ID:", savedProductId)
         }
       }
-    }
 
-    // Step 3: Upload new images (both add and edit mode)
-    if (imageFiles.length > 0 && savedProductId) {
-      console.log(`Uploading ${imageFiles.length} images to product ${savedProductId}...`)
-      
-      let successCount = 0
-      let failCount = 0
-      
-      for (const file of imageFiles) {
-        try {
-          console.log("Uploading:", file.name)
-          const uploadRes = await addImage({ product_id: savedProductId }, file)
-          
-          if (uploadRes.success) {
-            successCount++
-            console.log("Upload success:", file.name)
-          } else {
-            failCount++
-            console.error("Upload failed:", file.name, uploadRes.message)
+      if (!res || !res.success) {
+        throw new Error(res?.message || "Failed to save product")
+      }
+
+      // Step 2: Delete marked images (only in edit mode)
+      if (formType === "edit" && imagesToDelete.length > 0) {
+        console.log("Deleting images:", imagesToDelete)
+        for (const imageId of imagesToDelete) {
+          try {
+            await deleteImage(imageId)
+          } catch (err) {
+            console.error("Failed to delete image:", imageId, err)
           }
-        } catch (err: any) {
-          failCount++
-          console.error("Upload error:", file.name, err)
         }
       }
-      
-      console.log(`Upload complete: ${successCount} success, ${failCount} failed`)
-      
-      if (failCount > 0) {
-        toast.warning(`Product saved, but ${failCount} image(s) failed to upload`)
-      }
-    }
 
-    const successMessage = formType === "edit" 
-      ? "Product updated successfully!" 
-      : "Product created successfully!"
-    toast.success(successMessage)
-    console.log("=== SUBMIT SUCCESS ===")
-    
-    // Redirect to products list
-    router.push("/admin/products")
-    
-  } catch (err: any) {
-    console.error("=== SUBMIT ERROR ===", err)
-    toast.error(err.message || "Something went wrong")
-  } finally {
-    setLoading(false)
-    console.log("=== SUBMIT ENDED ===")
+      // Step 3: Upload new images (both add and edit mode)
+      if (imageFiles.length > 0 && savedProductId) {
+        console.log(`Uploading ${imageFiles.length} images to product ${savedProductId}...`)
+
+        let successCount = 0
+        let failCount = 0
+
+        for (const file of imageFiles) {
+          try {
+            console.log("Uploading:", file.name)
+            const uploadRes = await addImage({ product_id: savedProductId }, file)
+
+            if (uploadRes.success) {
+              successCount++
+              console.log("Upload success:", file.name)
+            } else {
+              failCount++
+              console.error("Upload failed:", file.name, uploadRes.message)
+            }
+          } catch (err: any) {
+            failCount++
+            console.error("Upload error:", file.name, err)
+          }
+        }
+
+        console.log(`Upload complete: ${successCount} success, ${failCount} failed`)
+
+        if (failCount > 0) {
+          toast.warning(`Product saved, but ${failCount} image(s) failed to upload`)
+        }
+      }
+
+      const successMessage = formType === "edit"
+        ? "Product updated successfully!"
+        : "Product created successfully!"
+      toast.success(successMessage)
+      console.log("=== SUBMIT SUCCESS ===")
+
+      // Redirect to products list
+      router.push("/admin/products")
+
+    } catch (err: any) {
+      console.error("=== SUBMIT ERROR ===", err)
+      toast.error(err.message || "Something went wrong")
+    } finally {
+      setLoading(false)
+      console.log("=== SUBMIT ENDED ===")
+    }
   }
-}
 
   const handleRemoveExistingImage = (imageId: string) => {
     if (!confirm("Remove this image?")) return
-    
+
     // Mark image for deletion
     setImagesToDelete(prev => [...prev, imageId])
     // Remove from UI
@@ -267,8 +268,8 @@ const handleSubmit = async (values: ProductForm) => {
 
   return (
     <div className="p-6 space-y-6">
-      <Card className="p-6">
-        <div className="flex items-center gap-4 mb-6">
+      <Card className="p-6 bg-white">
+        <div className="flex items-center gap-4 mb-6 bg-white">
           <Button
             variant="outline"
             size="icon"
@@ -356,7 +357,10 @@ const handleSubmit = async (values: ProductForm) => {
                 <FormItem>
                   <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Product description" {...field} />
+                    <RichTextEditor
+                      {...field}
+                      value={field.value}
+                      onChange={field.onChange} placeholder="Product description"  />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -364,14 +368,14 @@ const handleSubmit = async (values: ProductForm) => {
             />
 
             <div className="flex gap-4">
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 disabled={loading}
               >
-                {loading 
-                  ? "Saving..." 
-                  : formType === "edit" 
-                    ? "Update Product" 
+                {loading
+                  ? "Saving..."
+                  : formType === "edit"
+                    ? "Update Product"
                     : "Create Product"
                 }
               </Button>

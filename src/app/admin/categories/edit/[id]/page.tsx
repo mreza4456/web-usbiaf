@@ -13,8 +13,9 @@ import {
 } from "@/action/package"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import { ICategory, IPackageCategories, IImageCategories } from "@/interface"
+import { ICategory, IPackageCategories, IImageCategories, IIncludes } from "@/interface"
 import { SiteHeader } from "@/components/site-header"
+import { addInclude, deleteInclude, updateInclude } from "@/action/includes"
 
 export default function EditCategoryPage() {
     const router = useRouter()
@@ -24,6 +25,9 @@ export default function EditCategoryPage() {
     const [images, setImages] = React.useState<IImageCategories[]>([])
     const [packages, setPackages] = React.useState<IPackageCategories[]>([])
     const [loading, setLoading] = React.useState(true)
+    const [includes, setIncludes] = React.useState<IIncludes[]>([])
+
+    // di dalam fetchData():
 
     React.useEffect(() => {
         const fetchData = async () => {
@@ -42,6 +46,10 @@ export default function EditCategoryPage() {
                     setImages(categoryResponse.data.images)
                 }
 
+                if (categoryResponse.data?.includes) {
+                    setIncludes(categoryResponse.data.includes)
+                }
+                
                 // Fetch packages
                 const packagesResponse = await getPackageCategoriesByCategoryId(params.id as string)
 
@@ -71,14 +79,22 @@ export default function EditCategoryPage() {
         try {
             setIsSubmitting(true)
 
-            // 1. Pisahkan images dan packages dari category data
-            const { images: updatedImages, packages: updatedPackages, ...categoryData } = values
+            // Pisahkan images, packages, dan includes dari data category
+            const {
+                images: updatedImages,
+                packages: updatedPackages,
+                includes: updatedIncludes,
+                ...categoryData
+            } = values
 
             console.log("=== CATEGORY DATA ===", categoryData)
             console.log("=== UPDATED IMAGES ===", updatedImages)
             console.log("=== UPDATED PACKAGES ===", updatedPackages)
+            console.log("=== UPDATED INCLUDES ===", updatedIncludes)
 
-            // 2. Update Category dengan images
+            // ==========================
+            // UPDATE CATEGORY + IMAGES
+            // ==========================
             const categoryRes = await updateCategories(
                 params.id as string,
                 categoryData,
@@ -91,9 +107,66 @@ export default function EditCategoryPage() {
 
             console.log("✅ Category and images updated successfully")
 
-            // 3. Handle Packages
+            // ==========================
+            // HANDLE INCLUDES
+            // ==========================
+            const submittedIncludes = updatedIncludes || []
+
+            const existingIncludeIds = includes.map((inc) => inc.id)
+            const submittedIncludeIds = submittedIncludes
+                .filter((inc: any) => inc.id)
+                .map((inc: any) => inc.id)
+
+            console.log("=== EXISTING INCLUDE IDs ===", existingIncludeIds)
+            console.log("=== SUBMITTED INCLUDE IDs ===", submittedIncludeIds)
+
+            // Delete includes yang dihapus
+            const includesToDelete = existingIncludeIds.filter(
+                (id) => !submittedIncludeIds.includes(id)
+            )
+
+            console.log("=== INCLUDES TO DELETE ===", includesToDelete)
+
+            for (const incId of includesToDelete) {
+                const deleteRes = await deleteInclude(incId)
+                console.log(
+                    `Deleted include ${incId}:`,
+                    deleteRes.success ? "✅" : "❌",
+                    deleteRes.message
+                )
+            }
+
+            // Update/Create includes
+            const includePromises = submittedIncludes
+                .filter((inc: any) => inc.include_name?.trim())
+                .map((inc: any, idx: number) => {
+                    if (inc.id) {
+                        console.log(
+                            `[${idx}] Updating include ${inc.id}:`,
+                            inc.include_name
+                        )
+                        return updateInclude(inc.id, inc.include_name)
+                    }
+
+                    console.log(
+                        `[${idx}] Creating include:`,
+                        inc.include_name
+                    )
+                    return addInclude(params.id as string, inc.include_name)
+                })
+
+            const includeResults = await Promise.all(includePromises)
+
+            console.log("=== INCLUDE RESULTS ===", includeResults)
+
+            const failedInclude = includeResults.find((res) => !res.success)
+
+            // ==========================
+            // HANDLE PACKAGES
+            // ==========================
             const submittedPackages = updatedPackages || []
-            const existingPackageIds = packages.map(p => p.id)
+
+            const existingPackageIds = packages.map((p) => p.id)
             const submittedPackageIds = submittedPackages
                 .filter((p: any) => p.id)
                 .map((p: any) => p.id)
@@ -101,19 +174,23 @@ export default function EditCategoryPage() {
             console.log("=== EXISTING PACKAGE IDs ===", existingPackageIds)
             console.log("=== SUBMITTED PACKAGE IDs ===", submittedPackageIds)
 
-            // Delete packages that were removed
+            // Delete package yang dihapus
             const packagesToDelete = existingPackageIds.filter(
-                id => !submittedPackageIds.includes(id)
+                (id) => !submittedPackageIds.includes(id)
             )
 
             console.log("=== PACKAGES TO DELETE ===", packagesToDelete)
 
             for (const pkgId of packagesToDelete) {
                 const deleteRes = await deletePackageCategory(pkgId)
-                console.log(`Deleted package ${pkgId}:`, deleteRes.success ? "✅" : "❌", deleteRes.message)
+                console.log(
+                    `Deleted package ${pkgId}:`,
+                    deleteRes.success ? "✅" : "❌",
+                    deleteRes.message
+                )
             }
 
-            // Update or Create packages
+            // Update/Create packages
             const packagePromises = submittedPackages.map((pkg: any, idx: number) => {
                 const packageData = {
                     categories_id: params.id as string,
@@ -124,29 +201,53 @@ export default function EditCategoryPage() {
                 }
 
                 if (pkg.id) {
-                    console.log(`[${idx}] UPDATING package ${pkg.id}:`, packageData)
+                    console.log(
+                        `[${idx}] Updating package ${pkg.id}:`,
+                        packageData
+                    )
                     return updatePackageCategory(pkg.id, packageData)
-                } else {
-                    console.log(`[${idx}] CREATING new package:`, packageData)
-                    return addPackageCategory(packageData)
                 }
+
+                console.log(`[${idx}] Creating package:`, packageData)
+                return addPackageCategory(packageData)
             })
 
             const packageResults = await Promise.all(packagePromises)
 
             console.log("=== PACKAGE RESULTS ===", packageResults)
 
-            // Check if any package operation failed
-            const failedPackage = packageResults.find(res => !res.success)
-            if (failedPackage) {
-                toast.warning(`Kategori dan gambar diupdate, namun ada paket yang gagal: ${failedPackage.message}`)
+            const failedPackage = packageResults.find((res) => !res.success)
+
+            // ==========================
+            // HANDLE WARNINGS
+            // ==========================
+            if (failedInclude || failedPackage) {
+                let warningMessage = "Kategori berhasil diupdate, namun "
+
+                if (failedInclude && failedPackage) {
+                    warningMessage += "ada feature dan paket yang gagal diupdate."
+                } else if (failedInclude) {
+                    warningMessage += `ada feature yang gagal: ${failedInclude.message}`
+                } else {
+                    warningMessage += `ada paket yang gagal: ${failedPackage?.message}`
+                }
+
+                toast.warning(warningMessage)
                 router.push("/admin/categories")
                 return
             }
 
+            // ==========================
+            // SUCCESS
+            // ==========================
             const imageCount = updatedImages?.length || 0
             const packageCount = submittedPackages.length
-            toast.success(`Kategori, ${imageCount} gambar, dan ${packageCount} paket berhasil diupdate`)
+            const includeCount = submittedIncludes.length
+
+            toast.success(
+                `Kategori, ${imageCount} gambar, ${includeCount} feature, dan ${packageCount} paket berhasil diupdate`
+            )
+
             router.push("/admin/categories")
         } catch (err: any) {
             console.error("=== ERROR ===", err)

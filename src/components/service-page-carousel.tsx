@@ -59,49 +59,49 @@ export default function CategoryPageCarousel() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-     const fetchPoster = async () => {
-            try {
-                const result = await getAllPosters();
+    const fetchPoster = async () => {
+        try {
+            const result = await getAllPosters();
 
-                if (result.success && Array.isArray(result.data)) {
-                    setPoster(result.data);
-                } else {
-                    console.error('Failed to fetch Poster:', result.message);
-                    setPoster([]);
-                    setError(result.message || 'Failed to load Poster');
-                }
-            } catch (error) {
-                console.error('Failed to fetch Poster:', error);
+            if (result.success && Array.isArray(result.data)) {
+                setPoster(result.data);
+            } else {
+                console.error('Failed to fetch Poster:', result.message);
                 setPoster([]);
-                setError('Failed to load Poster');
-            } finally {
-                setLoading(false);
+                setError(result.message || 'Failed to load Poster');
             }
-        };
-         const fetchCategories = async () => {
-            try {
-                const result = await getAllCategories();
+        } catch (error) {
+            console.error('Failed to fetch Poster:', error);
+            setPoster([]);
+            setError('Failed to load Poster');
+        } finally {
+            setLoading(false);
+        }
+    };
+    const fetchCategories = async () => {
+        try {
+            const result = await getAllCategories();
 
-                if (result.success && Array.isArray(result.data)) {
-                    setCategories(result.data);
-                } else {
-                    console.error('Failed to fetch categories:', result.message);
-                    setCategories([]);
-                    setError(result.message || 'Failed to load categories');
-                }
-            } catch (error) {
-                console.error('Failed to fetch categories:', error);
+            if (result.success && Array.isArray(result.data)) {
+                setCategories(result.data);
+            } else {
+                console.error('Failed to fetch categories:', result.message);
                 setCategories([]);
-                setError('Failed to load categories');
-            } finally {
-                setLoading(false);
+                setError(result.message || 'Failed to load categories');
             }
-        };
+        } catch (error) {
+            console.error('Failed to fetch categories:', error);
+            setCategories([]);
+            setError('Failed to load categories');
+        } finally {
+            setLoading(false);
+        }
+    };
     useEffect(() => {
-          fetchPoster();
+        fetchPoster();
         fetchCategories();
     }, []);
- 
+
 
     const handleCategoryClick = (categoryId: string) => {
         router.push(`/service/detail/${categoryId}`);
@@ -126,7 +126,7 @@ export default function CategoryPageCarousel() {
                                     }}
                                     className="w-full"
                                 >
-                                    <CarouselContent className="-ml-2 md:-ml-4">
+                                    <CarouselContent className="-ml-2 md:-ml-4 max-w-5xl">
                                         {categories.map((category) => (
                                             <CarouselItem key={category.id} className="pl-2 md:pl-4 basis-auto">
                                                 <button
@@ -139,7 +139,11 @@ export default function CategoryPageCarousel() {
                                                         {/* Icon placeholder */}
                                                     </div>
                                                     <span className="text-sm font-medium arial">
-                                                        {category.name}
+                                                        {category.name
+                                                            ?.split(" ")
+                                                            .slice(0, 4)
+                                                            .join(" ")}
+                                                        {category.name?.split(" ").length > 4 ? "" : ""}
                                                     </span>
                                                 </button>
                                             </CarouselItem>

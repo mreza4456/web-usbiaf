@@ -16,7 +16,7 @@ import { useForm, useFieldArray } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { getAllPackageNames } from "@/action/package"
-import { ICategory, IPackageCategories, IImageCategories, IPackageName } from "@/interface"
+import { ICategory, IPackageCategories, IImageCategories, IPackageName, IIncludes } from "@/interface"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
@@ -24,8 +24,9 @@ import { uploadImage, deleteImage } from "@/action/upload"
 import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select"
-import { Plus, Trash2, Upload, X, Image as ImageIcon, GripVertical, ArrowUp, ArrowDown, Settings } from "lucide-react"
+import { Plus, Trash2, Upload, X, Image as ImageIcon, GripVertical, ArrowUp, ArrowDown, Settings, ListChecks } from "lucide-react"
 import { ManagePackageNamesModal } from "./page-modal"
+import { RichTextEditor } from "./text-editor"
 
 const packageSchema = z.object({
     id: z.union([z.string(), z.number()]).optional(),
@@ -44,11 +45,17 @@ const imageSchema = z.object({
     sort_order: z.number().optional(),
 })
 
+const includeSchema = z.object({
+    id: z.union([z.string(), z.number()]).optional(),
+    include_name: z.string().min(1, "Nama include tidak boleh kosong"),
+})
+
 const categorySchema = z.object({
     name: z.string().min(2, "Minimal 2 karakter"),
     description: z.string().optional(),
     start_price: z.string().optional(),
     images: z.array(imageSchema).min(1, "Minimal 1 gambar harus diupload"),
+    includes: z.array(includeSchema).optional(),
     packages: z.array(packageSchema).optional(),
 })
 
@@ -58,6 +65,7 @@ interface CategoryFormProps {
     initialData?: ICategory & {
         packages?: IPackageCategories[]
         images?: IImageCategories[]
+        includes?: IIncludes[]
     }
     onSubmit: (values: CategoryFormValues) => Promise<void>
     isSubmitting?: boolean
@@ -92,6 +100,10 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                     created_at: img.created_at,
                     sort_order: (img as any).sort_order ?? idx,
                 })),
+            includes: initialData?.includes?.map(inc => ({
+                id: inc.id,
+                include_name: inc.include_name,
+            })) || [],
             packages: initialData?.packages?.map(pkg => ({
                 id: pkg.id,
                 name: pkg.name,
@@ -105,6 +117,11 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
     const { fields: imageFields, append: appendImage, remove: removeImage, move: moveImage } = useFieldArray({
         control: form.control,
         name: "images",
+    })
+
+    const { fields: includeFields, append: appendInclude, remove: removeInclude } = useFieldArray({
+        control: form.control,
+        name: "includes",
     })
 
     const { fields: packageFields, append: appendPackage, remove: removePackage } = useFieldArray({
@@ -248,6 +265,10 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
         setOverIndex(null)
     }
 
+    const addInclude = () => {
+        appendInclude({ include_name: "" })
+    }
+
     const addPackage = () => {
         appendPackage({
             name: "",
@@ -290,10 +311,10 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                 <FormItem>
                                     <FormLabel>Description</FormLabel>
                                     <FormControl>
-                                        <Textarea
+                                        <RichTextEditor
+                                            value={field.value}
+                                            onChange={field.onChange}
                                             placeholder="Masukkan deskripsi kategori"
-                                            {...field}
-                                            rows={4}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -468,6 +489,68 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                     </CardContent>
                 </Card>
 
+                {/* Includes Section - card biasa, tidak pakai modal */}
+                <Card className="bg-white col-span-2">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                            Features
+                        </CardTitle>
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="px-3 bg-slate-800 hover:bg-slate-700"
+                            onClick={addInclude}
+                        >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Features
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="space-y-3 grid grid-cols-3 gap-5">
+                        {includeFields.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-8">
+                                Belum ada Feature. Klik "Add Feature" untuk menambahkan.
+                            </p>
+                        ) : (
+                            includeFields.map((field, index) => (
+                                <div key={field.id} className=" w-full  ">
+                                    <FormField
+                                        control={form.control}
+                                        name={`includes.${index}.id`}
+                                        render={({ field }) => (
+                                            <FormControl>
+                                                <Input type="hidden" {...field} value={field.value || ""} />
+                                            </FormControl>
+                                        )}
+                                    />
+                                    <div className="relative">
+                                    <FormField
+                                        control={form.control}
+                                        name={`includes.${index}.include_name`}
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <FormControl>
+                                                    <Input placeholder="Masukan Features "  {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-transparent shrink-0 absolute right-0 top-0 cursor-pointer"
+                                        onClick={() => removeInclude(index)}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </CardContent>
+                </Card>
+
                 {/* Packages Section */}
                 <Card className="col-span-2 bg-white">
                     <CardHeader className="flex flex-row items-center justify-between">
@@ -479,14 +562,14 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                 size="sm"
                                 onClick={() => setPackageNameModalOpen(true)}
                                 title="Kelola Package Type"
-                            > 
+                            >
                                 <Settings className="h-4 w-4" />
                                 Package Type
                             </Button>
                             <Button
                                 type="button"
-                                   size="sm"
-                               className="px-3 cursor-pointer bg-slate-800 hover:bg-slate-700"
+                                size="sm"
+                                className="px-3 cursor-pointer bg-slate-800 hover:bg-slate-700"
                                 onClick={addPackage}
                             >
                                 <Plus className="h-4 w-4 mr-1 " />

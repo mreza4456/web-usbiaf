@@ -36,6 +36,7 @@ import {
 } from "@/action/blog"
 import { SiteHeader } from "@/components/site-header"
 import Example from "@/components/skeleton"
+import { RichTextEditor } from "@/components/text-editor"
 
 const blogPostSchema = z.object({
     title: z.string().min(2, "Minimum 2 characters required"),
@@ -390,9 +391,10 @@ export default function BlogManagementPage() {
                                             <FormItem>
                                                 <FormLabel>Description *</FormLabel>
                                                 <FormControl>
-                                                    <Textarea 
+                                                    <RichTextEditor
                                                         {...field} 
-                                                        rows={6}
+                                                      value={field.value}
+                                            onChange={field.onChange}
                                                         placeholder="Enter blog description or content"
                                                     />
                                                 </FormControl>

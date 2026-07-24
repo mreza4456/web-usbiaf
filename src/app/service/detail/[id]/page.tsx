@@ -57,7 +57,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
   const [notificationMessage, setNotificationMessage] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-const DESCRIPTION_LIMIT = 400; // jumlah karakter sebelum dipotong
+  const DESCRIPTION_LIMIT = 400; // jumlah karakter sebelum dipotong
   // Image gallery states
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -392,9 +392,9 @@ const DESCRIPTION_LIMIT = 400; // jumlah karakter sebelum dipotong
 
                     return (
                       <div className="py-4 md:py-8">
-                        <p className="text-gray-600 text-base md:text-lg leading-relaxed whitespace-pre-line">
-                          {displayText}
-                        </p>
+
+                        <div className=" text-gray-600  md:text-lg leading-relaxed whitespace-pre-line" dangerouslySetInnerHTML={{ __html: displayText }} />
+
                         {isLong && (
                           <button
                             type="button"
@@ -448,7 +448,9 @@ const DESCRIPTION_LIMIT = 400; // jumlah karakter sebelum dipotong
                   </CardHeader>
                   <CardContent className="space-y-4">
                     {pkg.description && (
-                      <p className="text-gray-600 text-sm">{pkg.description}</p>
+
+                      <div className="prose prose-neutral max-w-none" dangerouslySetInnerHTML={{ __html: pkg.description }} />
+
                     )}
 
                     <Button
@@ -737,7 +739,7 @@ const DESCRIPTION_LIMIT = 400; // jumlah karakter sebelum dipotong
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {pkg.description && (
-                        <p className="text-gray-600 text-sm min-h-[60px]">{pkg.description}</p>
+                        <div className="prose prose-neutral max-w-none text-gray-600 text-sm " dangerouslySetInnerHTML={{ __html: pkg.description }} />
                       )}
 
                       <Button
