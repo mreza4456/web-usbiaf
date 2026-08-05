@@ -1,0 +1,960 @@
+"use client"
+
+import React from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/components/ui/form"
+import { useForm, useFieldArray } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+import { uploadImage, deleteImage } from "@/action/upload"
+import { toast } from "sonner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select"
+import { Plus, Trash2, Upload, X, Image as ImageIcon, GripVertical, ArrowUp, ArrowDown, Settings, ListChecks } from "lucide-react"
+import { ManagePackageNamesModal } from "./page-modal"
+import { RichTextEditor } from "./text-editor"
+import { getAllPackageNames } from "@/action/package"
+import { getAllClasses } from "@/action/class"
+import { ICategory, IPackageCategories, IImageCategories, IPackageName, IIncludes, IClass } from "@/interface"
+import { Switch } from "@/components/ui/switch"
+
+const packageSchema = z.object({
+    id: z.union([z.string(), z.number()]).optional(),
+    name: z.string().min(2, "Minimal 2 karakter"),
+    price: z.number().min(1, "Harga harus diisi"),
+    package_id: z.union([z.string(), z.number(), z.literal("")]).refine(v => v !== "" && v !== undefined, "Paket harus dipilih"),
+    description: z.string().optional(),
+})
+
+const imageSchema = z.object({
+    id: z.union([z.string(), z.number()]).optional(),
+    image_url: z.string().min(1, "URL gambar harus diisi"),
+    categories_id: z.union([z.string(), z.number()]).optional(),
+    created_at: z.string().optional(),
+    // urutan tampil gambar, disimpan supaya bisa dipersist ke DB
+    sort_order: z.number().optional(),
+})
+
+const includeSchema = z.object({
+    id: z.union([z.string(), z.number()]).optional(),
+    include_name: z.string().min(1, "Nama include tidak boleh kosong"),
+})
+
+const categorySchema = z.object({
+    name: z.string().min(2, "Minimal 2 karakter"),
+    description: z.string().optional(),
+    start_price: z.string().optional(),
+    icon: z.string().optional(),
+    class_id: z.union([z.string(), z.number(), z.literal("")]).refine(
+        v => v !== "" && v !== undefined,
+        "Class harus dipilih"
+    ),
+    is_best_seller: z.boolean(),
+    is_popular: z.boolean(),
+    sales: z.string().optional(),
+    images: z.array(imageSchema).min(1, "Minimal 1 gambar harus diupload"),
+    includes: z.array(includeSchema).optional(),
+    packages: z.array(packageSchema).optional(),
+})
+
+type CategoryFormValues = z.infer<typeof categorySchema>
+
+interface CategoryFormProps {
+    initialData?: ICategory & {
+        packages?: IPackageCategories[]
+        images?: IImageCategories[]
+        includes?: IIncludes[]
+    }
+    onSubmit: (values: CategoryFormValues) => Promise<void>
+    isSubmitting?: boolean
+}
+
+export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFormProps) {
+    const [uploading, setUploading] = React.useState(false)
+    const [uploadMethod, setUploadMethod] = React.useState<"upload" | "url">("upload")
+    const [urlInput, setUrlInput] = React.useState("")
+    const fileInputRef = React.useRef<HTMLInputElement>(null)
+    const [packageNameModalOpen, setPackageNameModalOpen] = React.useState(false)
+    // state untuk drag & drop reorder gambar
+    const [dragIndex, setDragIndex] = React.useState<number | null>(null)
+    const [overIndex, setOverIndex] = React.useState<number | null>(null)
+    const [packageNames, setPackageNames] = React.useState<IPackageName[]>([])
+    const [iconUploading, setIconUploading] = React.useState(false)
+    const iconInputRef = React.useRef<HTMLInputElement>(null)
+    const [classes, setClasses] = React.useState<IClass[]>([])
+
+
+
+
+
+    const form = useForm<CategoryFormValues>({
+        resolver: zodResolver(categorySchema),
+        defaultValues: {
+            name: initialData?.name || "",
+            description: initialData?.description || "",
+            start_price: initialData?.start_price || "",
+            icon: initialData?.icon || "",
+            class_id: initialData?.class_id ?? initialData?.class?.id ?? "",
+            is_best_seller: initialData?.is_best_seller ?? false,
+            is_popular: initialData?.is_popular ?? false,
+            sales: initialData?.sales || "",
+            images: (initialData?.images || [])
+                .slice()
+                .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                .map((img, idx) => ({
+                    id: img.id,
+                    image_url: img.image_url,
+                    categories_id: img.categories_id,
+                    created_at: img.created_at,
+                    sort_order: (img as any).sort_order ?? idx,
+                })),
+            includes: initialData?.includes?.map(inc => ({
+                id: inc.id,
+                include_name: inc.include_name,
+            })) || [],
+            packages: initialData?.packages?.map(pkg => ({
+                id: pkg.id,
+                name: pkg.name,
+                price: pkg.price,
+                package_id: pkg.package_id,
+                description: pkg.description || "",
+            })) || [],
+        },
+    })
+    const loadClasses = React.useCallback(async () => {
+        const res = await getAllClasses()
+        if (res.success) setClasses(res.data)
+    }, [])
+
+    const { fields: imageFields, append: appendImage, remove: removeImage, move: moveImage } = useFieldArray({
+        control: form.control,
+        name: "images",
+    })
+
+    const { fields: includeFields, append: appendInclude, remove: removeInclude } = useFieldArray({
+        control: form.control,
+        name: "includes",
+    })
+
+    const { fields: packageFields, append: appendPackage, remove: removePackage } = useFieldArray({
+        control: form.control,
+        name: "packages",
+    })
+
+    // pastikan sort_order selalu sinkron dengan posisi array setiap kali urutan berubah
+    const syncSortOrder = React.useCallback(() => {
+        const current = form.getValues("images")
+        current.forEach((img, idx) => {
+            if (img.sort_order !== idx) {
+                form.setValue(`images.${idx}.sort_order`, idx, { shouldDirty: true })
+            }
+        })
+    }, [form])
+
+    const loadPackageNames = React.useCallback(async () => {
+        const res = await getAllPackageNames()
+        if (res.success) setPackageNames(res.data)
+    }, [])
+
+    React.useEffect(() => {
+        loadPackageNames()
+        loadClasses()
+    }, [loadPackageNames, loadClasses])
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (!files || files.length === 0) return
+
+        try {
+            setUploading(true)
+
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']
+            const maxSize = 10 * 1024 * 1024
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i]
+
+                if (!validTypes.includes(file.type)) {
+                    toast.error(`File ${file.name}: Tipe tidak valid`)
+                    continue
+                }
+
+                if (file.size > maxSize) {
+                    toast.error(`File ${file.name}: Ukuran terlalu besar (max 10MB)`)
+                    continue
+                }
+
+                const formData = new FormData()
+                formData.append('file', file)
+
+                const result = await uploadImage(formData)
+
+                if (!result.success) {
+                    toast.error(`File ${file.name}: ${result.message}`)
+                    continue
+                }
+
+                appendImage({
+                    image_url: result.url!,
+                    sort_order: imageFields.length,
+                })
+            }
+
+            toast.success('Gambar berhasil diupload')
+
+            if (fileInputRef.current) {
+                fileInputRef.current.value = ""
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'Upload gagal')
+        } finally {
+            setUploading(false)
+        }
+    }
+    const handleIconUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files
+        if (!files || files.length === 0) return
+
+        const file = files[0]
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/svg+xml']
+        const maxSize = 2 * 1024 * 1024 // 2MB, icon biasanya kecil
+
+        if (!validTypes.includes(file.type)) {
+            toast.error(`File ${file.name}: Tipe tidak valid`)
+            return
+        }
+
+        if (file.size > maxSize) {
+            toast.error(`File ${file.name}: Ukuran terlalu besar (max 2MB)`)
+            return
+        }
+
+        try {
+            setIconUploading(true)
+
+            // Hapus icon lama dulu jika ada dan berasal dari supabase
+            const currentIcon = form.getValues("icon")
+            if (currentIcon && currentIcon.includes('supabase')) {
+                await deleteImage(currentIcon)
+            }
+
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const result = await uploadImage(formData)
+
+            if (!result.success) {
+                toast.error(`Gagal upload icon: ${result.message}`)
+                return
+            }
+
+            form.setValue("icon", result.url!, { shouldDirty: true })
+            toast.success('Icon berhasil diupload')
+        } catch (error: any) {
+            toast.error(error.message || 'Upload icon gagal')
+        } finally {
+            setIconUploading(false)
+            if (iconInputRef.current) {
+                iconInputRef.current.value = ""
+            }
+        }
+    }
+
+    const handleRemoveIcon = async () => {
+        const currentIcon = form.getValues("icon")
+        if (currentIcon) {
+            await deleteImage(currentIcon)
+        }
+        form.setValue("icon", "", { shouldDirty: true })
+        toast.success("Icon berhasil dihapus")
+    }
+    const handleAddImageUrl = () => {
+        if (!urlInput.trim()) {
+            toast.error("URL gambar tidak boleh kosong")
+            return
+        }
+
+        appendImage({
+            image_url: urlInput.trim(),
+            sort_order: imageFields.length,
+        })
+
+        setUrlInput("")
+        toast.success("Gambar URL berhasil ditambahkan")
+    }
+
+    const handleRemoveImage = async (index: number) => {
+        const image = imageFields[index]
+
+        if (image.image_url && image.image_url.includes('supabase')) {
+            await deleteImage(image.image_url)
+        }
+
+        removeImage(index)
+        toast.success("Gambar berhasil dihapus")
+        setTimeout(syncSortOrder, 0)
+    }
+
+    // ---- Reorder handlers ----
+    const handleMoveImage = (from: number, to: number) => {
+        if (to < 0 || to >= imageFields.length) return
+        moveImage(from, to)
+        setTimeout(syncSortOrder, 0)
+    }
+
+    const handleDragStart = (index: number) => (e: React.DragEvent) => {
+        setDragIndex(index)
+        e.dataTransfer.effectAllowed = "move"
+    }
+
+    const handleDragEnter = (index: number) => (e: React.DragEvent) => {
+        e.preventDefault()
+        if (index !== overIndex) setOverIndex(index)
+    }
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault()
+    }
+
+    const handleDrop = (index: number) => (e: React.DragEvent) => {
+        e.preventDefault()
+        if (dragIndex === null || dragIndex === index) {
+            setDragIndex(null)
+            setOverIndex(null)
+            return
+        }
+        moveImage(dragIndex, index)
+        setTimeout(syncSortOrder, 0)
+        setDragIndex(null)
+        setOverIndex(null)
+    }
+
+    const handleDragEnd = () => {
+        setDragIndex(null)
+        setOverIndex(null)
+    }
+
+    const addInclude = () => {
+        appendInclude({ include_name: "" })
+    }
+
+    const addPackage = () => {
+        appendPackage({
+            name: "",
+            price: 0,
+            package_id: "",
+            description: "",
+        })
+    }
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit, (errors) => {
+                console.log("=== VALIDATION ERRORS ===", errors)
+                toast.error("Validasi form gagal. Periksa kembali input Anda.")
+            })} className="space-y-1 grid lg:grid-cols-2 gap-8">
+                {/* Category Information */}
+                <Card className="bg-white">
+                    <CardHeader>
+                        <CardTitle>Category Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Category Name *</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Masukkan nama kategori" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Description</FormLabel>
+                                    <FormControl>
+                                        <RichTextEditor
+                                            value={field.value}
+                                            onChange={field.onChange}
+                                            placeholder="Masukkan deskripsi kategori"
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="grid grid-cols-2 gap-5">
+                            <FormField
+                                control={form.control}
+                                name="start_price"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Start Price</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                placeholder="0"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="sales"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Sales</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                placeholder="0"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+
+                        <FormField
+                            control={form.control}
+                            name="class_id"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Class *</FormLabel>
+                                    <Select
+                                        value={field.value ? String(field.value) : ""}
+                                        onValueChange={(val) => field.onChange(val)}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Select a Class" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectLabel>Class</SelectLabel>
+                                                {classes.length === 0 ? (
+                                                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                                        Belum ada class
+                                                    </div>
+                                                ) : (
+                                                    classes.map((c) => (
+                                                        <SelectItem key={c.id} value={String(c.id)}>
+                                                            {c.class_name}
+                                                        </SelectItem>
+                                                    ))
+                                                )}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <div className="flex items-center gap-8">
+                            <FormField
+                                control={form.control}
+                                name="is_best_seller"
+                                render={({ field }) => (
+                                    <FormItem className="flex items-center gap-3">
+                                        <FormLabel className="mb-0">Best Seller</FormLabel>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="is_popular"
+                                render={({ field }) => (
+                                    <FormItem className="flex items-center gap-3">
+                                        <FormLabel className="mb-0">Top Popular</FormLabel>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {/* Icon Upload - tambahan baru */}
+                        <FormField
+                            control={form.control}
+                            name="icon"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Icon</FormLabel>
+                                    <FormControl>
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-4">
+                                                {field.value ? (
+                                                    <div className="relative w-20 h-20 border-2 rounded-lg overflow-hidden bg-gray-100 group shrink-0">
+                                                        <img
+                                                            src={field.value}
+                                                            alt="Icon preview"
+                                                            className="w-full h-full object-contain p-2"
+                                                            onError={(e) => {
+                                                                e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EError%3C/text%3E%3C/svg%3E"
+                                                            }}
+                                                        />
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="icon"
+                                                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                            onClick={handleRemoveIcon}
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-20 h-20 border-2 border-dashed rounded-lg flex items-center justify-center text-muted-foreground bg-gray-50 shrink-0">
+                                                        <ImageIcon className="h-6 w-6" />
+                                                    </div>
+                                                )}
+
+                                                <div className="flex-1">
+                                                    <Input
+                                                        ref={iconInputRef}
+                                                        type="file"
+                                                        accept="image/jpeg,image/jpg,image/png,image/webp,image/svg+xml"
+                                                        onChange={handleIconUpload}
+                                                        disabled={iconUploading}
+                                                    />
+                                                    <p className="text-xs text-muted-foreground mt-1">
+                                                        Format: JPEG, PNG, WEBP, SVG. Maks 2MB.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </CardContent>
+                </Card>
+
+                {/* Images Section */}
+                <Card className="bg-white">
+                    <CardHeader>
+                        <CardTitle>Category Images *</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <Tabs className="" value={uploadMethod} onValueChange={(v) => setUploadMethod(v as "upload" | "url")}>
+                            <TabsList className="grid w-full grid-cols-2 bg-gray-200">
+                                <TabsTrigger value="upload">Upload Files</TabsTrigger>
+                                <TabsTrigger value="url">Image URL</TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="upload" className="space-y-4">
+                                <div className="flex flex-col gap-4">
+                                    <Input
+                                        ref={fileInputRef}
+                                        type="file"
+                                        accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                                        onChange={handleFileUpload}
+                                        disabled={uploading}
+                                        multiple
+                                    />
+                                    <p className="text-xs text-muted-foreground">
+                                        Format: JPEG, PNG, WEBP, GIF. Maks 10MB per file. Bisa upload multiple files.
+                                    </p>
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="url" className="space-y-4">
+                                <div className="flex gap-2">
+                                    <Input
+                                        placeholder="https://example.com/image.jpg"
+                                        value={urlInput}
+                                        onChange={(e) => setUrlInput(e.target.value)}
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault()
+                                                handleAddImageUrl()
+                                            }
+                                        }}
+                                    />
+                                    <Button
+                                        type="button"
+                                        onClick={handleAddImageUrl}
+                                        disabled={!urlInput.trim()}
+                                        className="bg-slate-800 hover:bg-slate-700"
+                                    >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Add
+                                    </Button>
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+
+                        {/* Image Gallery - drag & drop + tombol panah untuk reorder */}
+                        {imageFields.length > 0 ? (
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {imageFields.map((field, index) => (
+                                    <div
+                                        key={field.id}
+                                        draggable
+                                        onDragStart={handleDragStart(index)}
+                                        onDragEnter={handleDragEnter(index)}
+                                        onDragOver={handleDragOver}
+                                        onDrop={handleDrop(index)}
+                                        onDragEnd={handleDragEnd}
+                                        className={`relative group cursor-move transition-transform ${dragIndex === index ? "opacity-40" : ""
+                                            } ${overIndex === index && dragIndex !== null && dragIndex !== index
+                                                ? "ring-2 ring-slate-800 rounded-lg"
+                                                : ""
+                                            }`}
+                                    >
+                                        <div className="relative w-full h-48 border-2 rounded-lg overflow-hidden bg-gray-100">
+                                            <img
+                                                src={field.image_url}
+                                                alt={`Image ${index + 1}`}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => {
+                                                    e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext fill='%23999' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3EError%3C/text%3E%3C/svg%3E"
+                                                }}
+                                            />
+
+                                            {/* Badge nomor urutan */}
+                                            <div className="absolute top-2 left-2 bg-slate-900/80 text-white text-xs font-medium h-6 w-6 rounded-full flex items-center justify-center">
+                                                {index + 1}
+                                            </div>
+
+                                            {/* Grip handle, penanda bisa di-drag */}
+                                            <div className="absolute bottom-2 left-2 bg-black/50 text-white rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <GripVertical className="h-4 w-4" />
+                                            </div>
+                                        </div>
+
+                                        {/* Tombol hapus */}
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-7 w-7"
+                                            onClick={() => handleRemoveImage(index)}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+
+                                        {/* Tombol panah naik/turun, fallback selain drag & drop */}
+                                        <div className="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-7 w-7"
+                                                disabled={index === 0}
+                                                onClick={() => handleMoveImage(index, index - 1)}
+                                            >
+                                                <ArrowUp className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                size="icon"
+                                                className="h-7 w-7"
+                                                disabled={index === imageFields.length - 1}
+                                                onClick={() => handleMoveImage(index, index + 1)}
+                                            >
+                                                <ArrowDown className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground bg-gray-50">
+                                <ImageIcon className="h-12 w-12 mb-2" />
+                                <p className="text-sm">Belum ada gambar. Upload atau tambahkan URL gambar.</p>
+                            </div>
+                        )}
+
+                        {imageFields.length > 1 && (
+                            <p className="text-xs text-muted-foreground">
+                                Tips: geser (drag) gambar untuk mengubah urutan, atau gunakan tombol panah saat hover.
+                            </p>
+                        )}
+
+                        <FormMessage>{form.formState.errors.images?.message}</FormMessage>
+                    </CardContent>
+                </Card>
+
+                {/* Includes Section - card biasa, tidak pakai modal */}
+                <Card className="bg-white col-span-2">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle className="flex items-center gap-2">
+                            Features
+                        </CardTitle>
+                        <Button
+                            type="button"
+                            size="sm"
+                            className="px-3 bg-slate-800 hover:bg-slate-700"
+                            onClick={addInclude}
+                        >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Features
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="space-y-3 grid grid-cols-3 gap-5">
+                        {includeFields.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-8">
+                                Belum ada Feature. Klik "Add Feature" untuk menambahkan.
+                            </p>
+                        ) : (
+                            includeFields.map((field, index) => (
+                                <div key={field.id} className=" w-full  ">
+                                    <FormField
+                                        control={form.control}
+                                        name={`includes.${index}.id`}
+                                        render={({ field }) => (
+                                            <FormControl>
+                                                <Input type="hidden" {...field} value={field.value || ""} />
+                                            </FormControl>
+                                        )}
+                                    />
+                                    <div className="relative">
+                                        <FormField
+                                            control={form.control}
+                                            name={`includes.${index}.include_name`}
+                                            render={({ field }) => (
+                                                <FormItem className="flex-1">
+                                                    <FormControl>
+                                                        <Input placeholder="Masukan Features "  {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-9 w-9 text-red-500 hover:text-red-700 hover:bg-transparent shrink-0 absolute right-0 top-0 cursor-pointer"
+                                            onClick={() => removeInclude(index)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Packages Section */}
+                <Card className="col-span-2 bg-white">
+                    <CardHeader className="flex flex-row items-center justify-between">
+                        <CardTitle>Package Categories</CardTitle>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPackageNameModalOpen(true)}
+                                title="Kelola Package Type"
+                            >
+                                <Settings className="h-4 w-4" />
+                                Package Type
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                className="px-3 cursor-pointer bg-slate-800 hover:bg-slate-700"
+                                onClick={addPackage}
+                            >
+                                <Plus className="h-4 w-4 mr-1 " />
+                                Add Package
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent className={`space-y-1 gap-7 ${packageFields.length === 0 ? '' :
+                        packageFields.length === 1 ? 'grid grid-cols-1' :
+                            packageFields.length === 2 ? 'grid grid-cols-1 md:grid-cols-2' :
+                                'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+                        }`}>
+                        {packageFields.length === 0 ? (
+                            <p className="text-sm text-muted-foreground text-center py-8">
+                                Belum ada paket. Klik "Add Package" untuk menambahkan paket.
+                            </p>
+                        ) : (
+                            packageFields.map((field, index) => (
+                                <div key={field.id}>
+
+                                    <Card className="space-y-2 p-5 bg-white">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="font-medium">Package {index + 1}</h4>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => removePackage(index)}
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                Remove
+                                            </Button>
+                                        </div>
+
+                                        <FormField
+                                            control={form.control}
+                                            name={`packages.${index}.id`}
+                                            render={({ field }) => (
+                                                <FormControl>
+                                                    <Input type="hidden" {...field} value={field.value || ""} />
+                                                </FormControl>
+                                            )}
+                                        />
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={form.control}
+                                                name={`packages.${index}.name`}
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Package Name *</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="Contoh: Basic Widget Package" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+
+                                            <FormField
+                                                control={form.control}
+                                                name={`packages.${index}.package_id`}
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Package Type *</FormLabel>
+                                                        <Select
+                                                            value={field.value ? String(field.value) : ""}
+                                                            onValueChange={(val) => field.onChange(val)}
+                                                        >
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="Select a Package" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectGroup>
+                                                                    <SelectLabel>Package Type</SelectLabel>
+                                                                    {packageNames.length === 0 ? (
+                                                                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                                                            Belum ada package type
+                                                                        </div>
+                                                                    ) : (
+                                                                        packageNames.map((pn) => (
+                                                                            <SelectItem key={pn.id} value={String(pn.id)}>
+                                                                                {pn.name}
+                                                                            </SelectItem>
+                                                                        ))
+                                                                    )}
+                                                                </SelectGroup>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+
+                                        <FormField
+                                            control={form.control}
+                                            name={`packages.${index}.price`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Price *</FormLabel>
+                                                    <FormControl>
+                                                        <Input
+                                                            type="number"
+                                                            placeholder="Input Price"
+                                                            {...field}
+                                                            onChange={(e) => {
+                                                                const value = e.target.value === '' ? 0 : Number(e.target.value)
+                                                                field.onChange(value)
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={form.control}
+                                            name={`packages.${index}.description`}
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Description</FormLabel>
+                                                    <FormControl>
+                                                        <Textarea
+                                                            placeholder="Masukkan deskripsi paket"
+                                                            {...field}
+                                                            rows={3}
+                                                        />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <ManagePackageNamesModal
+                                            open={packageNameModalOpen}
+                                            onOpenChange={setPackageNameModalOpen}
+                                            onChange={loadPackageNames}
+                                        />
+                                    </Card>
+                                </div>
+                            ))
+                        )}
+                    </CardContent>
+                </Card>
+
+                <div className="col-span-2 flex justify-end">
+
+                    <Button
+                        type="submit"
+                        className="py-7 px-15 rounded-xl cursor-pointer bg-slate-800 hover:bg-slate-700"
+                        disabled={isSubmitting || uploading || iconUploading}
+                    >
+                        {isSubmitting ? "Menyimpan..." : initialData ? "Update Category & Packages" : "Create Category & Packages"}
+                    </Button>
+                </div>
+
+            </form>
+        </Form>
+    )
+}
