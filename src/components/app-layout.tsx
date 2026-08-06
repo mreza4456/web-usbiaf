@@ -20,7 +20,7 @@ import {
   Sidebar,
 } from "@/components/ui/sidebar"
 import Navbar from "./navbar"
-import LenisScroll from "./lenis"
+// import LenisScroll from "./lenis"
 import { AuthProvider } from "./auth-provider"
 import Footer from "./footer"
 import UserChat from "./user-chat"
@@ -191,7 +191,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   else if (authLayout) {
     return (
       <>
-        <LenisScroll />
+        {/* <LenisScroll /> */}
         {children}
       </>
     )
@@ -199,7 +199,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   else if (isUserLayout) {
     return (
       <>
-        <LenisScroll />
+        {/* <LenisScroll /> */}
 
         <div className="min-h-screen background relative overflow-hidden">
           <div className="absolute top-20 left-10 w-32 h-32 bg-[#FFE66D] rounded-full opacity-20 blur-3xl"></div>
@@ -309,7 +309,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <LenisScroll />
+      {/* <LenisScroll /> */}
 
       <div className="min-h-screen bg-board relative overflow-hidden">
       

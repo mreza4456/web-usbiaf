@@ -116,11 +116,15 @@ function PosterCarousel({ posters }: { posters: IPoster[] }) {
           key={current}
           className="absolute inset-0 w-full h-full"
         >
-          <img
+          <Image
             className="w-full h-full object-cover"
             src={posters[current].image_url}
             alt={posters[current].id}
-            onError={(e) => { e.currentTarget.src = '/placeholder-image.svg'; }}
+            fill
+            priority={current === 0}
+            loading={current === 0 ? 'eager' : 'lazy'}
+            sizes="100vw"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder-image.svg'; }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
         </div>
@@ -312,6 +316,7 @@ export default function ServicesPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedClassId, setSelectedClassId] = useState<string | number | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<'best_seller' | 'popular' | 'handpick' | null>(null);
 
@@ -367,6 +372,12 @@ export default function ServicesPage() {
     fetchClasses();
   }, []);
 
+  // Debounce search input so filtering doesn't run on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => clearTimeout(t);
+  }, [search]);
+
   const handleCategoryClick = (categoryId: string) => {
     router.push(`/service/detail/${categoryId}`);
   };
@@ -377,11 +388,11 @@ export default function ServicesPage() {
     classes.forEach((c) => map.set(String(c.id), c.class_name));
     return map;
   }, [classes]);
+
   const filteredCategories = useMemo(() => {
+    const term = debouncedSearch.trim().toLowerCase();
     return categories.filter((category) => {
-      const matchesSearch = search.trim()
-        ? category.name.toLowerCase().includes(search.trim().toLowerCase())
-        : true;
+      const matchesSearch = term ? category.name.toLowerCase().includes(term) : true;
 
       const matchesClass = selectedClassId
         ? String((category as any).class_id) === String(selectedClassId)
@@ -397,7 +408,7 @@ export default function ServicesPage() {
 
       return matchesSearch && matchesClass && matchesBadge;
     });
-  }, [categories, search, selectedClassId, selectedBadge]);
+  }, [categories, debouncedSearch, selectedClassId, selectedBadge]);
 
   // ── Pagination derived values (pakai filteredCategories) ──
   const totalPages = Math.max(1, Math.ceil(filteredCategories.length / ITEMS_PER_PAGE));
@@ -411,7 +422,7 @@ export default function ServicesPage() {
   // Reset ke halaman 1 setiap kali filter berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedClassId, selectedBadge]);
+  }, [debouncedSearch, selectedClassId, selectedBadge]);
 
   const paginatedCategories = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -522,6 +533,8 @@ export default function ServicesPage() {
                       const isBestSeller = (category as any).is_best_seller;
                       const isTopPopular = (category as any).is_popular;
                       const isHandpick = (category as any).is_handpick;
+                      // Only the very first row of cards is likely above the fold on first paint
+                      const isAboveFold = currentPage === 1 && index < 4;
 
                       return (
                         <div key={category.id}>
@@ -531,12 +544,15 @@ export default function ServicesPage() {
                           >
                             <div className="relative aspect-square  overflow-hidden">
                               {primaryImage ? (
-                                <img
-
-                                  className="w-full h-full  object-cover"
+                                <Image
+                                  className="object-cover"
                                   src={primaryImage}
                                   alt={category.name}
-                                  onError={(e) => { e.currentTarget.src = '/placeholder-image.svg'; }}
+                                  fill
+                                  loading={isAboveFold ? 'eager' : 'lazy'}
+                                  priority={isAboveFold}
+                                  sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                                  onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder-image.svg'; }}
                                 />
                               ) : (
                                 <div className="w-full h-full bg-gray-200 flex items-center justify-center">

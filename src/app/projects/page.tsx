@@ -180,7 +180,7 @@ export default function Projects() {
                 <p className="text-gray-500">Try adjusting your search or filter</p>
               </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {filteredProjects.map((project, index) => {
                   const mainImage =
                     project.main_image?.image_url ||
