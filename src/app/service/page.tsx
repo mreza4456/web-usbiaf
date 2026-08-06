@@ -470,6 +470,7 @@ export default function ServicesPage() {
                       const className = classMap.get(String((category as any).class_id));
                       const isBestSeller = (category as any).is_best_seller;
                       const isTopPopular = (category as any).is_popular;
+                      const isHandpick = (category as any).is_handpick;
 
                       return (
                         <div key={category.id}>
@@ -492,15 +493,23 @@ export default function ServicesPage() {
                                 </div>
                               )}
                             </div>
-                            {(isBestSeller || isTopPopular) && (
-                              <div className="flex flex-wrap gap-1.5 mt-2">
+                            {(isHandpick || isTopPopular) && (
+                              <div className="flex flex-wrap gap-1.5 mt-2 absolute top-2 left-2 z-10">
                                 {isTopPopular && (
-                                  <span className="inline-flex absolute top-2 left-2 items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-pink-100 text-pink-700">
+                                  <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-pink-100 text-pink-700">
                                     <TrendingUp className="w-3 h-3" />
                                     Popular
                                   </span>
                                 )}
+                                {isHandpick && (
+                                  <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-green-100 text-green-700">
+                                    <Flame className="w-3 h-3" />
+                                    Handpick
+                                  </span>
+                                )}
                               </div>
+
+                           
                             )}
 
                             <div className="p-2 px-5">
@@ -536,7 +545,7 @@ export default function ServicesPage() {
                               </div>
                             </div>
                             {isBestSeller && (
-                              <div className="absolute top-0 right-5 md:right-10 w-7 h-10 md:h-18 rounded-b-full md:w-12 bg-yellow-500 flex flex-col justify-end items-center">
+                              <div className="absolute top-0 right-3 md:right-5 w-7 h-10 md:h-18 rounded-b-full md:w-12 bg-yellow-500 flex flex-col justify-end items-center">
                                 <div className="clip-stars md:h-6 md:w-6 w-3 h-3 bg-white mb-2 md:mb-5" />
                               </div>
                             )}

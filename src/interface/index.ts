@@ -188,6 +188,7 @@ export interface ICategory {
   start_price?: string;
   is_best_seller: boolean;
   is_popular: boolean;
+  is_handpick: boolean;
   sales:string;
   class_id: number;
   created_at?: string;

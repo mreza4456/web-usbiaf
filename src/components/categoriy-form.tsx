@@ -64,6 +64,7 @@ const categorySchema = z.object({
     ),
     is_best_seller: z.boolean(),
     is_popular: z.boolean(),
+    is_handpick: z.boolean(),
     sales: z.string().optional(),
     images: z.array(imageSchema).min(1, "Minimal 1 gambar harus diupload"),
     includes: z.array(includeSchema).optional(),
@@ -110,6 +111,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
             class_id: initialData?.class_id ?? initialData?.class?.id ?? "",
             is_best_seller: initialData?.is_best_seller ?? false,
             is_popular: initialData?.is_popular ?? false,
+            is_handpick: initialData?.is_handpick ?? false,
             sales: initialData?.sales || "",
             images: (initialData?.images || [])
                 .slice()
@@ -498,7 +500,22 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                 name="is_popular"
                                 render={({ field }) => (
                                     <FormItem className="flex items-center gap-3">
-                                        <FormLabel className="mb-0">Top Popular</FormLabel>
+                                        <FormLabel className="mb-0">Popular</FormLabel>
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="is_handpick"
+                                render={({ field }) => (
+                                    <FormItem className="flex items-center gap-3">
+                                        <FormLabel className="mb-0">Handpick</FormLabel>
                                         <FormControl>
                                             <Switch
                                                 checked={field.value}
