@@ -164,11 +164,12 @@ function PosterCarousel({ posters }: { posters: IPoster[] }) {
 }
 
 // ─── CategorySidebar ───────────────────────────────────────────────────────────
-
 function CategorySidebar({
   classes,
   selectedClassId,
   onSelectClass,
+  selectedBadge,
+  onSelectBadge,
   search,
   onSearchChange,
   resultCount,
@@ -177,11 +178,19 @@ function CategorySidebar({
   classes: IClass[];
   selectedClassId: string | number | null;
   onSelectClass: (id: string | number | null) => void;
+  selectedBadge: 'best_seller' | 'popular' | 'handpick' | null;
+  onSelectBadge: (badge: 'best_seller' | 'popular' | 'handpick' | null) => void;
   search: string;
   onSearchChange: (v: string) => void;
   resultCount: number;
   className?: string;
 }) {
+  const badgeOptions: { key: 'best_seller' | 'popular' | 'handpick'; label: string; icon: React.ReactNode }[] = [
+    { key: 'popular', label: 'Popular', icon: <TrendingUp className="w-3.5 h-3.5" /> },
+    { key: 'handpick', label: 'Handpick', icon: <Flame className="w-3.5 h-3.5" /> },
+    { key: 'best_seller', label: 'Best Seller', icon: <Star className="w-3.5 h-3.5" /> },
+  ];
+
   return (
     <aside className={`w-full lg:w-64 shrink-0 ${className}`}>
       <div className="lg:sticky lg:top-24 space-y-6">
@@ -243,6 +252,39 @@ function CategorySidebar({
           </div>
         </div>
 
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <Star className="w-3.5 h-3.5 text-gray-500" />
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+              Highlight
+            </label>
+          </div>
+          <div className="flex flex-wrap lg:flex-col gap-2">
+            <button
+              onClick={() => onSelectBadge(null)}
+              className={`text-left px-3 py-2 rounded-full cursor-pointer lg:rounded-lg text-sm font-medium transition-colors ${selectedBadge === null
+                ? 'bg-primary text-white'
+                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                }`}
+            >
+              All
+            </button>
+            {badgeOptions.map((b) => (
+              <button
+                key={b.key}
+                onClick={() => onSelectBadge(selectedBadge === b.key ? null : b.key)}
+                className={`flex items-center gap-1.5 text-left px-3 py-2 rounded-full cursor-pointer lg:rounded-lg text-sm font-medium transition-colors ${selectedBadge === b.key
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                  }`}
+              >
+                {b.icon}
+                {b.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <p className="text-xs text-gray-400">
           {resultCount} service{resultCount === 1 ? '' : 's'} found
         </p>
@@ -271,6 +313,7 @@ export default function ServicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selectedClassId, setSelectedClassId] = useState<string | number | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<'best_seller' | 'popular' | 'handpick' | null>(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -334,8 +377,6 @@ export default function ServicesPage() {
     classes.forEach((c) => map.set(String(c.id), c.class_name));
     return map;
   }, [classes]);
-
-  // ── Filtered categories (search + class) ──
   const filteredCategories = useMemo(() => {
     return categories.filter((category) => {
       const matchesSearch = search.trim()
@@ -346,9 +387,17 @@ export default function ServicesPage() {
         ? String((category as any).class_id) === String(selectedClassId)
         : true;
 
-      return matchesSearch && matchesClass;
+      const matchesBadge = selectedBadge
+        ? selectedBadge === 'best_seller'
+          ? !!(category as any).is_best_seller
+          : selectedBadge === 'popular'
+            ? !!(category as any).is_popular
+            : !!(category as any).is_handpick
+        : true;
+
+      return matchesSearch && matchesClass && matchesBadge;
     });
-  }, [categories, search, selectedClassId]);
+  }, [categories, search, selectedClassId, selectedBadge]);
 
   // ── Pagination derived values (pakai filteredCategories) ──
   const totalPages = Math.max(1, Math.ceil(filteredCategories.length / ITEMS_PER_PAGE));
@@ -362,7 +411,7 @@ export default function ServicesPage() {
   // Reset ke halaman 1 setiap kali filter berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, selectedClassId]);
+  }, [search, selectedClassId, selectedBadge]);
 
   const paginatedCategories = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -412,7 +461,7 @@ export default function ServicesPage() {
           </div>
           <div className="max-w-3xl">
             <p
-           
+
               className="text-lg md:text-xl arial"
             >
               Explore our collection and portofolio and browse for your reffrences
@@ -430,6 +479,8 @@ export default function ServicesPage() {
               classes={classes}
               selectedClassId={selectedClassId}
               onSelectClass={setSelectedClassId}
+              selectedBadge={selectedBadge}
+              onSelectBadge={setSelectedBadge}
               search={search}
               onSearchChange={setSearch}
               resultCount={filteredCategories.length}
@@ -481,7 +532,7 @@ export default function ServicesPage() {
                             <div className="relative aspect-square  overflow-hidden">
                               {primaryImage ? (
                                 <img
-                               
+
                                   className="w-full h-full  object-cover"
                                   src={primaryImage}
                                   alt={category.name}
@@ -493,7 +544,7 @@ export default function ServicesPage() {
                                 </div>
                               )}
                             </div>
-                            {(isHandpick || isTopPopular) && (
+                            {(isHandpick || isTopPopular || isBestSeller) && (
                               <div className="flex flex-wrap gap-1.5 mt-2 absolute top-2 left-2 z-10">
                                 {isTopPopular && (
                                   <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-pink-100 text-pink-700">
@@ -507,9 +558,15 @@ export default function ServicesPage() {
                                     Handpick
                                   </span>
                                 )}
+                                {isBestSeller && (
+                                  <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-yellow-100 text-yellow-700">
+                                    <Star className="w-3 h-3" />
+                                    Best Seller
+                                  </span>
+                                )}
                               </div>
 
-                           
+
                             )}
 
                             <div className="p-2 px-5">
@@ -526,11 +583,11 @@ export default function ServicesPage() {
                                 </h3>
 
                                 {/* Class - di bawah nama */}
-                             
-                                  <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
-                                    {className}
-                                  </p>
-                              
+
+                                <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
+                                  {className}
+                                </p>
+
                               </div>
                               {/* Best Seller & Popular badges - di bawah class */}
 
@@ -544,11 +601,11 @@ export default function ServicesPage() {
                                 )}
                               </div>
                             </div>
-                            {isBestSeller && (
+                            {/* {isBestSeller && (
                               <div className="absolute top-0 right-3 md:right-5 w-7 h-10 md:h-18 rounded-b-full md:w-12 bg-yellow-500 flex flex-col justify-end items-center">
                                 <div className="clip-stars md:h-6 md:w-6 w-3 h-3 bg-white mb-2 md:mb-5" />
                               </div>
-                            )}
+                            )} */}
 
 
                           </Card>
