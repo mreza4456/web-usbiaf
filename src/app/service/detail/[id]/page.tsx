@@ -31,6 +31,7 @@ import CategoryCarousel from '@/components/carousel-categories';
 import Link from 'next/link';
 import { getIncludesByCategory } from '@/action/includes';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { getCloudflareImageUrl } from '@/lib/storage-utils';
 
 interface CategoryDetailPageProps {
   params: Promise<{ id: string; }>;
@@ -296,7 +297,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
               <>
                 <div className="relative rounded-xl md:rounded-2xl overflow-hidden  bg-gradient-to-br from-purple-100 to-pink-100 aspect-square">
                   <img
-                    src={images[currentImageIndex]?.image_url}
+                    src={getCloudflareImageUrl(images[currentImageIndex]?.image_url, "large")}
                     alt={`${category.name} - Image ${currentImageIndex + 1}`}
                     className="w-full h-full object-cover"
                     onError={(e) => {
@@ -349,7 +350,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                               }`}
                           >
                             <img
-                              src={image.image_url}
+                              src={getCloudflareImageUrl(image.image_url, "thumbnail")}
                               alt={`Thumbnail ${index + 1}`}
                               className="w-full h-full object-cover"
                             />

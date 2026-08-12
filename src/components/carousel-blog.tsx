@@ -8,6 +8,7 @@ import { Search, X, Calendar, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { getAllBlogPosts } from '@/action/blog';
 import { IBlogPost } from '@/interface';
+import { getCloudflareImageUrl } from '@/lib/storage-utils';
 import {
     Carousel,
     CarouselContent,
@@ -100,7 +101,7 @@ export default function BlogCarousel() {
                                                             <div className="relative h-60 bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 overflow-hidden">
                                                                 {post.image ? (
                                                                     <img
-                                                                        src={post.image}
+                                                                        src={getCloudflareImageUrl(post.image, "medium")}
                                                                         alt={post.title}
                                                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                                                         onError={(e) => {

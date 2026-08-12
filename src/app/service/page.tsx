@@ -14,6 +14,7 @@ import SkeletonService from '@/components/skeleton-card';
 import Link from 'next/link';
 import { Textstyle, Textstylegreen } from '@/components/font-design';
 import Image from 'next/image';
+import { getCloudflareImageUrl } from '@/lib/storage-utils';
 
 
 function Pagination({
@@ -118,7 +119,7 @@ function PosterCarousel({ posters }: { posters: IPoster[] }) {
         >
           <Image
             className="w-full h-full object-cover"
-            src={posters[current].image_url}
+            src={getCloudflareImageUrl(posters[current].image_url, "large")}
             alt={posters[current].id}
             fill
             priority={current === 0}

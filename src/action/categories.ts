@@ -194,9 +194,19 @@ export const updateCategories = async (
     const existingImageIds = existingImages?.map(img => img.id) || [];
     const newImageIds = images.filter(img => img.id).map(img => img.id!);
 
-    // 3. Hapus images yang tidak ada di array baru
+    // 3. Hapus images yang tidak ada di array baru — termasuk file dari Cloudflare
     const imagesToDelete = existingImageIds.filter(id => !newImageIds.includes(id));
     if (imagesToDelete.length > 0) {
+      // Ambil URL gambar yang akan dihapus agar bisa dihapus dari Cloudflare juga
+      const imagesToDeleteData = existingImages?.filter(img => imagesToDelete.includes(img.id)) || [];
+
+      // Hapus file dari Cloudflare terlebih dahulu
+      await Promise.all(
+        imagesToDeleteData.map(img =>
+          img.image_url ? deleteFromCloudflare(img.image_url) : Promise.resolve()
+        )
+      );
+
       const { error: deleteError } = await supabase
         .from("image_categories")
         .delete()
@@ -268,7 +278,22 @@ export const deleteCategories = async (id: string) => {
 
     const supabase = await createClient();
 
-    // 1. Hapus semua images terkait
+    // 1. Ambil semua image_url dari image_categories sebelum dihapus
+    const { data: imageCategoriesToDelete } = await supabase
+      .from("image_categories")
+      .select("image_url")
+      .eq("categories_id", id);
+
+    // Hapus file gambar dari Cloudflare
+    if (imageCategoriesToDelete && imageCategoriesToDelete.length > 0) {
+      await Promise.all(
+        imageCategoriesToDelete.map(img =>
+          img.image_url ? deleteFromCloudflare(img.image_url) : Promise.resolve()
+        )
+      );
+    }
+
+    // Hapus baris dari database
     const { error: imagesError } = await supabase
       .from("image_categories")
       .delete()

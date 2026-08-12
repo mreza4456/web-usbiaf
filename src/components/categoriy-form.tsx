@@ -20,6 +20,7 @@ import { z } from "zod"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { uploadImage, deleteImage } from "@/action/upload"
+import { isCloudflareImageUrl } from "@/lib/storage-utils"
 import { toast } from "sonner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "./ui/select"
@@ -247,9 +248,9 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
         try {
             setIconUploading(true)
 
-            // Hapus icon lama dulu jika ada dan berasal dari supabase
+            // Hapus icon lama dulu jika ada (baik dari Cloudflare maupun Supabase)
             const currentIcon = form.getValues("icon")
-            if (currentIcon && currentIcon.includes('supabase')) {
+            if (currentIcon) {
                 await deleteImage(currentIcon)
             }
 
@@ -301,7 +302,8 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
     const handleRemoveImage = async (index: number) => {
         const image = imageFields[index]
 
-        if (image.image_url && image.image_url.includes('supabase')) {
+        // Hapus dari Cloudflare ATAU Supabase (bukan hanya Supabase)
+        if (image.image_url) {
             await deleteImage(image.image_url)
         }
 
