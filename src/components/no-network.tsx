@@ -20,9 +20,8 @@ export default function NoNetwork({ children }: { children: React.ReactNode }) {
 
   if (!online) {
     return (
-      <div style={{ textAlign: 'center', padding: 50 }}>
-        <h1>📴 No Internet Connection</h1>
-        <p>Silakan cek koneksi kamu</p>
+      <div className='min-h-screen flex flex-col justify-center mx-auto text-center item-center max-w-7xl' style={{ textAlign: 'center', padding: 50 }}>
+        <h1 className='arial'>No Internet Connection</h1>
       </div>
     )
   }

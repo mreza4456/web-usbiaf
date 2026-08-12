@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, X, Calendar, ArrowRight, Loader2, ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { getAllBlogPosts } from '@/action/blog';
+import { getCloudflareImageUrl } from '@/lib/storage-utils';
 import { IBlogPost, ICategory, IImageCategories, IProduct } from '@/interface';
 import {
     Carousel,
@@ -137,7 +138,7 @@ export default function ProductsCarousel() {
                                                                 <>
                                                                     <img
                                                                         className='w-full h-full object-cover  transition-all duration-300'
-                                                                        src={primaryImage}
+                                                                        src={getCloudflareImageUrl(primaryImage, "small")}
                                                                         alt={product.name}
                                                                         onError={(e) => {
                                                                             e.currentTarget.src = "/placeholder-image.svg"

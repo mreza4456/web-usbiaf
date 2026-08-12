@@ -114,7 +114,7 @@ export default function CategoryPageCarousel() {
                 <section className="">
                     <div className="w-full grid grid-cols-7">
                         {loading ? (
-                            <SkeletonBlog cardcount={6} />
+                              <div className="text-center py-12 text-gray-500">Loading</div>
                         ) : categories.length === 0 ? (
                             <div className="text-center py-12 text-gray-500">No categories available</div>
                         ) : (

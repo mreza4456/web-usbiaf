@@ -45,7 +45,7 @@ export default function Footer() {
             <div className="container mx-auto text-arial">
                 <div className="grid md:grid-cols-5 grid-cols-2 gap-8 mb-8">
                     <div>
-                        <Image src="/images/logonav.png" width={100} height={50} className="w-1/2 mb-5" alt="" />
+                        <Image src="/images/logonav.webp" width={100} height={50} className="w-1/2 mb-5" alt="" />
                         <p className="text-primary/50 text-sm">
                             Premium stream widgets & overlays for content creators
                         </p>

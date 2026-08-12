@@ -173,6 +173,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (isAdminLayout) {
     return (
+      <NoNetwork>
       <SidebarProvider
         style={
           {
@@ -186,13 +187,16 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </SidebarInset>
       </SidebarProvider>
+      </NoNetwork>
     )
   }
   else if (authLayout) {
     return (
       <>
         {/* <LenisScroll /> */}
+        <NoNetwork>
         {children}
+        </NoNetwork>
       </>
     )
   }
@@ -210,8 +214,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           <div className="absolute top-60 left-32 text-2xl rotate-12">★</div>
           <div className="absolute bottom-40 right-60 text-3xl">✦</div>
 
-          <Navbar />
           <NoNetwork>
+          <Navbar />
             <AuthProvider>
               <div className="container mx-auto px-4 mt-30 max-w-7xl">
                 <div className="flex flex-col lg:flex-row gap-6">
@@ -299,8 +303,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
                 </div>
               </div>
             </AuthProvider>
-          </NoNetwork>
           <Footer />
+          </NoNetwork>
         </div>
       </>
     )
@@ -314,14 +318,14 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen bg-board relative overflow-hidden">
       
 
-        <Navbar />
         <NoNetwork>
+        <Navbar />
           <AuthProvider>
             {children}
-          </AuthProvider>
-        </NoNetwork>
+          </AuthProvider>å
       
         <Footer />
+        </NoNetwork>
         </div>
 
         {/* Render modal OUTSIDE AuthProvider to avoid blocking */}
