@@ -157,7 +157,7 @@ export default function ReviewPage() {
         {/* Stats Overview */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">
           {/* Average Rating Card */}
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <Card className="card-primary">
             <CardHeader className="pb-3">
               <CardDescription className="text-purple-700 font-semibold flex items-center gap-2">
                 <Award className="w-4 h-4" />
@@ -186,7 +186,7 @@ export default function ReviewPage() {
           </Card>
 
           {/* Total Reviews Card */}
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <Card className="card-primary">
             <CardHeader className="pb-3">
               <CardDescription className="text-blue-700 font-semibold flex items-center gap-2">
                 <Users className="w-4 h-4" />
@@ -200,7 +200,7 @@ export default function ReviewPage() {
           </Card>
 
           {/* Top Rated Card */}
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <Card className="card-primary">
             <CardHeader className="pb-3">
               <CardDescription className="text-green-700 font-semibold flex items-center gap-2">
                 <TrendingUp className="w-4 h-4" />
@@ -220,9 +220,9 @@ export default function ReviewPage() {
         </div>
 
         {/* Rating Distribution */}
-        <Card className="mb-8 bg-white ">
+        <Card className="mb-8 card-primary-white ">
           <CardHeader>
-            <CardTitle className="text-2xl">Rating Distribution</CardTitle>
+            <CardTitle className="text-2xl arial">Rating Distribution</CardTitle>
             <CardDescription>Breakdown of customer ratings</CardDescription>
           </CardHeader>
           <CardContent>
@@ -235,7 +235,7 @@ export default function ReviewPage() {
                   </div>
                   <div className="flex-1 bg-gray-200 rounded-full h-3">
                     <div
-                      className="bg-gradient-to-r from-purple-500 to-purple-600 h-3 rounded-full transition-all duration-500"
+                      className="bg-primary h-3 rounded-full transition-all duration-500"
                       style={{
                         width: `${stats.totalReviews > 0
                           ? (stats.distribution[rating as keyof typeof stats.distribution] / stats.totalReviews) * 100
@@ -254,12 +254,12 @@ export default function ReviewPage() {
         </Card>
 
         {/* Filters Section */}
-        <Card className="mb-8 bg-muted/50">
+        <Card className="mb-8 card-primary">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Filter className="w-5 h-5 text-primary" />
-                <CardTitle className="text-xl">Filter Reviews</CardTitle>
+                <CardTitle className="text-xl arial">Filter Reviews</CardTitle>
               </div>
               {hasActiveFilters && (
                 <Button
@@ -371,7 +371,7 @@ export default function ReviewPage() {
         ) : (
           <div className="space-y-4">
             {filteredComments.map((comment) => (
-              <Card key={comment.id} className="hover:shadow-lg transition-shadow bg-white">
+              <Card key={comment.id} className="hover:shadow-lg card-primary-white transition-shadow bg-white">
                 <CardHeader>
                   <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div className="flex items-start gap-4 flex-1">

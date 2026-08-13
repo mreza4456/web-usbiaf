@@ -335,6 +335,11 @@
     color: #6B50B0;
     letter-spacing: 0.5px;
 }
+.borsok-dark{
+  font-family: var(--font-borsok);
+   color: #463772;
+    letter-spacing: 0.5px;
+}
 .text-eliane{
   font-family: var(--font-eliane);
   color: #6B50B0;

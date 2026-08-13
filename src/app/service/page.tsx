@@ -539,7 +539,7 @@ export default function ServicesPage() {
                         <div key={category.id}>
                           <Card
                             onClick={(e) => { e.stopPropagation(); handleCategoryClick(category.id); }}
-                            className="bg-white p-0 m-0 relative h-full  overflow-hidden shadow-lg  cursor-pointer gap-0"
+                            className="card-primary-white p-2 m-0 relative h-full  overflow-hidden shadow-lg  cursor-pointer gap-0"
                           >
                             <div className="relative aspect-square  overflow-hidden">
                               {primaryImage ? (
@@ -584,7 +584,7 @@ export default function ServicesPage() {
 
                             )}
 
-                            <div className="p-2 px-5">
+                            <div className="p-2 ">
                               <div>
                                 {/* Nama */}
                                 <h3

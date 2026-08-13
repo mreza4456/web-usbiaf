@@ -66,13 +66,13 @@ export default function CommmentsCarousel() {
                                             <CardHeader>
                                                 <div className="flex justify-between items-center mb-3 ">
                                                     {testimonial.order_items?.category_name && (
-                                                        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">
+                                                        <Badge className="bg-purple-100 rotate-5 text-purple-700 hover:bg-purple-200">
                                                             <MessageSquare className="w-3 h-3 mr-1" />
                                                             {testimonial.order_items.category_name}
                                                         </Badge>
                                                     )}
 
-                                                    <div className="flex items-center gap-1 px-3 rotate-5 ">
+                                                    <div className="flex items-center gap-1 px-3 rotate-5 mt-5 ">
                                                         {[...Array(Number(testimonial.rating))].map((_, j) => (
                                                             <Star key={j} className="w-4 h-4 fill-[#FFE66D] text-[#FFE66D]" />
                                                         ))}

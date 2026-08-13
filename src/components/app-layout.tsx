@@ -252,7 +252,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
                                   flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
                                   transition-all duration-200 group
                                   ${isActive 
-                                    ? 'bg-muted  arial' 
+                                    ? 'bg-muted   arial' 
                                     : 'text-dark arial hover:bg-gray-50 hover:text-gray-900'
                                   }
                                 `}
