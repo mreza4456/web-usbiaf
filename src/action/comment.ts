@@ -128,7 +128,7 @@ export async function createComment(commentData: CreateCommentData) {
         order_items (
           id,
           category_name,
-          package_name,
+          package_title,
           categories_id
         )
       `)
@@ -184,7 +184,7 @@ export async function getCommentsByOrderItem(orderItemId: string) {
         order_items (
           id,
           category_name,
-          package_name,
+          package_title,
           categories_id
         )
       `)
@@ -235,7 +235,7 @@ export async function getCommentsByCategory(categoryId: string) {
         order_items!inner (
           id,
           category_name,
-          package_name,
+          package_title,
           categories_id
         )
       `)
@@ -295,7 +295,7 @@ export async function getCommentsByUser(userId: string) {
         order_items (
           id,
           category_name,
-          package_name,
+          package_title,
           categories_id
         )
       `)
@@ -331,16 +331,6 @@ export async function getCommentsByUser(userId: string) {
 // ============================================
 export async function getAllComments() {
   try {
-    const user = await getAuthenticatedUser();
-    const adminCheck = await isAdmin(user.id);
-
-    if (!adminCheck) {
-      return {
-        success: false,
-        message: 'Access denied. Admin only.',
-        data: []
-      };
-    }
 
     const supabase = await createClient();
 
@@ -357,7 +347,7 @@ export async function getAllComments() {
         order_items (
           id,
           category_name,
-          package_name,
+          package_title,
           categories_id
         )
       `)
@@ -371,11 +361,12 @@ export async function getAllComments() {
         data: []
       };
     }
-
+console.log('Sample row:', JSON.stringify(data?.[0], null, 2));
     return {
       success: true,
       data: data || []
     };
+    
 
   } catch (error: any) {
     console.error('❌ GET ALL COMMENTS EXCEPTION:', error);
@@ -477,7 +468,7 @@ export async function updateComment(
         order_items (
           id,
           category_name,
-          package_name,
+          package_title,
           categories_id
         )
       `)

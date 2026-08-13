@@ -198,9 +198,7 @@ export default function OrderAdminPage() {
                 return (
                     <div className="space-y-1">
                         <div className="text-sm font-medium">{itemCount} item(s)</div>
-                        <div className="text-xs text-gray-500">
-                            {categories.join(", ")}
-                        </div>
+                     
                     </div>
                 )
             }

@@ -162,7 +162,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <div className="bg-secondary border-b border-gray-200">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">

@@ -103,7 +103,7 @@ export default function ProjectDetail() {
 
             <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 relative z-10">
                 {/* Back Button */}
-                <Link href="/projects" className='flex mx-2 items-center'>
+                <Link href="/projects" className='flex mx-2 arial items-center text-primary mb-5'>
 
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Projects

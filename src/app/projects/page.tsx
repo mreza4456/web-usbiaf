@@ -78,14 +78,12 @@ export default function Projects() {
 
             {/* Badge */}
             <div>
-              <div className="flex gap-5 justify-center w-full  mb-4 mt-15">
-                <Textstyle Title="OUR" className="text-3xl sm:text-7xl w-full " color="text-purple" />
-                <Textstyle Title="RECENTS" className="text-3xl sm:text-7xl w-full" color="text-yellow" />
-                <Textstylegreen Title="WORKS" className="text-3xl sm:text-7xl w-full" color="text-green" />
+              <div className="flex gap-5 justify-center w-full  mt-15">
+                 <h1 className="text-4xl sm:text-6xl  w-full text-[#6B50B0] text-borsok" >Our Recents Work</h1>
               </div>
             </div>
             <div className="w-full max-w-3xl mx-auto">
-              <p>
+              <p className='arial'>
                 Explore our collection and portofolio and browse for your reffrences
               </p>
             </div>

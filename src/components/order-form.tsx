@@ -35,18 +35,17 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuthStore } from '@/store/auth';
 import type { ICartItemDetail } from '@/interface';
 
-import { Elements } from '@stripe/react-stripe-js';
-import { loadStripe } from '@stripe/stripe-js';
-import CheckoutForm from '@/components/checkout-form'; // sesuaikan path
-import { getStripeClientSecret } from '@/action/payment'; // sesuaikan path
-import CustomStripeDialog from '@/components/checkout-form';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog';
+import CustomPayPalDialog from '@/components/checkout-form'; // sesuaikan path
+import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 interface CheckoutPageProps {
   cartItems: ICartItemDetail[];
   userId: string;
-  onSubmitCheckout: (data: any) => Promise<{ success: boolean; message?: string }>;
+  onSubmitCheckout: (data: any) => Promise<{
+    success: boolean;
+    message?: string;
+    order_id?: string;
+  }>;
 }
 
 export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout }: CheckoutPageProps) {
@@ -55,12 +54,9 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const user = useAuthStore((s) => s.user);
-  const [clientSecret, setClientSecret] = useState<string>('');
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
-  const [open, setOpen] = useState(false);
   const voucherId = searchParams.get('voucher_id');
   const voucherCode = searchParams.get('voucher_code');
   const voucherValue = searchParams.get('voucher_value');
@@ -155,6 +151,10 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
+  // With PayPal, there's no separate "create client secret" step like Stripe.
+  // The PayPal order is created lazily (via the createPayPalOrder server
+  // action) inside CustomPayPalDialog when the buyer clicks the PayPal
+  // button, so here we just validate the form and open the payment dialog.
   const handleSubmit = async () => {
     if (!validateStep(3)) {
       setError('Please complete all required fields');
@@ -162,29 +162,12 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
     }
 
     setError('');
-    setSuccess('');
-    setIsSubmitting(true);
-
-    try {
-      // Get Stripe client secret
-      const stripeResult = await getStripeClientSecret(total); // total sudah dalam USD
-
-      if (!stripeResult.success || !stripeResult.data) {
-        setError('Failed to initialize payment. Please try again.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      setClientSecret(stripeResult.data);
-      setShowPaymentDialog(true);
-      setIsSubmitting(false);
-    } catch (err: any) {
-      setError(err.message || 'Failed to initialize payment. Please try again.');
-      setIsSubmitting(false);
-    }
+    setShowPaymentDialog(true);
   };
-  const handlePaymentSuccess = async (paymentId: string) => {
+
+  const handlePaymentSuccess = async (paymentResult: { paypalOrderId: string; captureId: string | null }) => {
     setIsSubmitting(true);
+    setError('');
 
     try {
       const orderData = {
@@ -198,7 +181,10 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
         additional_notes: formData.additional_notes || '',
         total: total,
         voucher_id: voucherId || undefined,
-        payment_id: paymentId, // Tambahkan payment ID dari Stripe
+        // Dikirim ke processCheckout untuk DIVERIFIKASI ULANG ke PayPal
+        // (lihat verifyPayPalOrder di actions/paypal.ts) sebelum order dibuat.
+        paypal_order_id: paymentResult.paypalOrderId,
+        payment_id: paymentResult.captureId || paymentResult.paypalOrderId,
         cart_items: cartItems.map(item => ({
           cart_id: item.id,
           categories_id: item.categories_id,
@@ -214,17 +200,21 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
 
       const result = await onSubmitCheckout(orderData);
 
-      if (result.success) {
-        setSuccess('Order placed successfully! We will contact you shortly to discuss your project.');
-        setTimeout(() => {
-          router.push('/user/user-order');
-        }, 2000);
+      if (result.success && result.order_id) {
+        // Order hanya ada di database kalau pembayaran sudah diverifikasi
+        // di processCheckout — jadi cukup redirect ke halaman success
+        // dengan order_id, dan halaman itu sendiri yang akan memverifikasi
+        // ulang kepemilikan order sebelum menampilkan apa pun.
+        router.push(`/success?order_id=${result.order_id}`);
+        // Sengaja TIDAK setIsSubmitting(false) di sini — biarkan tombol
+        // tetap dalam state loading sampai navigasi selesai, supaya user
+        // tidak sempat klik ulang saat halaman masih berpindah.
       } else {
         setError(result.message || 'Failed to place order. Please try again.');
+        setIsSubmitting(false);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to place order. Please try again.');
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -249,35 +239,8 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
     { number: 4, title: 'Review', icon: CreditCard }
   ];
 
-  useEffect(() => {
-    if (success) setOpen(true);
-  }, [success]);
-
-
-
-
-
   return (
     <div className="min-h-screen py-8 sm:py-12 px-4 mt-15 sm:mt-15">
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTitle>
-          Order Complete
-        </DialogTitle>
-        <DialogContent>
-          <div className="text-center space-y-4">
-            <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
-            <h2 className="text-2xl font-bold text-gray-900">Order Placed!</h2>
-            <p className="text-gray-600">{success}</p>
-            <Button
-              onClick={() => router.push('/myorder')}
-              className="w-full bg-primary hover:bg-primary/90"
-            >
-              View My Orders
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className='w-full mb-8 sm:mb-10 text-center'>
@@ -667,18 +630,18 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
                   )}
                 </Button>
               )}
-              {/* Stripe Payment Dialog */}
-              {clientSecret && (
-                <Elements stripe={stripePromise} options={{ clientSecret }}>
-                  <CustomStripeDialog
-                    open={showPaymentDialog}
-                    setOpen={setShowPaymentDialog}
-                    clientSecret={clientSecret}
-                    amount={total}
-                    onPaymentSuccess={handlePaymentSuccess}
-                  />
-                </Elements>
-              )}
+
+              {/* PayPal Payment Dialog */}
+              <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!, currency: "USD" }}>
+                <CustomPayPalDialog
+                  open={showPaymentDialog}
+                  setOpen={setShowPaymentDialog}
+                  amount={total}
+                  cartIds={cartItems.map(item => item.id)}
+                  voucherId={voucherId || undefined}
+                  onPaymentSuccess={handlePaymentSuccess}
+                />
+              </PayPalScriptProvider>
             </div>
           </Card>
         </div>

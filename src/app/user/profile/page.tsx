@@ -138,8 +138,8 @@ export default function ProfilePage() {
     <div className="min-h-screen  ">
       <div className="max-w-7xl mx-auto">
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6 ">
-          <div className="h-32 bg-secondary"></div>
+        <div className="card-primary-white rounded-lg shadow-md overflow-hidden mb-6 ">
+          <div className="h-20 bg-muted/70"></div>
 
           <div className="px-6 pb-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-16 sm:-mt-12">
@@ -213,7 +213,7 @@ export default function ProfilePage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
           <Link href="/myorder">
-            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-300">
+            <div className="card-primary p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-300">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Total Orders</p>
@@ -223,7 +223,7 @@ export default function ProfilePage() {
               </div>
             </div>
           </Link>
-          <div className="bg-white p-6 rounded-lg shadow-md border-2 border-transparent">
+          <div className="card-primary p-6 rounded-lg shadow-md border-2 border-transparent">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Pending</p>
@@ -232,7 +232,7 @@ export default function ProfilePage() {
               <Clock className="w-8 h-8 text-orange-500" />
             </div>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow-md border-2 border-transparent">
+          <div className="card-primary p-6 rounded-lg shadow-md border-2 border-transparent">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Completed</p>
@@ -244,14 +244,14 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Details */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Profile Information</h2>
+        <div className="card-primary-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 text-borsok">Profile Information</h2>
 
           <div className="space-y-4">
             <div className="flex items-start gap-3">
-              <Mail className="w-5 h-5 text-gray-400 mt-0.5" />
+              <Mail className="w-5 h-5 text-gray-400 text-primary mt-0.5" />
               <div className="flex-1">
-                <Label className="text-sm text-gray-600">Email</Label>
+                <Label className="text-sm text-gray-600 arial">Email</Label>
                 {isEditing ? (
                   <Input
                     type="email"
@@ -266,17 +266,17 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex items-start gap-3">
-              <User className="w-5 h-5 text-gray-400 mt-0.5" />
+              <User className="w-5 h-5 text-primary text-gray-400 mt-0.5" />
               <div className="flex-1">
-                <Label className="text-sm text-gray-600">Full Name</Label>
+                <Label className="text-sm text-gray-600 arial">Full Name</Label>
                 <p className="text-gray-900">{userData?.full_name || displayName}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3">
-              <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
+              <Calendar className="w-5 h-5 text-primary mt-0.5" />
               <div className="flex-1">
-                <Label className="text-sm text-gray-600">Member Since</Label>
+                <Label className="text-sm text-gray-600 arial">Member Since</Label>
                 <p className="text-gray-900">
                   {userData?.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -290,22 +290,22 @@ export default function ProfilePage() {
         </div>
 
         {/* Link to Milestone Page */}
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-md p-6 border-2 border-purple-200">
+        <div className="card-primary rounded-lg shadow-md p-6 ">
           <div className="flex md:flex-row flex-col gap-5 items-center justify-between">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <Award className="w-6 h-6 text-purple-600" />
-                <h2 className="text-xl font-bold text-gray-900">Stamp Journey</h2>
+                <Award className="w-6 h-6 text-primary mb-2" />
+                <h2 className="text-2xl font-bold text-gray-900 text-borsok ">Stamp Journey</h2>
               </div>
-              <p className="text-gray-600 mb-4">
+              <p className="text-gray-600 mb-4 " >
                 Complete orders to collect stamps and unlock exclusive rewards!
               </p>
-              <Badge className="bg-purple-600">
+              <Badge className="bg-primary">
                 {stats.completed} Completed Orders
               </Badge>
             </div>
             <Link href="/milestone">
-              <Button className="bg-purple-600 hover:bg-purple-700 ">
+              <Button className="bg-primary hover:bg-purple-700 ">
                 View Milestones
                 <Award className="w-4 h-4 ml-2" />
               </Button>

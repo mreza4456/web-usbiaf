@@ -86,7 +86,7 @@ export default function VoucherEventsList() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 text-[#D78FEE] animate-spin" />
+        
       </div>
     );
   }
@@ -95,7 +95,7 @@ export default function VoucherEventsList() {
     return (
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center py-12">
-          <Gift className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+
           <p className="text-gray-500">No event vouchers are currently available</p>
         </div>
       </div>
@@ -104,9 +104,7 @@ export default function VoucherEventsList() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 ">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-primary mt-5">Claim Vouchers Now</h2>
-      </div>
+      
 
       <Carousel
         opts={{
@@ -122,8 +120,8 @@ export default function VoucherEventsList() {
             const isExpired = new Date(event.expired_at) < new Date();
 
             return (
-              <CarouselItem key={event.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                <div className="relative bg-muted/30 p-6 rounded-lg shadow-lg h-full flex flex-col">
+              <CarouselItem key={event.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/2">
+                <div className="relative card-primary p-6 rounded-lg shadow-lg h-full flex flex-col">
                   {/* Event Name */}
                   <h3 className="text-xl font-bold text-primary mb-4">
                     {event.name}

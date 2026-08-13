@@ -239,8 +239,8 @@ export default function UserOrdersPage() {
     };
 
     const renderOrderCard = (order: IOrderWithItems) => (
-        <Card key={order.id} className="bg-white shadow-sm hover:shadow-md transition-shadow border border-gray-200">
-            <CardContent className="p-4">
+        <Card key={order.id} className="card-primary-white shadow-sm hover:shadow-md transition-shadow border border-gray-200">
+            <CardContent className="">
                 {/* Status Badge & Order Info Header */}
                 <div className="flex items-start justify-between mb-3 pb-3 border-b">
                     <div className="flex items-center gap-3">
@@ -272,7 +272,7 @@ export default function UserOrdersPage() {
 
                                 {/* Product Info */}
                                 <div className="flex-1 min-w-0">
-                                    <h4 className="font-medium text-gray-900 truncate">
+                                    <h4 className="font-medium text-gray-900 arial truncate">
                                         OrderID: {order.code_order}
                                     </h4>
                                     <h4 className="font-medium text-gray-500 truncate">
@@ -456,7 +456,7 @@ export default function UserOrdersPage() {
             {/* Header Section */}
             <div className="relative overflow-hidden">
                 <div className="max-w-7xl mx-auto px-4 relative">
-                    <h1 className="text-3xl font-bold text-primary mb-6 px-4 sm:px-6 lg:px-8">My Orders</h1>
+                    <h1 className="text-4xl font-bold text-primary mb-6 px-4 sm:px-6 lg:px-8 text-borsok">My Orders</h1>
 
                    
                 </div>

@@ -146,15 +146,12 @@ export default function ReviewPage() {
   }
 
   return (
-    <div className="min-h-screen  py-8 px-4 mt-20">
+    <div className="min-h-screen  py-8 px-4 mt-25">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold text-primary mb-2 flex items-center gap-3">
-            <MessageSquare className="w-10 h-10" />
-            Customer Reviews
-          </h1>
-          <p className="text-gray-600 text-lg">See what our customers are saying about our services</p>
+            <h1 className="text-4xl sm:text-6xl  w-full text-[#6B50B0] text-borsok" >Customers Reviews</h1>
+          <p className="text-gray-600 text-lg arial">See what our customers are saying about our services</p>
         </div>
 
         {/* Stats Overview */}
@@ -223,7 +220,7 @@ export default function ReviewPage() {
         </div>
 
         {/* Rating Distribution */}
-        <Card className="mb-8">
+        <Card className="mb-8 bg-white ">
           <CardHeader>
             <CardTitle className="text-2xl">Rating Distribution</CardTitle>
             <CardDescription>Breakdown of customer ratings</CardDescription>

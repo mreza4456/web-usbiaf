@@ -79,17 +79,17 @@ export default function VoucherPage() {
     // Loading state
     if (isLoadingVouchers) {
         return (
-             <div className="min-h-screen max-w-7xl mx-auto p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-white/50 rounded w-1/4 mb-6"></div>
-          <div className="h-64 bg-white/50 rounded mb-6"></div>
-          <div className="space-y-3">
-            <div className="h-20 bg-white/50 rounded"></div>
-            <div className="h-20 bg-white/50 rounded"></div>
-            <div className="h-20 bg-white/50 rounded"></div>
-          </div>
-        </div>
-      </div>
+            <div className="min-h-screen max-w-7xl mx-auto p-6">
+                <div className="animate-pulse">
+                    <div className="h-8 bg-white/50 rounded w-1/4 mb-6"></div>
+                    <div className="h-64 bg-white/50 rounded mb-6"></div>
+                    <div className="space-y-3">
+                        <div className="h-20 bg-white/50 rounded"></div>
+                        <div className="h-20 bg-white/50 rounded"></div>
+                        <div className="h-20 bg-white/50 rounded"></div>
+                    </div>
+                </div>
+            </div>
         );
     }
 
@@ -101,35 +101,41 @@ export default function VoucherPage() {
 
 
                 <div className="max-w-7xl mx-auto px-4 relative">
-                        <h1 className="text-3xl font-bold text-primary mb-6">My Vouchers</h1>
+                    <h1 className="text-4xl font-bold text-borsok mb-6">My Vouchers</h1>
 
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-5 mb-5">
-                        <div className="bg-white shadow-lg rounded-xl p-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <Ticket className="w-8 h-8 text-green-400" />
-                                <span className="text-3xl font-bold text-green-400">{availableVouchers.length}</span>
+                        <div className=' rounded-lg'>
+                            <div className=" card-primary-white   p-6">
+                                <div className="flex items-center justify-between mb-2">
+                                    <Ticket className="w-8 h-8 text-green-400" />
+                                    <span className="text-3xl font-bold text-green-400">{availableVouchers.length}</span>
+                                </div>
+                                <p className="text-gray-300 font-medium">Available Vouchers</p>
+                                <p className="text-gray-500 text-sm mt-1">Ready to use</p>
                             </div>
-                            <p className="text-gray-300 font-medium">Available Vouchers</p>
-                            <p className="text-gray-500 text-sm mt-1">Ready to use</p>
                         </div>
+                        <div className=' rounded-lg'>
 
-                        <div className="bg-white shadow-lg rounded-xl p-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <Check className="w-8 h-8 text-gray-400" />
-                                <span className="text-3xl font-bold text-gray-400">{usedVouchers.length}</span>
+                            <div className=" card-primary-white  p-6">
+                                <div className="flex items-center justify-between mb-2">
+                                    <Check className="w-8 h-8 text-gray-400" />
+                                    <span className="text-3xl font-bold text-gray-400">{usedVouchers.length}</span>
+                                </div>
+                                <p className="text-gray-300 font-medium">Used Vouchers</p>
+                                <p className="text-gray-500 text-sm mt-1">Already used</p>
                             </div>
-                            <p className="text-gray-300 font-medium">Used Vouchers</p>
-                            <p className="text-gray-500 text-sm mt-1">Already used</p>
                         </div>
+                        <div className=' rounded-lg'>
 
-                        <div className="bg-white shadow-lg rounded-xl p-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <AlertCircle className="w-8 h-8 text-red-400" />
-                                <span className="text-3xl font-bold text-red-400">{expiredVouchers.length}</span>
+                            <div className=" card-primary-white  p-6">
+                                <div className="flex items-center justify-between mb-2">
+                                    <AlertCircle className="w-8 h-8 text-red-400" />
+                                    <span className="text-3xl font-bold text-red-400">{expiredVouchers.length}</span>
+                                </div>
+                                <p className="text-gray-300 font-medium">Expired Vouchers</p>
+                                <p className="text-gray-500 text-sm mt-1">No longer valid</p>
                             </div>
-                            <p className="text-gray-300 font-medium">Expired Vouchers</p>
-                            <p className="text-gray-500 text-sm mt-1">No longer valid</p>
                         </div>
                     </div>
                 </div>
@@ -185,9 +191,9 @@ export default function VoucherPage() {
                         return (
                             <div
                                 key={voucher.id}
-                                className="relative bg-white border-secondary  border-2 rounded-2xl p-6 hover:border-primary  transition-all group"
+                                className="relative card-primary-white border-secondary  border-2 rounded-2xl p-6 hover:border-primary  transition-all group"
                             >
-                              
+
 
                                 {/* Discount Value */}
                                 <div className="mb-4">
@@ -287,9 +293,7 @@ export default function VoucherPage() {
                         (activeTab === 'used' && usedVouchers.length === 0) ||
                         (activeTab === 'expired' && expiredVouchers.length === 0)) && (
                             <div className="col-span-full flex flex-col items-center justify-center py-16">
-                                <div className="w-24 h-24 bg-gradient-to-br from-gray-800 to-gray-700 rounded-full flex items-center justify-center mb-6">
-                                    <Ticket className="w-12 h-12 text-gray-500" />
-                                </div>
+                                
                                 <h3 className="text-2xl font-bold text-gray-400 mb-2">
                                     No vouchers
                                 </h3>
@@ -301,9 +305,9 @@ export default function VoucherPage() {
                                 {activeTab === 'available' && (
                                     <Link
                                         href="/order"
-                                        className="inline-flex items-center gap-2 bg-gradient-to-r from-[#D78FEE] to-[#8B5CF6] text-white px-6 py-3 rounded-lg font-semibold hover:scale-105 transition-transform"
+                                        className="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:scale-105 transition-transform"
                                     >
-                                        <Sparkles className="w-5 h-5" />
+                    
                                         Start Ordering Now
                                     </Link>
                                 )}

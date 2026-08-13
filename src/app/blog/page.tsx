@@ -126,14 +126,10 @@ export default function BlogPage() {
         <section className="pt-16 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6 bg-[#e6dcff]">
           <div className="container mx-auto text-center pt-10">
             <div>
-              <div className="flex gap-5 justify-center  w-full mb-4 mt-15">
-                <Textstyle Title="FIND" className="text-4xl sm:text-7xl w-full " color="text-purple" />
-                <Textstyle Title="OUR" className="text-4xl sm:text-7xl w-full" color="text-yellow" />
-                <Textstylegreen Title="SERVICES" className="text-4xl sm:text-7xl w-full" color="text-green" />
-              </div>
+              <h1 className="text-4xl sm:text-6xl mt-10  w-full text-[#6B50B0] text-borsok" >Find Our Services</h1>
             </div>
             <div className="text-center mx-auto  max-w-3xl ">
-              <p className="text-lg md:text-xl  arial">
+              <p className="text-lg   arial">
                 Explore our collection and portofolio and browse for your reffrences
               </p>
             </div>
@@ -168,7 +164,7 @@ export default function BlogPage() {
               <Button className='px-7 py-5 cursor-pointer rounded-full bg-white border-primary border-4 arial '>
                 About Nemuneko
               </Button>
-              <h5 className='text-2xl max-w-xl text-arial text-end text-primary'>Nemuneko Studio is a group of 7 Talented
+              <h5 className='text-xl max-w-xl text-arial text-end text-primary'>Nemuneko Studio is a group of 7 Talented
                 VArtist base on South East Asia we love
                 creating creativity and joy our life.</h5>
             </div>

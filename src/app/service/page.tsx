@@ -465,16 +465,14 @@ export default function ServicesPage() {
       <section className="pt-5 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6">
         <div className="container mx-auto">
           <div>
-            <div className="flex gap-5 w-full mb-4 mt-15">
-              <Textstyle Title="FIND" className="text-4xl sm:text-7xl w-full" color="text-purple" />
-              <Textstyle Title="OUR" className="text-4xl sm:text-7xl w-full" color="text-yellow" />
-              <Textstylegreen Title="SERVICES" className="text-4xl sm:text-7xl w-full" color="text-green" />
+            <div className="flex gap-5 w-full mt-5">
+              <h1 className="text-4xl sm:text-6xl  w-full text-[#6B50B0] text-borsok" >Find Our Services</h1>
             </div>
           </div>
           <div className="max-w-3xl">
             <p
 
-              className="text-lg md:text-xl arial"
+              className="text-lg  arial"
             >
               Explore our collection and portofolio and browse for your reffrences
             </p>

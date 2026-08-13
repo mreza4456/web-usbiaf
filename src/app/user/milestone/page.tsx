@@ -89,8 +89,8 @@ export default function MilestonePage() {
         
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
-              <Award className="w-8 h-8 text-primary" />
-              <h1 className="text-3xl font-bold text-gray-900">Stamp Journey</h1>
+              <Award className="w-8 h-8  mb-2 text-primary" />
+              <h1 className="text-3xl font-bold text-gray-900 text-borsok">Stamp Journey</h1>
             </div>
             <Badge className="bg-primary text px-4 py-2">
               {stats.completed} Completed Orders
@@ -101,15 +101,15 @@ export default function MilestonePage() {
         {/* Main Content */}
         <div className="bg-white rounded-xl shadow-md p-8">
           {/* Progress Section */}
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 shadow-sm mb-6 border border-purple-200">
+          <div className="card-primary rounded-lg p-6 shadow-sm mb-6 border border-purple-200">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900 text-lg">Your Progress</h3>
-              <span className="text-sm text-gray-600">Next reward at {Math.ceil(stats.completed / 3) * 3} orders</span>
+              <h3 className="font-semibold text-gray-900 text-lg text-borsok">Your Progress</h3>
+              <span className="text-sm text-gray-600 arial">Next reward at {Math.ceil(stats.completed / 3) * 3} orders</span>
             </div>
 
             <div className="w-full bg-gray-200 rounded-full h-4 mb-8">
               <div
-                className="bg-gradient-to-r from-purple-500 to-pink-500 h-4 rounded-full transition-all duration-500"
+                className="bg-secondary h-4 rounded-full transition-all duration-500"
                 style={{ width: `${((stats.completed % 3) / 3) * 100}%` }}
               ></div>
             </div>
@@ -129,7 +129,7 @@ export default function MilestonePage() {
                         isCompleted
                           ? isGoal
                             ? 'border-yellow-500 bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg'
-                            : 'border-purple-500 bg-purple-100'
+                            : 'border-primary bg-purple-primary'
                           : 'border-gray-300 bg-gray-50'
                       }`}
                     >
@@ -138,7 +138,7 @@ export default function MilestonePage() {
                           {isGoal ? (
                             <div className="text-2xl">🎁</div>
                           ) : (
-                            <div className="text-xl text-purple-600">✓</div>
+                            <div className="text-xl text-primary">✓</div>
                           )}
                         </div>
                       ) : (
@@ -154,7 +154,7 @@ export default function MilestonePage() {
                       )}
                     </div>
 
-                    <span className={`text-xs font-medium text-center ${isCompleted ? 'text-purple-600' : 'text-gray-400'}`}>
+                    <span className={`text-xs font-medium arial text-center ${isCompleted ? 'text-dark' : 'text-gray-400'}`}>
                       {stepNumber}
                     </span>
                   </div>
@@ -164,7 +164,7 @@ export default function MilestonePage() {
 
             {/* Milestone Goals */}
             <div className="space-y-4">
-              <h4 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
+              <h4 className="font-semibold text-gray-900 arial text-lg flex items-center gap-2">
                 <span>🎯</span>
                 Milestone Rewards
               </h4>
@@ -202,7 +202,7 @@ export default function MilestonePage() {
             </div>
           </div>
 
-          <Alert className="border-purple-300 bg-purple-50">
+          <Alert className="card-primary-white">
             <Award className="h-5 w-5 text-purple-600" />
             <AlertDescription className="text-sm text-gray-700">
               Complete orders to collect stamps! Reach milestones to unlock exclusive voucher rewards. Keep ordering to earn more discounts! 🎁

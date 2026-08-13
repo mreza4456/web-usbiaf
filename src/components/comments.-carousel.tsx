@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/carousel"
 import { SkeletonBlog } from './skeleton-card';
 import { getAllComments } from '@/action/comment';
+import Image from 'next/image';
 
 export default function CommmentsCarousel() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -51,7 +52,7 @@ export default function CommmentsCarousel() {
                 <div className="absolute bottom-20 right-40 text-6xl text-primary opacity-10">✦</div>
 
                 <div className="container mx-auto max-w-7xl">
-                    
+
                     {loading ? (
                         <SkeletonBlog cardcount={3} />
                     ) : comment.length === 0 ? (
@@ -60,10 +61,10 @@ export default function CommmentsCarousel() {
                         <Carousel className="">
                             <CarouselContent className="-ml-4">
                                 {comment.map((testimonial, i) => (
-                                    <CarouselItem key={i} className="pl-4 md:basis-1/2 lg:basis-1/4">
-                                        <Card className="bg-muted/50 backdrop-blur-sm border-2 border-primary/20 transition-all rounded-3xl h-full">
+                                    <CarouselItem key={i} className="pl-4 md:basis-1/2 lg:basis-1/3 p-10">
+                                        <Card className=" stats backdrop-blur-sm border-2 border-primary/20 transition-all  h-full ">
                                             <CardHeader>
-                                                <div className="flex justify-between items-center mb-3">
+                                                <div className="flex justify-between items-center mb-3 ">
                                                     {testimonial.order_items?.category_name && (
                                                         <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200">
                                                             <MessageSquare className="w-3 h-3 mr-1" />
@@ -71,21 +72,27 @@ export default function CommmentsCarousel() {
                                                         </Badge>
                                                     )}
 
-                                                    <div className="flex items-center gap-1 ">
+                                                    <div className="flex items-center gap-1 px-3 rotate-5 ">
                                                         {[...Array(Number(testimonial.rating))].map((_, j) => (
                                                             <Star key={j} className="w-4 h-4 fill-[#FFE66D] text-[#FFE66D]" />
                                                         ))}
                                                     </div>
                                                 </div>
-                                                <CardDescription className="text-gray-500 text-base italic leading-relaxed">
+                                                <CardDescription className="text-gray-500 px-3 rotate-5 text-base italic leading-relaxed">
                                                     "{testimonial.message}"
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="flex items-center gap-3">
-                                                    <img src={testimonial.users?.avatar_url} alt={testimonial.users?.full_name} className="w-12 h-12 rounded-full border-2 border-white" />
+                                                <div className="flex items-center gap-2 rotate-5">
+                                                    <Image
+                                                        src={testimonial.users?.avatar_url ?? "/default-avatar.png"}
+                                                        width={50}
+                                                        height={50}
+                                                        alt={testimonial.users?.full_name ?? "User avatar"}
+                                                        className="w-12 h-12 rounded-full border-2 border-white"
+                                                    />
                                                     <div>
-                                                        <div className="font-semibold text-primary">{testimonial.users?.full_name}</div>
+                                                        <div className="font-semibold text-primary arial">{testimonial.users?.full_name}</div>
                                                     </div>
                                                 </div>
                                             </CardContent>
@@ -100,11 +107,11 @@ export default function CommmentsCarousel() {
                     )}
                     <div className="text-center mt-8">
 
-                    <Link href="reviews">
-                        <Button className="bg-white cursor-pointer hover:bg-gray-50 text-[#50398e] px-10 py-6 rounded-full shadow-md border-2 border-[#50398e]">
-                            Show All Reviews
-                        </Button>
-                    </Link>
+                        <Link href="reviews">
+                            <Button className="bg-white cursor-pointer hover:bg-gray-50 text-[#50398e] px-10 py-6 rounded-full shadow-md border-2 border-[#50398e]">
+                                Show All Reviews
+                            </Button>
+                        </Link>
                     </div>
                 </div>
             </section>

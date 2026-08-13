@@ -217,10 +217,10 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           <NoNetwork>
           <Navbar />
             <AuthProvider>
-              <div className="container mx-auto px-4 mt-30 max-w-7xl">
+              <div className="container mx-auto  px-4 mt-30 max-w-7xl">
                 <div className="flex flex-col lg:flex-row gap-6">
                   {/* User Sidebar */}
-                  <aside className="w-full lg:w-64 flex-shrink-0">
+                  <aside className="w-full  lg:w-64 flex-shrink-0">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
                       {/* Profile Header */}
                       <div className="p-6 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
@@ -252,15 +252,15 @@ function AppLayout({ children }: { children: React.ReactNode }) {
                                   flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
                                   transition-all duration-200 group
                                   ${isActive 
-                                    ? 'bg-muted text-primary' 
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    ? 'bg-muted  arial' 
+                                    : 'text-dark arial hover:bg-gray-50 hover:text-gray-900'
                                   }
                                 `}
                               >
-                                <Icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${isActive ? 'text-purple-600' : ''}`} />
+                                <Icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${isActive ? 'text-primary' : ''}`} />
                                 <span className="flex-1">{item.name}</span>
                                 {isActive && (
-                                  <ChevronRight className="h-4 w-4 text-purple-600" />
+                                  <ChevronRight className="h-4 w-4 text-primary" />
                                 )}
                               </Link>
                             )

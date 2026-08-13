@@ -102,14 +102,11 @@ export default function Teams() {
 
           {/* Badge */}
           <div>
-            <div className="flex gap-5  w-full mb-4 mt-15 justify-center">
-              <Textstyle Title="TEAM" className="text-4xl sm:text-7xl w-full " color="text-purple" />
-              <Textstyle Title="AND" className="text-4xl sm:text-7xl w-full" color="text-yellow" />
-              <Textstylegreen Title="PARTNER" className="text-4xl sm:text-7xl w-full" color="text-green" />
-            </div>
+               {/* Badge */}
+           <h1 className="text-4xl sm:text-6xl mt-10  w-full text-[#6B50B0] text-borsok" >Teams And Partner</h1>
           </div>
           <div className=" max-w-3xl mx-auto">
-            <p className="text-lg md:text-xl  arial">
+            <p className="text-lg   arial">
               Nemuneko Studio is house of creativity, full of talented artist and partners
             </p>
           </div>

@@ -93,17 +93,12 @@ export default function NemunekoContact() {
           <div className="container mx-auto text-center">
 
             {/* Badge */}
-          
-              <div className="flex gap-5 justify-center w-full mb-4 mt-15">
-                <Textstyle Title="GET" className="text-4xl sm:text-7xl w-full " color="text-purple" />
-                <Textstyle Title="IN" className="text-4xl sm:text-7xl w-full" color="text-yellow" />
-                <Textstylegreen Title="TOUCH" className="text-4xl sm:text-7xl w-full" color="text-green" />
-              </div>
+           <h1 className="text-4xl sm:text-6xl mt-10  w-full text-[#6B50B0] text-borsok" >Get In Touch</h1>
          
             <div className="w-full max-w-3xl mx-auto">
               <p
                
-                className="text-lg md:text-xl text-center arial"
+                className="text-lg text-center arial"
               >
                 Explore our collection and portofolio and browse for your reffrences
               </p>
@@ -119,16 +114,17 @@ export default function NemunekoContact() {
         </section>
 
         {/* Contact Info Cards */}
-        <section className="py-12 sm:pb-16 px-4 sm:px-6 bg-white">
+        <section className="mb-10 sm:pb-16 px-4 sm:px-6 bg-white">
           <div className="container mx-auto">
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10">
               {contactInfo.map((info, i) => (
-                <Card key={i} className="bg-white border-[#9B5DE0]/30 hover:border-[#D78FEE]/50 transition-all duration-300 hover:transform hover:scale-105 group cursor-pointer">
+                <Card key={i} className="bg-white stats border-[#9B5DE0]/30 hover:border-[#D78FEE]/50 transition-all duration-300 hover:transform hover:scale-105 group cursor-pointer">
+                  <div className="rotate-5 p-3">
                   <CardHeader className="text-center pb-3">
                     <div className="w-16 h-16 bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                      <info.icon className="w-8 h-8 text-[#9B5DE0]" />
+                      <info.icon className="w-8 h-8 text-dark" />
                     </div>
-                    <CardTitle className="text-lg text-primary">{info.title}</CardTitle>
+                    <CardTitle className="text-lg text-primary arial">{info.title}</CardTitle>
                   </CardHeader>
                   <CardContent className="text-center">
                     <a href={info.link} className="text-[#9B5DE0] hover:text-[#D78FEE] transition-colors font-medium block mb-1">
@@ -138,6 +134,7 @@ export default function NemunekoContact() {
                       {info.description}
                     </CardDescription>
                   </CardContent>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -151,7 +148,7 @@ export default function NemunekoContact() {
               {/* Contact Form */}
               <Card className="bg-white shadow">
                 <CardHeader>
-                  <CardTitle className="text-2xl sm:text-3xl text-primary">Send us a Message</CardTitle>
+                  <CardTitle className="text-2xl sm:text-3xl text-primary text-borsok">Send us a Message</CardTitle>
                   <CardDescription className="text-gray-600">
                     Fill out the form below and we'll get back to you as soon as possible
                   </CardDescription>
@@ -227,7 +224,7 @@ export default function NemunekoContact() {
                       <Button 
                         onClick={handleSubmit}
                         size="lg" 
-                        className="w-full bg-primary text-white rounded-full"
+                        className="w-full bg-primary text-white mt-15 rounded-full"
                       >
                         <Send className="w-5 h-5 mr-2" />
                         Send Message
@@ -253,11 +250,11 @@ export default function NemunekoContact() {
                 <Card className="bg-white border-[#9B5DE0]/30">
                   <CardHeader>
                     <div className="flex items-center space-x-2">
-                      <Clock className="w-6 h-6 text-[#9B5DE0]" />
-                      <CardTitle className="text-xl text-primary">Business Hours</CardTitle>
+                      <CardTitle className="text-3xl  text-borsok">Business Hours</CardTitle>
+                    
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-3 text-arial">
                     <div className="flex justify-between items-center py-2 border-b border-[#9B5DE0]/20">
                       <span className="text-gray-700">Monday - Friday</span>
                       <span className="text-[#9B5DE0] font-medium">9:00 AM - 6:00 PM</span>
@@ -279,12 +276,12 @@ export default function NemunekoContact() {
                 {/* Social Media */}
                 <Card className="bg-white border-[#9B5DE0]/30">
                   <CardHeader>
-                    <CardTitle className="text-xl text-primary">Follow Us</CardTitle>
-                    <CardDescription className="text-gray-600">
+                    <CardTitle className="text-3xl text-primary text-borsok">Follow Us</CardTitle>
+                    <CardDescription className="text-gray-600 arial">
                       Connect with us on social media for updates and inspiration
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="space-y-3 arial">
                     {socialLinks.map((social, i) => (
                       <a
                         key={i}
@@ -304,23 +301,7 @@ export default function NemunekoContact() {
                   </CardContent>
                 </Card>
 
-                {/* Response Time */}
-                <Card className="bg-gradient-to-br from-[#9B5DE0]/10 to-[#D78FEE]/10 border-[#9B5DE0]/30">
-                  <CardContent className="py-6">
-                    <div className="text-center">
-                      <div className="text-4xl font-bold bg-gradient-to-r from-[#9B5DE0] to-[#D78FEE] bg-clip-text text-transparent mb-2">
-                        &lt; 24 Hours
-                      </div>
-                      <div className="text-gray-700 text-sm">Average Response Time</div>
-                      <div className="flex items-center justify-center space-x-2 mt-4">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <div key={star} className="w-5 h-5 text-[#9B5DE0]">★</div>
-                        ))}
-                      </div>
-                      <div className="text-gray-600 text-xs mt-2">4.9/5.0 Customer Rating</div>
-                    </div>
-                  </CardContent>
-                </Card>
+               
               </div>
             </div>
           </div>

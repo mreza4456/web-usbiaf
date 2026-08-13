@@ -278,17 +278,12 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
 
       <div className="max-w-7xl mx-auto bg-white px-4 sm:px-5">
         {/* Header Navigation */}
-        <div className="flex justify-between items-center mb-6 md:mb-8">
-          <Button
-            onClick={() => router.push('/service')}
-            variant="ghost"
-            className="text-purple-600 hover:text-purple-700 -ml-2 sm:ml-0"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Back to Services</span>
-            <span className="sm:hidden">Back</span>
-          </Button>
-        </div>
+       <Link href="/service" className='flex mx-2 items-center arial text-primary mb-5'>
+
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Services
+
+                </Link>
 
         <div className="grid md:grid-cols-2 gap-6 md:gap-10 mb-8">
           {/* Image Gallery */}

@@ -1,6 +1,6 @@
 // app/checkout/page.tsx
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CheckoutPage from '@/components/order-form';
 import { getCartItems } from '@/action/cart';
@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CheckoutSkeleton } from '@/components/skeleton-card';
-
+import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 export default function CheckoutPageWrapper() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
@@ -20,10 +20,16 @@ export default function CheckoutPageWrapper() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Flag: begitu checkout mulai diproses, effect loadCart wajib berhenti
+  // ikut campur (khususnya redirect ke /cart saat cart kosong).
+  const checkoutInProgressRef = useRef(false);
+
   useEffect(() => {
+    let cancelled = false; // guard tambahan kalau effect ini unmount di tengah jalan
+
     async function loadCart() {
-      // Wait for auth to be ready
       if (isLoading) return;
+      if (checkoutInProgressRef.current) return; // <-- stop di sini kalau lagi/abis checkout
 
       if (!user?.id) {
         router.push('/login');
@@ -32,10 +38,10 @@ export default function CheckoutPageWrapper() {
 
       try {
         const result = await getCartItems(user.id);
+        if (cancelled || checkoutInProgressRef.current) return; // cek ulang setelah await
+
         if (result.success && result.data) {
-          // Check if cart is empty
           if (result.data.length === 0) {
-            // Redirect to cart if empty
             router.push('/cart');
             return;
           }
@@ -45,42 +51,50 @@ export default function CheckoutPageWrapper() {
           setError('Failed to load cart items');
         }
       } catch (error) {
+        if (cancelled) return;
         console.error('Error loading cart:', error);
         setCartItems([]);
         setError('Failed to load cart');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     loadCart();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user, isLoading, router]);
 
   const handleSubmitCheckout = async (checkoutData: any) => {
+    checkoutInProgressRef.current = true; // set SEBELUM memanggil processCheckout
+
     try {
       if (!user?.id) {
+        checkoutInProgressRef.current = false;
         return { success: false, message: 'User not authenticated' };
       }
 
-      // Process checkout - this will automatically clear cart on success
       const result = await processCheckout(checkoutData);
-      
+
       if (result.success) {
-        // Clear local cart state immediately for optimistic UI
         setCartItems([]);
-        
-        // Log success
         console.log(`✅ Order created: ${result.order_ref}`);
         console.log(`✅ Cart cleared: ${result.cleared_items} items removed`);
+        // flag TETAP true — biarkan halaman ini "mati" menunggu navigasi
+        // ke /success dari child, jangan biarkan effect sempat jalan lagi.
+      } else {
+        checkoutInProgressRef.current = false; // gagal → effect boleh normal lagi
       }
-      
+
       return result;
-      
     } catch (error: any) {
+      checkoutInProgressRef.current = false;
       console.error('Checkout error:', error);
-      return { 
-        success: false, 
-        message: error.message || 'Failed to process checkout' 
+      return {
+        success: false,
+        message: error.message || 'Failed to process checkout'
       };
     }
   };
@@ -145,10 +159,12 @@ export default function CheckoutPageWrapper() {
   }
 
   return (
+  
     <CheckoutPage
       cartItems={cartItems}
       userId={user.id}
       onSubmitCheckout={handleSubmitCheckout}
     />
+   
   );
 }

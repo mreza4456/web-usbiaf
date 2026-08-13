@@ -7,100 +7,102 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
+import { PayPalButtons } from "@paypal/react-paypal-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { CreditCard, Lock } from "lucide-react";
+import { createPayPalOrder, capturePayPalOrder } from "@/action/paypal";
 
-interface CustomStripeDialogProps {
+interface CustomPayPalDialogProps {
   open: boolean;
   setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  clientSecret: string;
+  // `amount` is DISPLAY ONLY (shown to the buyer for reassurance). The
+  // actual amount charged is recomputed server-side in createPayPalOrder
+  // from cartIds + voucherId, so a manipulated `amount` here can't change
+  // what's actually charged.
   amount: number;
-  onPaymentSuccess: (paymentId: string) => void;
+  cartIds: string[];
+  voucherId?: string;
+  onPaymentSuccess: (result: { paypalOrderId: string; captureId: string | null }) => void;
 }
 
-const CARD_ELEMENT_OPTIONS = {
-  style: {
-    base: {
-      fontSize: '16px',
-      color: '#424770',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      '::placeholder': {
-        color: '#aab7c4',
-      },
-      iconColor: '#666EE8',
-    },
-    invalid: {
-      color: '#ef4444',
-      iconColor: '#ef4444',
-    },
-  },
-  hidePostalCode: false,
-};
-
-function CustomStripeDialog({
+function CustomPayPalDialog({
   open,
   setOpen,
-  clientSecret,
   amount,
+  cartIds,
+  voucherId,
   onPaymentSuccess,
-}: CustomStripeDialogProps) {
-  const stripe = useStripe();
-  const elements = useElements();
+}: CustomPayPalDialogProps) {
   const [loading, setLoading] = useState(false);
   const [cardholderName, setCardholderName] = useState("");
   const [email, setEmail] = useState("");
+  const [detailsConfirmed, setDetailsConfirmed] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleConfirmDetails = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!stripe || !elements) {
-      return;
-    }
 
     if (!cardholderName || !email) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    setLoading(true);
+    setDetailsConfirmed(true);
+  };
 
-    const cardElement = elements.getElement(CardElement);
+  // Called when the buyer clicks the PayPal button, before they're
+  // redirected to approve the payment. Creates the order via the
+  // createPayPalOrder server action (mirrors getStripeClientSecret) so the
+  // amount is set server-side and can't be tampered with client-side.
+  const createOrder = async () => {
+    const result = await createPayPalOrder(cartIds, voucherId);
 
-    if (!cardElement) {
-      setLoading(false);
-      return;
+    if (!result.success || !result.data) {
+      toast.error(result.message || "Could not start PayPal checkout");
+      throw new Error(result.message || "Could not start PayPal checkout");
     }
 
-    try {
-      const { error, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret,
-        {
-          payment_method: {
-            card: cardElement,
-            billing_details: {
-              name: cardholderName,
-              email: email,
-            },
-          },
-        }
-      );
+    return result.data; // PayPal order id
+  };
 
-      if (error) {
-        toast.error(error.message || "Payment failed");
-        setLoading(false);
-      } else if (paymentIntent && paymentIntent.status === "succeeded") {
-        toast.success("Payment successful!");
-        onPaymentSuccess(paymentIntent.id);
-        setOpen(false);
+  // Called after the buyer approves the payment on PayPal's side.
+  // Captures the order via the capturePayPalOrder server action to
+  // actually take the funds. Both the PayPal order id AND the capture id
+  // are passed up so the caller can verify the order server-side again in
+  // processCheckout before persisting anything.
+  const onApprove = async (data: { orderID: string }) => {
+    setLoading(true);
+    try {
+      const result = await capturePayPalOrder(data.orderID);
+
+      if (!result.success || !result.data) {
+        throw new Error(result.message || "Payment could not be completed");
       }
+
+      toast.success("Payment successful!");
+      onPaymentSuccess({
+        paypalOrderId: data.orderID,
+        captureId: result.data.capture_id,
+      });
+      setOpen(false);
     } catch (err: any) {
       toast.error(err.message || "Payment failed");
+    } finally {
       setLoading(false);
     }
+  };
+
+  const onError = (err: any) => {
+    console.error("PayPal error:", err);
+    toast.error("Payment failed. Please try again.");
+    setLoading(false);
+  };
+
+  const onCancel = () => {
+    toast.info("Payment cancelled");
+    setLoading(false);
   };
 
   return (
@@ -112,11 +114,11 @@ function CustomStripeDialog({
             Complete Payment
           </DialogTitle>
           <DialogDescription>
-            Enter your card details to complete the purchase
+            Enter your details and pay securely with PayPal
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-5">
           {/* Amount Display */}
           <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
             <div className="flex justify-between items-center">
@@ -127,89 +129,110 @@ function CustomStripeDialog({
             </div>
           </div>
 
-          {/* Cardholder Name */}
-          <div className="space-y-2">
-            <Label htmlFor="cardholderName">
-              Cardholder Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="cardholderName"
-              type="text"
-              placeholder="John Doe"
-              value={cardholderName}
-              onChange={(e) => setCardholderName(e.target.value)}
-              disabled={loading}
-              required
-            />
-          </div>
+          {!detailsConfirmed ? (
+            <form onSubmit={handleConfirmDetails} className="space-y-5">
+              {/* Cardholder Name */}
+              <div className="space-y-2">
+                <Label htmlFor="cardholderName">
+                  Full Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="cardholderName"
+                  type="text"
+                  placeholder="John Doe"
+                  value={cardholderName}
+                  onChange={(e) => setCardholderName(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
 
-          {/* Email */}
-          <div className="space-y-2">
-            <Label htmlFor="email">
-              Email <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="john@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={loading}
-              required
-            />
-          </div>
+              {/* Email */}
+              <div className="space-y-2">
+                <Label htmlFor="email">
+                  Email <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  required
+                />
+              </div>
 
-          {/* Card Details */}
-          <div className="space-y-2">
-            <Label>
-              Card Information <span className="text-red-500">*</span>
-            </Label>
-            <div className="border rounded-md p-3 bg-white">
-              <CardElement options={CARD_ELEMENT_OPTIONS} />
-            </div>
-            <p className="text-xs text-gray-500 flex items-center gap-1">
-              <Lock className="w-3 h-3" />
-              Your payment information is secure and encrypted
-            </p>
-          </div>
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                Your payment information is secure and encrypted
+              </p>
 
-          {/* Buttons */}
-          <div className="flex gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={loading}
-              className="flex-1"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={!stripe || loading}
-              className="flex-1 bg-primary hover:bg-primary/90"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Processing...
-                </>
-              ) : (
-                `Pay $${amount.toLocaleString()}`
+              {/* Buttons */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90">
+                  Continue to PayPal
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-600 flex items-center justify-between">
+                <span>
+                  Paying as <span className="font-medium">{cardholderName}</span> ({email})
+                </span>
+                <button
+                  type="button"
+                  className="text-primary text-xs underline"
+                  onClick={() => setDetailsConfirmed(false)}
+                  disabled={loading}
+                >
+                  Edit
+                </button>
+              </div>
+
+              {loading && (
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-500 py-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  Processing payment...
+                </div>
               )}
-            </Button>
-          </div>
-        </form>
 
-        {/* Test Card Info */}
-        <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded border">
-          <p className="font-semibold mb-1">Test Card:</p>
-          <p>Card: 4242 4242 4242 4242</p>
-          <p>Expiry: Any future date | CVC: Any 3 digits</p>
+              <div className={loading ? "pointer-events-none opacity-50" : ""}>
+                <PayPalButtons
+                  style={{ layout: "vertical", label: "pay" }}
+                  disabled={loading}
+                  createOrder={createOrder}
+                  onApprove={onApprove}
+                  onError={onError}
+                  onCancel={onCancel}
+                />
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={loading}
+                className="w-full"
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
 
-export default CustomStripeDialog;
+export default CustomPayPalDialog;
