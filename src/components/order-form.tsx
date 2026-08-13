@@ -244,8 +244,8 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className='w-full mb-8 sm:mb-10 text-center'>
-          <h1 className="text-2xl sm:text-4xl font-bold text-primary mb-1">Checkout</h1>
-          <p className="text-gray-600 text-sm sm:text-base">Complete Your Order Detail</p>
+          <h1 className="text-2xl sm:text-5xl font-bold text-primary text-borsok">Checkout</h1>
+          <p className="text-gray-600 text-sm sm:text-base arial">Complete Your Order Detail</p>
 
         </div>
 
@@ -308,7 +308,7 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
               );
             })}
           </div>
-          <Card className='bg-white overflow-hidden border-2 shadow-lg mt-5 p-0'>
+          <Card className='card-primary-white rounded rounded-2xl overflow-hidden border-2 shadow-lg mt-5 p-0'>
 
             {/* Step 1: Contact Information */}
             {currentStep === 1 && (

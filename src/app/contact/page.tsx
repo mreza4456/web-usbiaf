@@ -146,7 +146,7 @@ export default function NemunekoContact() {
           <div className="container mx-auto">
             <div className="grid lg:grid-cols-2 gap-8">
               {/* Contact Form */}
-              <Card className="bg-white shadow">
+              <Card className="card-primary-white shadow">
                 <CardHeader>
                   <CardTitle className="text-2xl sm:text-3xl text-primary text-borsok">Send us a Message</CardTitle>
                   <CardDescription className="text-gray-600">
@@ -247,7 +247,7 @@ export default function NemunekoContact() {
               {/* Additional Info */}
               <div className="space-y-6">
                 {/* Business Hours */}
-                <Card className="bg-white border-[#9B5DE0]/30">
+                <Card className="card-primary-white ">
                   <CardHeader>
                     <div className="flex items-center space-x-2">
                       <CardTitle className="text-3xl  text-borsok">Business Hours</CardTitle>
@@ -274,7 +274,7 @@ export default function NemunekoContact() {
                 </Card>
 
                 {/* Social Media */}
-                <Card className="bg-white border-[#9B5DE0]/30">
+                <Card className="card-primary-white ">
                   <CardHeader>
                     <CardTitle className="text-3xl text-primary text-borsok">Follow Us</CardTitle>
                     <CardDescription className="text-gray-600 arial">

@@ -445,39 +445,46 @@ inset: 0px;
   clip-path: inset(0 0 35% 0);
 }
 
-.card-primary{
+
+.card-primary-white {
   position: relative;
-     border: 2px solid #4A3A78;
+  border: 2px solid #4A3A78;
+  background-color: #FFF;
+  border-radius: 10px;
+  box-shadow: 5px 5px 0px #4A3A78;
+  /* hapus z-index: -2; jangan taruh card di bawah stacking */
+  z-index: 0;
+  isolation: isolate; /* bikin stacking context sendiri, tidak ganggu di luar */
+}
+
+.card-primary-white::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 2px solid #4A3A78;
+  border-radius: 7px;
+  border-style: dashed;
+  z-index: -1; /* aman sekarang, karena berada di dalam stacking context .card-primary-white sendiri */
+  pointer-events: none; /* pastikan overlay ini tidak pernah mencegat klik */
+}
+.card-primary {
+  position: relative;
+  border: 2px solid #4A3A78;
   background-color:#F8EFFF;
-  
-   border-radius: 10px;
-    box-shadow: 5px 5px 0px #4A3A78;
+  border-radius: 10px;
+  box-shadow: 5px 5px 0px #4A3A78;
+  /* hapus z-index: -2; jangan taruh card di bawah stacking */
+  z-index: 0;
+  isolation: isolate; /* bikin stacking context sendiri, tidak ganggu di luar */
 }
-.card-primary::after{
+
+.card-primary::after {
   content: "";
   position: absolute;
   inset: 3px;
-
   border: 2px solid #4A3A78;
   border-radius: 7px;
   border-style: dashed;
-
-}
-.card-primary-white{
-  position: relative;
-     border: 2px solid #4A3A78;
-  background-color:#FFFF;
-  
-   border-radius: 10px;
-    box-shadow: 5px 5px 0px #4A3A78;
-}
-.card-primary-white::after{
-  content: "";
-  position: absolute;
-  inset: 3px;
-
-  border: 2px solid #4A3A78;
-  border-radius: 7px;
-  border-style: dashed;
-
+  z-index: -1; /* aman sekarang, karena berada di dalam stacking context .card-primary-white sendiri */
+  pointer-events: none; /* pastikan overlay ini tidak pernah mencegat klik */
 }

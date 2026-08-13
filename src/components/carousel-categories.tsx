@@ -60,12 +60,12 @@ export default function CategoryCarousel() {
 
 
                 {/* Blog Posts Grid */}
-                <section className="pb-20 px-4 sm:px-6">
+                <section className="pb-20 px-2 sm:px-6">
                     <div className="container mx-auto">
                         <div className="flex items-center justify-between mb-8 border-b border-gray-200 pb-5">
                             <h2 className="text-3xl md:text-4xl text-borsok font-bold text-[#50398e] relative inline-block">
                                 You May Also Like
-                                <span className="absolute -top-6 -right-8 text-4xl">✦</span>
+                                
                             </h2>
                             <Link href="/projects">
                                 <Button variant="outline" className="border-2 border-[#50398e] text-[#50398e] hover:bg-muted/30">
@@ -88,9 +88,9 @@ export default function CategoryCarousel() {
                                         return (
                                             <CarouselItem
                                                 key={category.id}
-                                                className="md:basis-1/2 lg:basis-1/3 flex"
+                                                className="md:basis-1/2 lg:basis-1/3 flex p-5"
                                             >
-                                                <Card className="bg-white p-0 shadow-lg flex flex-col w-full overflow-hidden group">
+                                                <Card className="card-primary-white p-2 shadow-lg flex flex-col w-full overflow-hidden group">
 
                                                     <CardHeader className="p-0">
                                                         <div className="relative h-60 overflow-hidden">
@@ -115,14 +115,13 @@ export default function CategoryCarousel() {
                                                         </div>
                                                     </CardHeader>
 
-                                                    <CardContent className="p-3 flex-1">
-                                                        <CardTitle className="text-xl text-eliane  mb-3 line-clamp-2">
+                                                    <CardContent className=" ">
+                                                        <CardTitle className="text-xl text-eliane   line-clamp-2">
                                                             {category.name}
                                                         </CardTitle>
 
-                                                        <CardDescription className="text-gray-800 text-sm line-clamp-3">
-                                                            {category.description || 'No description available'}
-                                                        </CardDescription>
+                        
+                                                          <div className="text-gray-600 text-sm line-clamp-3   leading-relaxed whitespace-pre-line" dangerouslySetInnerHTML={{ __html: category.description || 'No description available' }} />
                                                     </CardContent>
 
                                                     <CardFooter className="p-3 pt-0 mt-auto">

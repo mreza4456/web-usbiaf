@@ -278,12 +278,12 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
 
       <div className="max-w-7xl mx-auto bg-white px-4 sm:px-5">
         {/* Header Navigation */}
-       <Link href="/service" className='flex mx-2 items-center arial text-primary mb-5'>
+        <Link href="/service" className='flex mx-2 items-center arial text-primary mb-5'>
 
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Back to Services
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back to Services
 
-                </Link>
+        </Link>
 
         <div className="grid md:grid-cols-2 gap-6 md:gap-10 mb-8">
           {/* Image Gallery */}
@@ -453,20 +453,20 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
 
         {isMobile && packages.length > 0 && (
           <div className="mt-6 md:mt-8">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 sm:mb-4">Choose Your Package</h2>
-            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">Select the perfect package for your needs</p>
+            <h2 className="text-xl sm:text-4xl font-bold text-gray-900  text-borsok">Choose Your Package</h2>
+            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base text-font-arial">Select the perfect package for your needs</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-6">
               {packages.map((pkg) => (
                 <Card
                   key={pkg.id}
-                  className="transition-all hover:shadow-xl bg-white"
+                  className="transition-all hover:shadow-xl card-primary-white"
                 >
                   <CardHeader className="pb-3">
                     <Badge className="w-fit mb-2 bg-purple-100 text-purple-700">
                       {pkg.package?.name}
                     </Badge>
-                    <CardTitle className="text-lg sm:text-xl">{pkg.name}</CardTitle>
+                    <CardTitle className="text-lg sm:text-xl arial">{pkg.name}</CardTitle>
                     <div className="text-2xl sm:text-3xl font-bold text-secondary mt-2">
                       {formatCurrency(pkg.price)}
                     </div>
@@ -504,7 +504,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
         )}
 
         {feature.length > 0 && (
-          < Card className="bg-muted/50 my-10 md:my-15">
+          < Card className="card-primary my-10 md:my-15">
             <CardHeader>
               <CardTitle className="text-xl  sm:text-3xl   text-borsok  ">What's Included</CardTitle>
               <CardDescription>All packages include these premium features</CardDescription>
@@ -575,7 +575,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
               ].map((item, i, arr) => (
                 <div key={i} className="flex gap-4">
                   <div className="flex flex-col items-center">
-                    <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold">
+                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">
                       {item.step}
                     </div>
                     {i < arr.length - 1 && (
@@ -583,7 +583,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                     )}
                   </div>
                   <div className="flex-1 pb-4">
-                    <h3 className="font-semibold text-gray-900 mb-1">{item.title}</h3>
+                    <h3 className="font-semibold text-gray-900 mb-1 arial">{item.title}</h3>
                     <p className="text-sm text-gray-500">{item.desc}</p>
                   </div>
                 </div>
@@ -608,7 +608,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             </div>
 
             {/* Rating Breakdown */}
-            <Card className="mb-6">
+            <Card className="mb-6 card-primary-white">
               <CardContent className="pt-6">
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="flex items-center justify-center gap-6">
@@ -730,9 +730,9 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             >
               <div className="container mx-auto px-4 py-8 max-w-7xl">
                 {/* Modal Header */}
-                <div className="flex justify-between items-start mb-8 gap-4">
+                <div className="flex justify-between items-start mb-8 gap-4 p-10">
                   <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Choose Your Package</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2 text-font-arial">Choose Your Package</h2>
                     <p className="text-gray-300 text-base sm:text-lg">
                       Select the perfect package for your needs and add it to order
                     </p>
@@ -750,31 +750,34 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                   {packages.map((pkg) => (
                     <Card
                       key={pkg.id}
-                      className="transition-all hover:shadow-2xl bg-white"
+                      className="transition-all hover:shadow-2xl card-primary-white"
                     >
                       <CardHeader className="pb-3">
                         <Badge className="w-fit mb-2 bg-purple-100 text-purple-700">
                           {pkg.package?.name}
                         </Badge>
-                        <CardTitle className="text-xl">{pkg.name}</CardTitle>
+                        <CardTitle className="text-xl arial">{pkg.name}</CardTitle>
                         <div className="text-4xl sm:text-5xl font-bold text-primary mt-2">
                           ${pkg.price}<span className='text-xl'>.00</span>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-4">
+                      <CardContent className="space-y-4 flex flex-col">
                         {pkg.description && (
-                          <div className="prose prose-neutral max-w-none text-gray-600 text-sm " dangerouslySetInnerHTML={{ __html: pkg.description }} />
+                          <div
+                            className="prose prose-neutral max-w-none text-gray-600 text-sm"
+                            dangerouslySetInnerHTML={{ __html: pkg.description }}
+                          />
                         )}
 
                         <Button
                           onClick={() => handleAddToCart(pkg.id.toString())}
                           disabled={isAddingToCart && selectedPackage === pkg.id.toString()}
-                          className="float-end bg-primary rounded-full cursor-pointer hover:scale-105 text-white"
+                          className="self-end bg-primary rounded-full cursor-pointer hover:scale-105 text-white"
                           size="lg"
                         >
                           {isAddingToCart && selectedPackage === pkg.id.toString() ? (
                             <>
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                             
                               Adding...
                             </>
                           ) : (

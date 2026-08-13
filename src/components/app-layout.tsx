@@ -322,7 +322,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         <Navbar />
           <AuthProvider>
             {children}
-          </AuthProvider>å
+          </AuthProvider>
       
         <Footer />
         </NoNetwork>

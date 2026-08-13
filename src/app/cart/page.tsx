@@ -256,7 +256,7 @@ export default function CartPage() {
       <div className="max-w-7xl w-full mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
           <div className='w-full'>
-            <h1 className="text-2xl sm:text-4xl font-bold text-primary mb-1">Order Summary</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold text-primary text-borsok ">Order Summary</h1>
             <div className="flex justify-between items-start sm:items-center gap-2 sm:gap-0">
               <p className="text-gray-600 text-sm sm:text-base">{getTotalItems()} items in your cart</p>
               {cartItems.length > 0 && (
@@ -286,12 +286,12 @@ export default function CartPage() {
             <SkeletonCarts />
           </div>
         ) : cartItems.length === 0 ? (
-          <div className=" bg-background mt-10 p-4 sm:p-6 flex items-center justify-center">
+          <div className="  mt-10 p-4 sm:p-6 flex items-center justify-center">
             <div className="text-center max-w-7xl">
               <div className="w-24 h-24 sm:w-32 sm:h-32 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6">
                 <ShoppingCart className="w-12 h-12 sm:w-16 sm:h-16 text-purple-300" />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3">Your Order is empty</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2 sm:mb-3 arial">Your Order is empty</h2>
               <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base">Add some amazing services to get started!</p>
               <Button
                 onClick={() => router.push('/service')}
@@ -311,7 +311,7 @@ export default function CartPage() {
                   const isUpdating = updatingItems.has(item.id!);
 
                   return (
-                    <Card key={item.id} className={`${isUpdating ? 'opacity-50' : ''} transition-opacity bg-white relative mb-5`}>
+                    <Card key={item.id} className={`${isUpdating ? 'opacity-50' : ''} transition-opacity card-primary-white relative mb-5`}>
                       <CardContent className="p-3 sm:p-6">
                         <div className="block sm:hidden">
                           <div className="flex items-start gap-3 mb-3">
@@ -319,7 +319,7 @@ export default function CartPage() {
                               <Package className="w-8 h-8 text-secondary" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-base font-bold text-gray-900 mb-1 truncate">
+                              <h3 className="text-base font-bold text-gray-900 mb-1 truncate text-arial">
                                 {item.category_name}
                               </h3>
                               <Badge className="bg-purple-100 text-purple-700 text-xs mb-1">
@@ -429,15 +429,15 @@ export default function CartPage() {
             </div>
 
             <div className="lg:sticky lg:top-24 lg:self-start">
-              <Card className="bg-white">
+              <Card className="card-primary">
                 <CardContent className="space-y-4 ">
-                  <Card className='bg-muted/30'>
+                  <Card className='card-primary-white'>
                     <CardHeader
                       className="cursor-pointer transition-colors "
                       onClick={() => setIsVoucherOpen(!isVoucherOpen)}
                     >
                       <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                        <CardTitle className="flex items-center gap-2 arial text-base sm:text-lg">
                           <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
                           <span>Apply Voucher</span>
                           {selectedVoucher && (
@@ -475,14 +475,14 @@ export default function CartPage() {
                               <div
                                 key={voucher.id}
                                 onClick={() => handleVoucherSelect(voucher)}
-                                className={`p-3 sm:p-4 border-2 rounded-lg cursor-pointer transition-all ${selectedVoucher?.id === voucher.id
+                                className={`px-3 py-1 border-2 rounded-lg cursor-pointer transition-all ${selectedVoucher?.id === voucher.id
                                   ? 'border-purple-500 bg-purple-50'
-                                  : 'border-gray-200 hover:border-purple-300'
+                                  : 'border-gray-300 hover:border-primary'
                                   }`}
                               >
                                 <div className="flex items-center justify-between gap-2">
                                   <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
                                       <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                                     </div>
                                     <div className="min-w-0">
@@ -537,7 +537,7 @@ export default function CartPage() {
                     <Button
                       onClick={handleCheckout}
                       size="lg"
-                      className="w-full bg-primary text-white py-4 sm:py-6 font-semibold text-sm sm:text-base"
+                      className="w-full bg-primary text-white py-4 cursor-pointer sm:py-6 font-semibold text-sm sm:text-base"
                     >
                       Proceed to Checkout
                       <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />
