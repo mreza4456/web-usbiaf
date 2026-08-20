@@ -4,8 +4,7 @@ import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { ArrowRight, Zap, Shield, Star, Clock, ImageIcon, ChevronLeft, ChevronRight, Search, Flame, TrendingUp, X, SlidersHorizontal } from 'lucide-react';
+import { ArrowRight, Zap, Shield, Star, Clock, ImageIcon, ChevronLeft, ChevronRight, ChevronDown, Search, Flame, TrendingUp, X, SlidersHorizontal } from 'lucide-react';
 import { getAllCategories } from '@/action/categories';
 import { getAllPosters } from '@/action/poster'; // sesuaikan import path
 import { getAllClasses } from '@/action/class';
@@ -15,6 +14,8 @@ import Link from 'next/link';
 import { Textstyle, Textstylegreen } from '@/components/font-design';
 import Image from 'next/image';
 import { getCloudflareImageUrl } from '@/lib/storage-utils';
+import CardDashed from '@/components/card-dashed';
+import { title } from 'process';
 
 
 function Pagination({
@@ -168,8 +169,73 @@ function PosterCarousel({ posters }: { posters: IPoster[] }) {
   );
 }
 
-// ─── CategorySidebar ───────────────────────────────────────────────────────────
-function CategorySidebar({
+// ─── Dropdown (shared helper for Category / Sort by) ───────────────────────────
+
+function Dropdown({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label?: string;
+  value: string;
+  options: { key: string; label: string }[];
+  onChange: (key: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const activeLabel = options.find((o) => o.key === value)?.label ?? options[0]?.label;
+
+  return (
+    <div ref={ref} className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-1.5 px-4 h-10 rounded-full border border-2 border-primary text-primary text-sm font-medium hover:bg-primary/5 transition-colors whitespace-nowrap"
+      >
+        {label && <span className="text-gray-500 font-normal">{label}</span>}
+        <span className="font-semibold">{activeLabel}</span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-48 py-1.5 bg-white rounded-2xl border border-primary/20 shadow-lg z-20">
+          {options.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => {
+                onChange(opt.key);
+                setOpen(false);
+              }}
+              className={`w-full text-left px-4 py-2 text-sm transition-colors ${opt.key === value
+                ? 'text-primary font-semibold bg-primary/5'
+                : 'text-gray-700 hover:bg-gray-50'
+                }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ServiceToolbar ─────────────────────────────────────────────────────────────
+
+type BadgeFilter = 'best_seller' | 'popular' | 'handpick' | null;
+type SortKey = 'best_seller' | 'popular' | 'newest' | 'price_low' | 'price_high' | 'name_asc';
+
+function ServiceToolbar({
   classes,
   selectedClassId,
   onSelectClass,
@@ -177,124 +243,100 @@ function CategorySidebar({
   onSelectBadge,
   search,
   onSearchChange,
-  resultCount,
-  className = '',
+  sortBy,
+  onSortChange,
 }: {
   classes: IClass[];
   selectedClassId: string | number | null;
   onSelectClass: (id: string | number | null) => void;
-  selectedBadge: 'best_seller' | 'popular' | 'handpick' | null;
-  onSelectBadge: (badge: 'best_seller' | 'popular' | 'handpick' | null) => void;
+  selectedBadge: BadgeFilter;
+  onSelectBadge: (badge: BadgeFilter) => void;
   search: string;
   onSearchChange: (v: string) => void;
-  resultCount: number;
-  className?: string;
+  sortBy: SortKey;
+  onSortChange: (key: SortKey) => void;
 }) {
-  const badgeOptions: { key: 'best_seller' | 'popular' | 'handpick'; label: string; icon: React.ReactNode }[] = [
-    { key: 'popular', label: 'Popular', icon: <TrendingUp className="w-3.5 h-3.5" /> },
-    { key: 'handpick', label: 'Handpick', icon: <Flame className="w-3.5 h-3.5" /> },
-    { key: 'best_seller', label: 'Best Seller', icon: <Star className="w-3.5 h-3.5" /> },
+  const categoryOptions: { key: string; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'popular', label: 'Popular' },
+    { key: 'handpick', label: 'Handpick' },
+    { key: 'best_seller', label: 'Best Seller' },
+  ];
+
+  const sortOptions: { key: SortKey; label: string }[] = [
+    { key: 'best_seller', label: 'Best Seller' },
+    { key: 'popular', label: 'Most Popular' },
+    { key: 'newest', label: 'Newest' },
+    { key: 'price_low', label: 'Price: Low to High' },
+    { key: 'price_high', label: 'Price: High to Low' },
+    { key: 'name_asc', label: 'Name A-Z' },
+  ];
+
+  const pillOptions: { key: string | number | null; label: string }[] = [
+    { key: null, label: 'All' },
+    ...classes.map((c) => ({ key: c.id, label: c.class_name })),
   ];
 
   return (
-    <aside className={`w-full lg:w-64 shrink-0 ${className}`}>
-      <div className="lg:sticky lg:top-24 space-y-6">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
-        <div>
-          <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">
-            Search
-          </label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search services..."
-              className="pl-9 pr-8 rounded-full bg-gray-50 border-gray-200"
-            />
-            {search && (
-              <button
-                onClick={() => onSearchChange('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                aria-label="Clear search"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Class Filter */}
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-gray-500" />
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-              Class
-            </label>
-          </div>
-          <div className="flex flex-wrap lg:flex-col gap-2">
+        <div className="relative flex-1 max-w-xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+          <input
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Search everything..."
+            className="w-full h-10 pl-10 pr-9 rounded-full border border-primary border-2 bg-white text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+          />
+          {search && (
             <button
-              onClick={() => onSelectClass(null)}
-              className={`text-left px-3 py-2 rounded-full cursor-pointer lg:rounded-lg text-sm font-medium transition-colors ${selectedClassId === null
-                ? 'bg-primary text-white'
-                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                }`}
+              onClick={() => onSearchChange('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-primary"
+              aria-label="Clear search"
             >
-              All Classes
+              <X className="w-4 h-4" />
             </button>
-            {classes.map((c) => (
-              <button
-                key={c.id}
-                onClick={() => onSelectClass(c.id)}
-                className={`text-left px-3 py-2 rounded-full cursor-pointer lg:rounded-lg text-sm font-medium transition-colors ${String(selectedClassId) === String(c.id)
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                  }`}
-              >
-                {c.class_name}
-              </button>
-            ))}
-          </div>
+          )}
         </div>
 
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Star className="w-3.5 h-3.5 text-gray-500" />
-            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-              Highlight
-            </label>
-          </div>
-          <div className="flex flex-wrap lg:flex-col gap-2">
-            <button
-              onClick={() => onSelectBadge(null)}
-              className={`text-left px-3 py-2 rounded-full cursor-pointer lg:rounded-lg text-sm font-medium transition-colors ${selectedBadge === null
-                ? 'bg-primary text-white'
-                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                }`}
-            >
-              All
-            </button>
-            {badgeOptions.map((b) => (
-              <button
-                key={b.key}
-                onClick={() => onSelectBadge(selectedBadge === b.key ? null : b.key)}
-                className={`flex items-center gap-1.5 text-left px-3 py-2 rounded-full cursor-pointer lg:rounded-lg text-sm font-medium transition-colors ${selectedBadge === b.key
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
-                  }`}
-              >
-                {b.icon}
-                {b.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        {/* Category dropdown (Highlight filter) */}
 
-        <p className="text-xs text-gray-400">
-          {resultCount} service{resultCount === 1 ? '' : 's'} found
-        </p>
+
+        {/* Class pill group */}
+        <div className='rounded-full flex px-4 items-center border h-9.5 text-sm font-medium border-primary border-2 bg-white arial text-primary'>Category</div>
+        {pillOptions.length > 1 && (
+          <div className="flex items-center rounded-full border border-primary border-2 overflow-hidden bg-white shrink-0">
+            {pillOptions.map((opt, idx) => {
+              const isActive = String(selectedClassId) === String(opt.key) || (selectedClassId === null && opt.key === null);
+              return (
+                <button
+                  key={String(opt.key)}
+                  onClick={() => onSelectClass(opt.key)}
+                  className={`px-4 h-9.5 text-sm font-medium whitespace-nowrap cursor-pointer transition-colors ${isActive
+                    ? 'bg-muted/80 text-primary'
+                    : 'text-primary hover:bg-gray-50'
+                    } ${idx !== pillOptions.length - 1 ? ' border-r-2 border-primary ' : ''}`}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+
+        {/* Sort by */}
+        <div className="flex items-center gap-2 ml-auto">
+          <span className="text-sm text-primary hidden sm:inline">Sort by:</span>
+          <Dropdown
+            value={selectedBadge ?? 'all'}
+            options={categoryOptions}
+            onChange={(key) => onSelectBadge(key === 'all' ? null : (key as BadgeFilter))}
+          />
+        </div>
       </div>
-    </aside>
+    </div>
   );
 }
 
@@ -304,7 +346,7 @@ interface ICategoryWithImages extends ICategory {
   images?: IImageCategories[];
 }
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 15;
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
@@ -319,7 +361,8 @@ export default function ServicesPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedClassId, setSelectedClassId] = useState<string | number | null>(null);
-  const [selectedBadge, setSelectedBadge] = useState<'best_seller' | 'popular' | 'handpick' | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<BadgeFilter>(null);
+  const [sortBy, setSortBy] = useState<SortKey>('best_seller');
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -392,7 +435,7 @@ export default function ServicesPage() {
 
   const filteredCategories = useMemo(() => {
     const term = debouncedSearch.trim().toLowerCase();
-    return categories.filter((category) => {
+    const list = categories.filter((category) => {
       const matchesSearch = term ? category.name.toLowerCase().includes(term) : true;
 
       const matchesClass = selectedClassId
@@ -409,7 +452,34 @@ export default function ServicesPage() {
 
       return matchesSearch && matchesClass && matchesBadge;
     });
-  }, [categories, debouncedSearch, selectedClassId, selectedBadge]);
+
+    const sorted = [...list];
+    switch (sortBy) {
+      case 'best_seller':
+        sorted.sort((a, b) => (Number((b as any).sales) || 0) - (Number((a as any).sales) || 0));
+        break;
+      case 'popular':
+        sorted.sort((a, b) => Number(!!(b as any).is_popular) - Number(!!(a as any).is_popular));
+        break;
+      case 'newest':
+        sorted.sort((a, b) => {
+          const bd = new Date((b as any).created_at ?? 0).getTime();
+          const ad = new Date((a as any).created_at ?? 0).getTime();
+          return bd - ad;
+        });
+        break;
+      case 'price_low':
+        sorted.sort((a, b) => (Number(a.start_price) || 0) - (Number(b.start_price) || 0));
+        break;
+      case 'price_high':
+        sorted.sort((a, b) => (Number(b.start_price) || 0) - (Number(a.start_price) || 0));
+        break;
+      case 'name_asc':
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+    }
+    return sorted;
+  }, [categories, debouncedSearch, selectedClassId, selectedBadge, sortBy]);
 
   // ── Pagination derived values (pakai filteredCategories) ──
   const totalPages = Math.max(1, Math.ceil(filteredCategories.length / ITEMS_PER_PAGE));
@@ -423,7 +493,7 @@ export default function ServicesPage() {
   // Reset ke halaman 1 setiap kali filter berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, selectedClassId, selectedBadge]);
+  }, [debouncedSearch, selectedClassId, selectedBadge, sortBy]);
 
   const paginatedCategories = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -447,22 +517,76 @@ export default function ServicesPage() {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(numAmount);
   };
+
+const service = [
+  {
+    title: "Illustration",
+    link: "/services/illustration",
+  },
+  {
+    title: "Design",
+    link: "/services/design",
+  },
+  {
+    title: "Animation",
+    link: "/services/animation",
+  },
+  {
+    title: "Coded",
+    link: "/services/coded",
+  },
+  {
+    title: "3D Model",
+    link: "/services/3d-model",
+  },
+  {
+    title: "Editing",
+    link: "/services/editing",
+  },
+  {
+    title: "Music",
+    link: "/services/music",
+  },
+  {
+    title: "VTuber",
+    link: "/services/vtuber",
+  },
+  {
+    title: "PonyTuber",
+    link: "/services/ponytuber",
+  },
+  {
+    title: "VTuber",
+    link: "/services/vtuber",
+  },
+  {
+    title: "Social Media",
+    link: "/services/social-media",
+  },
+  {
+    title: "Branding",
+    link: "/services/branding",
+  },
+  {
+    title: "Bundling",
+    link: "/services/bundling",
+  },
+  {
+    title: "Other",
+    link: "/services/other",
+  },
+]
   return (
     <div className="min-h-screen">
-      <div className="mt-20">
-        {poster.length > 0 && (
-          <div>
-            <PosterCarousel posters={poster} />
-          </div>
-        )}
-      </div>
+
+ 
 
       {/* ── Hero Section ── */}
-      <section className="pt-5 sm:pt-24 pb-12 sm:pb-16 px-4 sm:px-6">
+      <section className="pb-5 sm:pt-30  px-4 sm:px-6">
         <div className="container mx-auto">
           <div>
             <div className="flex gap-5 w-full mt-5">
@@ -479,13 +603,24 @@ export default function ServicesPage() {
           </div>
         </div>
       </section>
+           <section className="py-10  px-4 sm:px-6">
+        <div className=" container mx-auto grid xl:grid-cols-7 lg:grid-cols-6 md:grid-cols-5 sm:grid-cols-4 grid-cols-3 gap-7">
+          {service.map((service, i) => (
+            <div key={i} className="card-secondary-white rounded rounded-3xl ">
+              <div className='card-shadow rounded-3xl '></div>
+              <div className='md:pt-10 pt-5   pb-3 px-5 arial bg-white h-full rounded-2xl'>
+                {service.title}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-      {/* ── Service Categories + Sidebar ── */}
+      {/* ── Toolbar + Service Categories ── */}
       <section className="py-12 sm:pb-16 px-5 sm:px-6 bg-white">
         <div className="container mx-auto">
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Sidebar */}
-            <CategorySidebar
+          <div className="mb-8">
+            <ServiceToolbar
               classes={classes}
               selectedClassId={selectedClassId}
               onSelectClass={setSelectedClassId}
@@ -493,58 +628,61 @@ export default function ServicesPage() {
               onSelectBadge={setSelectedBadge}
               search={search}
               onSearchChange={setSearch}
-              resultCount={filteredCategories.length}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
             />
+          </div>
 
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              {loading ? (
-                <SkeletonService />
-              ) : error ? (
-                <div>
-                  <Card className="bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30">
-                    <CardContent className="py-12 text-center">
-                      <p className="text-red-400">{error}</p>
-                    </CardContent>
-                  </Card>
-                </div>
-              ) : filteredCategories.length === 0 ? (
-                <div>
-                  <Card className="bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30">
-                    <CardContent className="py-12 text-center">
-                      <p className="text-gray-800">
-                        {categories.length === 0
-                          ? 'No categories available at the moment.'
-                          : 'No services match your search or filter.'}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              ) : (
-                <>
-                  <div
-                    key={currentPage}
-                    className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-6"
-                  >
-                    {paginatedCategories.map((category, index) => {
-                      const primaryImage = category.images?.[0]?.image_url || '';
-                      const className = classMap.get(String((category as any).class_id));
-                      const isBestSeller = (category as any).is_best_seller;
-                      const isTopPopular = (category as any).is_popular;
-                      const isHandpick = (category as any).is_handpick;
-                      // Only the very first row of cards is likely above the fold on first paint
-                      const isAboveFold = currentPage === 1 && index < 4;
+          {/* Content */}
+          <div className="min-w-0">
+            {loading ? (
+              <SkeletonService />
+            ) : error ? (
+              <div>
+                <Card className="bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30">
+                  <CardContent className="py-12 text-center">
+                    <p className="text-red-400">{error}</p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : filteredCategories.length === 0 ? (
+              <div>
+                <Card className="bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30">
+                  <CardContent className="py-12 text-center">
+                    <p className="text-gray-800">
+                      {categories.length === 0
+                        ? 'No categories available at the moment.'
+                        : 'No services match your search or filter.'}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <>
+                <div
+                  key={currentPage}
+                  className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
+                >
+                  {paginatedCategories.map((category, index) => {
+                    const primaryImage = category.images?.[0]?.image_url || '';
+                    const className = classMap.get(String((category as any).class_id));
+                    const isBestSeller = (category as any).is_best_seller;
+                    const isTopPopular = (category as any).is_popular;
+                    const isHandpick = (category as any).is_handpick;
+                    // Only the very first row of cards is likely above the fold on first paint
+                    const isAboveFold = currentPage === 1 && index < 4;
 
-                      return (
-                        <div key={category.id}>
-                          <Card
-                            onClick={(e) => { e.stopPropagation(); handleCategoryClick(category.id); }}
-                            className="card-primary-white p-2 m-0 relative h-full  overflow-hidden shadow-lg  cursor-pointer gap-0"
-                          >
-                            <div className="relative aspect-square  overflow-hidden">
+                    return (
+                      <div key={category.id}>
+                        <div
+                          onClick={(e) => { e.stopPropagation(); handleCategoryClick(category.id); }}
+                          className=" relative h-full hover:scale-[1.05] transition     cursor-pointer gap-0"
+                        >
+                          <CardDashed className='rounded-4xl'>
+                            <div className="relative aspect-square ">
                               {primaryImage ? (
                                 <Image
-                                  className="object-cover"
+                                  className="object-cover rounded  rounded-xl"
                                   src={primaryImage}
                                   alt={category.name}
                                   fill
@@ -559,84 +697,84 @@ export default function ServicesPage() {
                                 </div>
                               )}
                             </div>
-                            {(isHandpick || isTopPopular || isBestSeller) && (
-                              <div className="flex flex-wrap gap-1.5 mt-2 absolute top-2 left-2 z-10">
-                                {isTopPopular && (
-                                  <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-pink-100 text-pink-700">
-                                    <TrendingUp className="w-3 h-3" />
-                                    Popular
-                                  </span>
-                                )}
-                                {isHandpick && (
-                                  <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-green-100 text-green-700">
-                                    <Flame className="w-3 h-3" />
-                                    Handpick
-                                  </span>
-                                )}
-                                {isBestSeller && (
-                                  <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-yellow-100 text-yellow-700">
-                                    <Star className="w-3 h-3" />
-                                    Best Seller
-                                  </span>
-                                )}
-                              </div>
-
-
-                            )}
-
-                            <div className="p-2 ">
-                              <div>
-                                {/* Nama */}
-                                <h3
-                                  onClick={(e) => { e.stopPropagation(); handleCategoryClick(category.id); }}
-                                  className=" sm:text-md text-sm  text-eliane text-dark line-clamp-2 group-hover:text-primary/80 transition-colors"
-                                >
-                                  {category.name
-                                    ?.split(" ")
-                                    .slice(0, 4)
-                                    .join(" ")}
-                                </h3>
-
-                                {/* Class - di bawah nama */}
-
-                                <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
-                                  {className}
-                                </p>
-
-                              </div>
-                              {/* Best Seller & Popular badges - di bawah class */}
-
-                              <div className="flex justify-between items-center">
-                                <p className='arial'>{formatCurrency(category.start_price as any)}  </p>
-                                {category.sales != null && (
-                                  <p className="arial text-sm">
-                                    ({formatSales(category.sales as any)}){" "}
-                                    <span className="text-gray-500">sold</span>
-                                  </p>
-                                )}
-                              </div>
+                          </CardDashed>
+                          {(isHandpick || isTopPopular || isBestSeller) && (
+                            <div className="flex flex-wrap gap-1.5 mt-2 absolute top-2 left-2 z-10">
+                              {isTopPopular && (
+                                <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-pink-100 text-pink-700">
+                                  <TrendingUp className="w-3 h-3" />
+                                  Popular
+                                </span>
+                              )}
+                              {isHandpick && (
+                                <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-green-100 text-green-700">
+                                  <Flame className="w-3 h-3" />
+                                  Handpick
+                                </span>
+                              )}
+                              {isBestSeller && (
+                                <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-yellow-100 text-yellow-700">
+                                  <Star className="w-3 h-3" />
+                                  Best Seller
+                                </span>
+                              )}
                             </div>
-                            {/* {isBestSeller && (
-                              <div className="absolute top-0 right-3 md:right-5 w-7 h-10 md:h-18 rounded-b-full md:w-12 bg-yellow-500 flex flex-col justify-end items-center">
-                                <div className="clip-stars md:h-6 md:w-6 w-3 h-3 bg-white mb-2 md:mb-5" />
-                              </div>
-                            )} */}
 
 
-                          </Card>
+                          )}
+
+                          <div className="p-3 ">
+                            <div>
+                              {/* Nama */}
+                              <h3
+                                onClick={(e) => { e.stopPropagation(); handleCategoryClick(category.id); }}
+                                className=" sm:text-lg text-sm  text-eliane text-primary line-clamp-2 group-hover:text-primary/80 transition-colors"
+                              >
+                                {category.name
+                                  ?.split(" ")
+                                  .slice(0, 4)
+                                  .join(" ")}
+                              </h3>
+
+                              {/* Class - di bawah nama */}
+
+                              {/* <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
+                                {className}
+                              </p> */}
+                              <p className='arial text-xl'>{formatCurrency(category.start_price as any)}  </p>
+                            </div>
+                            {/* Best Seller & Popular badges - di bawah class */}
+
+                            {/* <div className="flex justify-between items-center">
+
+                              {category.sales != null && (
+                                <p className="arial text-sm">
+                                  ({formatSales(category.sales as any)}){" "}
+                                  <span className="text-gray-500">sold</span>
+                                </p>
+                              )}
+                            </div> */}
+                          </div>
+                          {/* {isBestSeller && (
+                            <div className="absolute top-0 right-3 md:right-5 w-7 h-10 md:h-18 rounded-b-full md:w-12 bg-yellow-500 flex flex-col justify-end items-center">
+                              <div className="clip-stars md:h-6 md:w-6 w-3 h-3 bg-white mb-2 md:mb-5" />
+                            </div>
+                          )} */}
+
+
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
+                </div>
 
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                  />
-                </>
-              )}
-            </div>
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </>
+            )}
           </div>
         </div>
       </section>

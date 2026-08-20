@@ -160,7 +160,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              <div className="flex-1 sm:ml-6 mt-4 sm:mt-0 text-center sm:text-left">
+              <div className="flex-1 sm:ml-6 mt-4 arial sm:mt-0 text-center sm:text-left">
                 {isEditing ? (
                   <div className="space-y-2">
                     <Input

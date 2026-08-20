@@ -111,7 +111,7 @@ export default function CheckoutPageWrapper() {
   // Not authenticated
   if (!user) {
    return (
-      <div className="min-h-screen bg-background p-4 sm:p-6 flex items-center justify-center">
+      <div className="min-h-screen  p-4 sm:p-6 flex items-center justify-center">
         <Card className="max-w-md w-full">
           <CardContent className="text-center p-8">
             <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">

@@ -200,7 +200,7 @@ export default function Teams() {
     {/* Card */}
     <Card
       className={`
-        bg-muted/50 backdrop-blur-sm rounded-[30px] lg:rounded-[50px]
+        card-primary backdrop-blur-sm rounded-[30px] lg:rounded-[50px]
         overflow-hidden
         ${index % 2 === 0 ? "lg:pl-60" : "lg:pr-60"}
       `}

@@ -143,7 +143,7 @@ export default function Login(): React.ReactElement {
   return (
     <div className="min-h-screen bg-radial from-transparent to-white text-primary flex items-center justify-center p-4">
       <div className="relative z-10 w-full max-w-4xl  mx-auto">
-        <Card className="bg-white border-0 shadow-none sm:border-primary/30 grid sm:grid-cols-2 sm:shadow-lg rounded-4xl">
+        <Card className="bg-white shadow-none sm:border-primary/30 grid sm:grid-cols-2 sm:shadow-lg rounded-4xl">
           <div className="relative overflow-hidden ">
             <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
             <img
