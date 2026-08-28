@@ -11,6 +11,14 @@ const borsok = localFont({
   src: "../../public/fonts/boorsok.ttf",
   variable: "--font-borsok",
 });
+const fredoka = localFont({
+  src: "../../public/fonts/Fredoka-VariableFont_wdth,wght.ttf",
+  variable: "--font-fredoka",
+});
+const lilita = localFont({
+  src: "../../public/fonts/LilitaOne-Regular.ttf",
+  variable: "--font-lilita",
+});
 const eliane = localFont({
   src: "../../public/fonts/anjaeliane.ttf",
   variable: "--font-eliane",
@@ -44,7 +52,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${borsok.variable} ${eliane.variable} ${arial.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${borsok.variable} ${fredoka.variable} ${lilita.variable} ${eliane.variable} ${arial.variable} ${geistMono.variable} antialiased`}
       >
         <Toaster />
         <AppLayout>

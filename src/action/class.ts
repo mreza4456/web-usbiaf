@@ -108,9 +108,10 @@ export const deleteClass = async (id: number | string) => {
   try {
     const supabase = await createClient();
 
-    // Cek apakah class masih dipakai oleh categories, supaya tidak melanggar FK constraint
+    // BARU: cek pemakaian lewat class_services (junction table multi class),
+    // bukan lagi categories.class_id langsung
     const { data: usedByCategories, error: checkError } = await supabase
-      .from("categories")
+      .from("class_services")
       .select("id")
       .eq("class_id", id)
       .limit(1);

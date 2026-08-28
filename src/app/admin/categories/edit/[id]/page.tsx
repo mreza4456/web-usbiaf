@@ -13,7 +13,7 @@ import {
 } from "@/action/package"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import { ICategory, IPackageCategories, IImageCategories, IIncludes } from "@/interface"
+import { ICategory, IPackageCategories, IImageCategories, IIncludes, IClassService } from "@/interface"
 import { SiteHeader } from "@/components/site-header"
 import { addInclude, deleteInclude, updateInclude } from "@/action/includes"
 
@@ -26,13 +26,11 @@ export default function EditCategoryPage() {
     const [packages, setPackages] = React.useState<IPackageCategories[]>([])
     const [loading, setLoading] = React.useState(true)
     const [includes, setIncludes] = React.useState<IIncludes[]>([])
-
-    // di dalam fetchData():
+    const [classServices, setClassServices] = React.useState<IClassService[]>([]) // BARU
 
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch category with images
                 const categoryResponse = await getCategoriesById(params.id as string)
 
                 if (!categoryResponse.success) {
@@ -41,7 +39,6 @@ export default function EditCategoryPage() {
 
                 setCategory(categoryResponse.data)
 
-                // Images sudah include di response getCategoriesById
                 if (categoryResponse.data?.images) {
                     setImages(categoryResponse.data.images)
                 }
@@ -49,18 +46,17 @@ export default function EditCategoryPage() {
                 if (categoryResponse.data?.includes) {
                     setIncludes(categoryResponse.data.includes)
                 }
-                
-                // Fetch packages
+
+                // BARU: simpan classServices supaya bisa jadi default value di form
+                if ((categoryResponse.data as any)?.classServices) {
+                    setClassServices((categoryResponse.data as any).classServices)
+                }
+
                 const packagesResponse = await getPackageCategoriesByCategoryId(params.id as string)
 
                 if (packagesResponse.success) {
                     setPackages(packagesResponse.data)
                 }
-
-                console.log("=== LOADED DATA ===")
-                console.log("Category:", categoryResponse.data)
-                console.log("Images:", categoryResponse.data?.images)
-                console.log("Packages:", packagesResponse.data)
             } catch (error: any) {
                 toast.error(error.message || "Gagal memuat data")
                 router.push("/admin/categories")
@@ -73,39 +69,33 @@ export default function EditCategoryPage() {
     }, [params.id, router])
 
     const handleSubmit = async (values: any) => {
-        console.log("🚀 EDIT CATEGORY - HANDLE SUBMIT CALLED!")
-        console.log("=== FORM VALUES ===", values)
-
         try {
             setIsSubmitting(true)
 
-            // Pisahkan images, packages, dan includes dari data category
+            // BARU: destructure classIds terpisah, JANGAN ikut masuk ke categoryData
             const {
                 images: updatedImages,
                 packages: updatedPackages,
                 includes: updatedIncludes,
+                classIds, // <-- dikeluarkan dari categoryData
                 ...categoryData
             } = values
 
-            console.log("=== CATEGORY DATA ===", categoryData)
-            console.log("=== UPDATED IMAGES ===", updatedImages)
-            console.log("=== UPDATED PACKAGES ===", updatedPackages)
-            console.log("=== UPDATED INCLUDES ===", updatedIncludes)
-
             // ==========================
-            // UPDATE CATEGORY + IMAGES
+            // UPDATE CATEGORY + IMAGES + CLASS
             // ==========================
             const categoryRes = await updateCategories(
                 params.id as string,
                 categoryData,
-                updatedImages || []
+                updatedImages || [],
+                undefined,   // iconFile - tidak dipakai di sini karena icon di-handle di form via field "icon"
+                undefined,   // removeIcon
+                classIds     // BARU: dikirim sebagai parameter terpisah
             )
 
             if (!categoryRes.success) {
                 throw new Error(categoryRes.message)
             }
-
-            console.log("✅ Category and images updated successfully")
 
             // ==========================
             // HANDLE INCLUDES
@@ -117,48 +107,24 @@ export default function EditCategoryPage() {
                 .filter((inc: any) => inc.id)
                 .map((inc: any) => inc.id)
 
-            console.log("=== EXISTING INCLUDE IDs ===", existingIncludeIds)
-            console.log("=== SUBMITTED INCLUDE IDs ===", submittedIncludeIds)
-
-            // Delete includes yang dihapus
             const includesToDelete = existingIncludeIds.filter(
                 (id) => !submittedIncludeIds.includes(id)
             )
 
-            console.log("=== INCLUDES TO DELETE ===", includesToDelete)
-
             for (const incId of includesToDelete) {
-                const deleteRes = await deleteInclude(incId)
-                console.log(
-                    `Deleted include ${incId}:`,
-                    deleteRes.success ? "✅" : "❌",
-                    deleteRes.message
-                )
+                await deleteInclude(incId)
             }
 
-            // Update/Create includes
             const includePromises = submittedIncludes
                 .filter((inc: any) => inc.include_name?.trim())
-                .map((inc: any, idx: number) => {
+                .map((inc: any) => {
                     if (inc.id) {
-                        console.log(
-                            `[${idx}] Updating include ${inc.id}:`,
-                            inc.include_name
-                        )
                         return updateInclude(inc.id, inc.include_name)
                     }
-
-                    console.log(
-                        `[${idx}] Creating include:`,
-                        inc.include_name
-                    )
                     return addInclude(params.id as string, inc.include_name)
                 })
 
             const includeResults = await Promise.all(includePromises)
-
-            console.log("=== INCLUDE RESULTS ===", includeResults)
-
             const failedInclude = includeResults.find((res) => !res.success)
 
             // ==========================
@@ -171,27 +137,15 @@ export default function EditCategoryPage() {
                 .filter((p: any) => p.id)
                 .map((p: any) => p.id)
 
-            console.log("=== EXISTING PACKAGE IDs ===", existingPackageIds)
-            console.log("=== SUBMITTED PACKAGE IDs ===", submittedPackageIds)
-
-            // Delete package yang dihapus
             const packagesToDelete = existingPackageIds.filter(
                 (id) => !submittedPackageIds.includes(id)
             )
 
-            console.log("=== PACKAGES TO DELETE ===", packagesToDelete)
-
             for (const pkgId of packagesToDelete) {
-                const deleteRes = await deletePackageCategory(pkgId)
-                console.log(
-                    `Deleted package ${pkgId}:`,
-                    deleteRes.success ? "✅" : "❌",
-                    deleteRes.message
-                )
+                await deletePackageCategory(pkgId)
             }
 
-            // Update/Create packages
-            const packagePromises = submittedPackages.map((pkg: any, idx: number) => {
+            const packagePromises = submittedPackages.map((pkg: any) => {
                 const packageData = {
                     categories_id: params.id as string,
                     name: pkg.name,
@@ -201,26 +155,14 @@ export default function EditCategoryPage() {
                 }
 
                 if (pkg.id) {
-                    console.log(
-                        `[${idx}] Updating package ${pkg.id}:`,
-                        packageData
-                    )
                     return updatePackageCategory(pkg.id, packageData)
                 }
-
-                console.log(`[${idx}] Creating package:`, packageData)
                 return addPackageCategory(packageData)
             })
 
             const packageResults = await Promise.all(packagePromises)
-
-            console.log("=== PACKAGE RESULTS ===", packageResults)
-
             const failedPackage = packageResults.find((res) => !res.success)
 
-            // ==========================
-            // HANDLE WARNINGS
-            // ==========================
             if (failedInclude || failedPackage) {
                 let warningMessage = "Kategori berhasil diupdate, namun "
 
@@ -237,9 +179,6 @@ export default function EditCategoryPage() {
                 return
             }
 
-            // ==========================
-            // SUCCESS
-            // ==========================
             const imageCount = updatedImages?.length || 0
             const packageCount = submittedPackages.length
             const includeCount = submittedIncludes.length
@@ -285,7 +224,6 @@ export default function EditCategoryPage() {
                         className="cursor-pointer bg-white rounded-full shadow p-5 mr-5"
                     >
                         <ArrowLeft className="h-10 w-10" />
-
                     </Button>
                     <div className="">
                         <h1 className="text-3xl font-bold mb-2">Edit Services & Packages</h1>
@@ -294,12 +232,12 @@ export default function EditCategoryPage() {
                 </div>
 
                 <div className="mt-7">
-
                     <CategoryForm
                         initialData={{
                             ...category,
                             images: images,
-                            packages: packages
+                            packages: packages,
+                            classServices: classServices // BARU
                         }}
                         onSubmit={handleSubmit}
                         isSubmitting={isSubmitting}

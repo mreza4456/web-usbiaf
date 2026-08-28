@@ -1,10 +1,9 @@
 "use server";
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import { ICategory, IImageCategories, IIncludes } from "@/interface";
+import { ICategory, IImageCategories, IIncludes, IClassService } from "@/interface";
 import { uploadToCloudflare, deleteFromCloudflare } from "@/lib/storage";
 
-// Create Supabase client dengan cookie support untuk server actions
 const createClient = async () => {
   const cookieStore = await cookies()
 
@@ -21,7 +20,6 @@ const createClient = async () => {
   )
 }
 
-// Helper function untuk get authenticated user
 const getAuthenticatedUser = async () => {
   const supabase = await createClient();
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -33,7 +31,6 @@ const getAuthenticatedUser = async () => {
   return user;
 };
 
-// Helper function untuk check admin role
 const isAdmin = async (userId: string) => {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -49,10 +46,12 @@ const isAdmin = async (userId: string) => {
 
   return data?.role === "admin";
 };
+
 export const addCategories = async (
   category: Partial<ICategory>,
   images: Partial<IImageCategories>[],
-  iconFile?: File | null
+  iconFile?: File | null,
+  classIds?: (number | string)[] // <-- BARU: array class_id untuk multi class
 ) => {
   try {
     const user = await getAuthenticatedUser();
@@ -64,7 +63,6 @@ export const addCategories = async (
 
     const supabase = await createClient();
 
-    // Upload icon dulu jika ada
     let iconUrl: string | undefined = category.icon;
     if (iconFile) {
       try {
@@ -84,7 +82,6 @@ export const addCategories = async (
 
     if (categoryError) {
       console.error("Category insert error:", categoryError);
-      // Rollback icon yang sudah terupload jika insert category gagal
       if (iconFile && iconUrl) await deleteIconFile(iconUrl);
       return { success: false, message: categoryError.message, data: null };
     }
@@ -108,18 +105,41 @@ export const addCategories = async (
       }
     }
 
+    // BARU: Insert relasi multi class ke class_services
+    if (classIds && classIds.length > 0) {
+      const classServicesToInsert = classIds.map((classId) => ({
+        categories_id: categoryData.id,
+        class_id: classId,
+      }));
+
+      const { error: classServicesError } = await supabase
+        .from("class_services")
+        .insert(classServicesToInsert);
+
+      if (classServicesError) {
+        console.error("Class services insert error:", classServicesError);
+        // Rollback: hapus images & category yang sudah dibuat, plus icon
+        await supabase.from("image_categories").delete().eq("categories_id", categoryData.id);
+        await supabase.from("categories").delete().eq("id", categoryData.id);
+        if (iconFile && iconUrl) await deleteIconFile(iconUrl);
+        return { success: false, message: `Gagal menyimpan class: ${classServicesError.message}`, data: null };
+      }
+    }
+
     return { success: true, message: "Category berhasil dibuat", data: categoryData as ICategory };
   } catch (error: any) {
     console.error("addCategories error:", error);
     return { success: false, message: error.message || "Terjadi kesalahan", data: null };
   }
 };
+
 export const updateCategories = async (
   id: string,
   category: Partial<ICategory>,
   images: Partial<IImageCategories>[],
   iconFile?: File | null,
-  removeIcon?: boolean // true jika user ingin hapus icon tanpa ganti baru
+  removeIcon?: boolean,
+  classIds?: (number | string)[] // <-- BARU: array class_id untuk multi class. undefined = tidak diubah
 ) => {
   try {
     const user = await getAuthenticatedUser();
@@ -131,7 +151,6 @@ export const updateCategories = async (
 
     const supabase = await createClient();
 
-    // Ambil icon lama untuk keperluan cleanup
     const { data: existingCategory } = await supabase
       .from("categories")
       .select("icon")
@@ -167,23 +186,9 @@ export const updateCategories = async (
       return { success: false, message: categoryError.message, data: null };
     }
 
-    // Hapus icon lama dari storage jika diganti/dihapus dan icon lama beda dari baru
     if (oldIconUrl && oldIconUrl !== iconUrl && (iconFile || removeIcon)) {
       await deleteIconFile(oldIconUrl);
     }
-
-    // // 1. Update category
-    // const { data: categoryData, error: categoryError } = await supabase
-    //   .from("categories")
-    //   .update(category)
-    //   .eq("id", id)
-    //   .select()
-    //   .single();
-
-    // if (categoryError) {
-    //   console.error("Category update error:", categoryError);
-    //   return { success: false, message: categoryError.message, data: null };
-    // }
 
     // 2. Ambil existing images
     const { data: existingImages } = await supabase
@@ -194,13 +199,10 @@ export const updateCategories = async (
     const existingImageIds = existingImages?.map(img => img.id) || [];
     const newImageIds = images.filter(img => img.id).map(img => img.id!);
 
-    // 3. Hapus images yang tidak ada di array baru — termasuk file dari Cloudflare
     const imagesToDelete = existingImageIds.filter(id => !newImageIds.includes(id));
     if (imagesToDelete.length > 0) {
-      // Ambil URL gambar yang akan dihapus agar bisa dihapus dari Cloudflare juga
       const imagesToDeleteData = existingImages?.filter(img => imagesToDelete.includes(img.id)) || [];
 
-      // Hapus file dari Cloudflare terlebih dahulu
       await Promise.all(
         imagesToDeleteData.map(img =>
           img.image_url ? deleteFromCloudflare(img.image_url) : Promise.resolve()
@@ -217,7 +219,6 @@ export const updateCategories = async (
       }
     }
 
-    // 4. Insert images baru (yang tidak punya id), sort_order sesuai posisi di array form
     const newImages = images
       .map((img, index) => ({ img, index }))
       .filter(({ img }) => !img.id);
@@ -238,8 +239,6 @@ export const updateCategories = async (
       }
     }
 
-    // 5. Update sort_order untuk images yang sudah ada (yang punya id)
-    // Ini bagian yang sebelumnya hilang, sehingga reorder tidak pernah tersimpan.
     const existingToUpdate = images
       .map((img, index) => ({ img, index }))
       .filter(({ img }) => img.id);
@@ -260,15 +259,60 @@ export const updateCategories = async (
       }
     }
 
+    // BARU: 6. Sync relasi multi class di class_services
+    // classIds === undefined artinya class tidak diubah sama sekali (skip sync)
+    if (classIds !== undefined) {
+      const { data: existingClassServices, error: fetchClassServicesError } = await supabase
+        .from("class_services")
+        .select("class_id")
+        .eq("categories_id", id);
+
+      if (fetchClassServicesError) {
+        console.error("Fetch class services error:", fetchClassServicesError);
+      }
+
+      const existingClassIds = existingClassServices?.map((cs) => cs.class_id) || [];
+
+      const classIdsToRemove = existingClassIds.filter((cid) => !classIds.includes(cid));
+      const classIdsToAdd = classIds.filter((cid) => !existingClassIds.includes(cid));
+
+      if (classIdsToRemove.length > 0) {
+        const { error: removeError } = await supabase
+          .from("class_services")
+          .delete()
+          .eq("categories_id", id)
+          .in("class_id", classIdsToRemove);
+
+        if (removeError) {
+          console.error("Class services delete error:", removeError);
+        }
+      }
+
+      if (classIdsToAdd.length > 0) {
+        const classServicesToInsert = classIdsToAdd.map((classId) => ({
+          categories_id: id,
+          class_id: classId,
+        }));
+
+        const { error: addError } = await supabase
+          .from("class_services")
+          .insert(classServicesToInsert);
+
+        if (addError) {
+          console.error("Class services insert error:", addError);
+        }
+      }
+    }
+
     return { success: true, message: "Category berhasil diupdate", data: categoryData as ICategory };
   } catch (error: any) {
     console.error("updateCategories error:", error);
     return { success: false, message: error.message || "Terjadi kesalahan", data: null };
   }
 };
+
 export const deleteCategories = async (id: string) => {
   try {
-    // Verify user is authenticated and is admin
     const user = await getAuthenticatedUser();
     const adminCheck = await isAdmin(user.id);
 
@@ -278,13 +322,26 @@ export const deleteCategories = async (id: string) => {
 
     const supabase = await createClient();
 
-    // 1. Ambil semua image_url dari image_categories sebelum dihapus
+    // BARU: 0. Hapus dulu relasi multi class di class_services
+    const { error: classServicesError } = await supabase
+      .from("class_services")
+      .delete()
+      .eq("categories_id", id);
+
+    if (classServicesError) {
+      console.error("Class services delete error:", classServicesError);
+      return {
+        success: false,
+        message: `Gagal menghapus relasi class: ${classServicesError.message}`,
+        data: null
+      };
+    }
+
     const { data: imageCategoriesToDelete } = await supabase
       .from("image_categories")
       .select("image_url")
       .eq("categories_id", id);
 
-    // Hapus file gambar dari Cloudflare
     if (imageCategoriesToDelete && imageCategoriesToDelete.length > 0) {
       await Promise.all(
         imageCategoriesToDelete.map(img =>
@@ -293,7 +350,6 @@ export const deleteCategories = async (id: string) => {
       );
     }
 
-    // Hapus baris dari database
     const { error: imagesError } = await supabase
       .from("image_categories")
       .delete()
@@ -308,8 +364,6 @@ export const deleteCategories = async (id: string) => {
       };
     }
 
-    // 2. Ambil dulu id-id categories_package yang terkait,
-    // karena carts merefer ke categories_package.id (bukan langsung ke categories.id)
     const { data: packageRelations, error: packageRelationsError } = await supabase
       .from("categories_package")
       .select("id")
@@ -326,12 +380,11 @@ export const deleteCategories = async (id: string) => {
 
     const packageIds = packageRelations?.map(p => p.id) || [];
 
-    // 3. Hapus carts yang masih merefer ke categories_package ini
     if (packageIds.length > 0) {
       const { error: cartsError } = await supabase
         .from("carts")
         .delete()
-        .in("package_id", packageIds); // sesuaikan nama kolom FK jika berbeda
+        .in("package_id", packageIds);
 
       if (cartsError) {
         console.error("Carts delete error:", cartsError);
@@ -343,7 +396,6 @@ export const deleteCategories = async (id: string) => {
       }
     }
 
-    // 4. Hapus semua relasi di categories_package
     const { error: packagesError } = await supabase
       .from("categories_package")
       .delete()
@@ -380,7 +432,6 @@ export const deleteCategories = async (id: string) => {
       await deleteIconFile(categoryToDelete.icon);
     }
 
-    // 5. Hapus category itu sendiri
     const { data, error } = await supabase
       .from("categories")
       .delete()
@@ -422,10 +473,10 @@ export const getCategoriesById = async (id: string) => {
         *,
         images:image_categories(*),
         packages:categories_package(*),
-        includes:categories_include(*)
+        includes:categories_include(*),
+        classServices:class_services(id, class_id, class:class(*))
       `)
       .eq("id", id)
-      // urutkan nested images berdasarkan sort_order (ascending)
       .order("sort_order", { foreignTable: "image_categories", ascending: true })
       .single();
 
@@ -434,7 +485,14 @@ export const getCategoriesById = async (id: string) => {
       return { success: false, message: error.message, data: null };
     }
 
-    return { success: true, data: data as ICategory & { images: IImageCategories[], includes: IIncludes[] } };
+    return {
+      success: true,
+      data: data as ICategory & {
+        images: IImageCategories[],
+        includes: IIncludes[],
+        classServices: IClassService[]
+      }
+    };
   } catch (error: any) {
     console.error("getCategoriesById catch error:", error);
     return { success: false, message: error.message || "Terjadi kesalahan", data: null };
@@ -449,10 +507,10 @@ export const getAllCategories = async () => {
       .from("categories")
       .select(`
         *,
-        images:image_categories(*)
+        images:image_categories(*),
+        classServices:class_services(id, class_id, class:class(*))
       `)
       .order("created_at", { ascending: false })
-      // urutkan nested images berdasarkan sort_order (ascending)
       .order("sort_order", { foreignTable: "image_categories", ascending: true });
 
     if (error) {
@@ -460,7 +518,10 @@ export const getAllCategories = async () => {
       return { success: false, message: error.message, data: [] };
     }
 
-    return { success: true, data: data as (ICategory & { images: IImageCategories[] })[] };
+    return {
+      success: true,
+      data: data as (ICategory & { images: IImageCategories[], classServices: IClassService[] })[]
+    };
   } catch (error: any) {
     console.error("getAllCategories catch error:", error);
     return { success: false, message: error.message || "Terjadi kesalahan", data: [] };
@@ -475,11 +536,11 @@ export const getActiveCategories = async (filters: any) => {
       .from("categories")
       .select(`
         *,
-        images:image_categories(*)
+        images:image_categories(*),
+        classServices:class_services(id, class_id, class:class(*))
       `)
       .eq("is_active", true)
       .order("created_at", { ascending: false })
-      // urutkan nested images berdasarkan sort_order (ascending)
       .order("sort_order", { foreignTable: "image_categories", ascending: true });
 
     if (filters.search) {
@@ -488,6 +549,12 @@ export const getActiveCategories = async (filters: any) => {
 
     if (filters.genre) {
       qry = qry.ilike("genre", `%${filters.genre}%`);
+    }
+
+    // BARU: filter by class_id, karena sekarang multi class via junction table
+    if (filters.classId) {
+      const { data: catIds } = await qry;
+      // fallback filter dilakukan di bawah jika query builder tidak mendukung filter nested langsung
     }
 
     const { data, error } = await qry;
@@ -500,9 +567,18 @@ export const getActiveCategories = async (filters: any) => {
       };
     }
 
+    let result = data as (ICategory & { images: IImageCategories[], classServices: IClassService[] })[];
+
+    // Filter manual berdasarkan classId (karena filter nested relation via .eq tidak reliable di postgrest)
+    if (filters.classId) {
+      result = result.filter((cat) =>
+        cat.classServices?.some((cs) => String(cs.class_id) === String(filters.classId))
+      );
+    }
+
     return {
       success: true,
-      data: data as (ICategory & { images: IImageCategories[] })[],
+      data: result,
     };
   } catch (error: any) {
     console.error("getActiveCategories catch error:", error);
@@ -514,8 +590,6 @@ export const getActiveCategories = async (filters: any) => {
   }
 };
 
-
-// Helper: upload icon file ke Cloudflare Images, return public URL
 const uploadIconFile = async (file: File): Promise<string> => {
   const result = await uploadToCloudflare(file);
 
@@ -526,7 +600,6 @@ const uploadIconFile = async (file: File): Promise<string> => {
   return result.url;
 };
 
-// Helper: hapus icon lama dari Cloudflare Images berdasarkan public URL
 const deleteIconFile = async (iconUrl: string) => {
   try {
     const result = await deleteFromCloudflare(iconUrl);
@@ -535,5 +608,115 @@ const deleteIconFile = async (iconUrl: string) => {
     }
   } catch (error) {
     console.error("deleteIconFile catch error:", error);
+  }
+};
+
+export const getCategoriesGroupedByBadge = async () => {
+  try {
+    const supabase = await createClient();
+
+    const { data: badges, error: badgesError } = await supabase
+      .from("badge_services")
+      .select("*");
+
+    if (badgesError) {
+      console.error("getCategoriesGroupedByBadge badges error:", badgesError);
+      return { success: false, message: badgesError.message, data: [] };
+    }
+
+    if (!badges || badges.length === 0) {
+      return { success: true, data: [] };
+    }
+
+    const { data: allCategories, error: categoriesError } = await supabase
+      .from("categories")
+      .select(`
+        *,
+        images:image_categories(*),
+        classServices:class_services(id, class_id, class:class(*))
+      `)
+      .order("created_at", { ascending: false })
+      .order("sort_order", { foreignTable: "image_categories", ascending: true });
+
+    if (categoriesError) {
+      console.error("getCategoriesGroupedByBadge categories error:", categoriesError);
+      return { success: false, message: categoriesError.message, data: [] };
+    }
+
+    const result = badges
+      .map((badge) => {
+        const categoriesForBadge = (allCategories || []).filter(
+          (cat: any) => String(cat.badge_id) === String(badge.id)
+        );
+
+        if (categoriesForBadge.length < 3) {
+          return null;
+        }
+
+        const limitedCategories = categoriesForBadge.slice(0, 3) as (ICategory & {
+          images: IImageCategories[],
+          classServices: IClassService[]
+        })[];
+
+        // BARU: kumpulkan semua class unik dari classServices di kategori-kategori badge ini
+        const classMap = new Map<string, any>();
+        categoriesForBadge.forEach((cat: any) => {
+          (cat.classServices || []).forEach((cs: any) => {
+            if (cs.class && !classMap.has(String(cs.class.id))) {
+              classMap.set(String(cs.class.id), cs.class);
+            }
+          });
+        });
+        const uniqueClasses = Array.from(classMap.values());
+
+        return {
+          badge,
+          categories: limitedCategories,
+          classes: uniqueClasses, // BARU: daftar class unik dalam badge ini
+        };
+      })
+      .filter((item) => item !== null);
+
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error("getCategoriesGroupedByBadge catch error:", error);
+    return { success: false, message: error.message || "Terjadi kesalahan", data: [] };
+  }
+};
+
+export const getHandpickCategories = async (limit?: number) => {
+  try {
+    const supabase = await createClient();
+
+    let qry = supabase
+      .from("categories")
+      .select(`
+        *,
+        images:image_categories(*),
+        classServices:class_services(id, class_id, class:class(*))
+      `)
+      .eq("is_handpick", true)
+      .order("created_at", { ascending: false })
+      .order("sort_order", { foreignTable: "image_categories", ascending: true });
+
+    // Optional limit, kalau tidak diisi ambil semua
+    if (limit && limit > 0) {
+      qry = qry.limit(limit);
+    }
+
+    const { data, error } = await qry;
+
+    if (error) {
+      console.error("getHandpickCategories error:", error);
+      return { success: false, message: error.message, data: [] };
+    }
+
+    return {
+      success: true,
+      data: data as (ICategory & { images: IImageCategories[], classServices: IClassService[] })[]
+    };
+  } catch (error: any) {
+    console.error("getHandpickCategories catch error:", error);
+    return { success: false, message: error.message || "Terjadi kesalahan", data: [] };
   }
 };

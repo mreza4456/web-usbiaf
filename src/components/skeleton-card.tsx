@@ -27,32 +27,44 @@ import { Card, CardContent, CardHeader } from './ui/card';
 //   );
 // }
 
-export default function SkeletonService() {
+
+type SkeletonServiceProps = {
+  className?: string
+  count?: number
+  height:number
+}
+
+export default function SkeletonService({
+  className = "grid-cols-2 sm:grid-cols-3 xl:grid-cols-5",
+  count = 4,
+  height = 60
+}: SkeletonServiceProps) {
   return (
     <div>
+      <div className={`grid ${className} gap-8 opacity-70`}>
+        {Array.from({ length: count }).map((_, i) => (
+          <div key={i}>
+            <div className="w-full space-y-3 rounded-4xl border bg-white/50 p-0">
+              <Skeleton className={`w-full aspect-square  h-${height}`} />
+            </div>
 
-
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-8 opacity-70" >
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div className=" w-full  gap-8 space-y-3  bg-white/50 rounded-md border p-4 rounded-xl" key={i}>
-            <Skeleton className="h-80 w-full flex-shrink-0" />
             <div className="flex flex-1 flex-col gap-2">
               <Skeleton className="h-5 w-3/4" />
               <Skeleton className="h-4 w-full" />
               <Skeleton className="h-4 w-5/6" />
+
               <div className="mt-auto flex items-center gap-2">
                 <Skeleton className="h-6 w-16" />
                 <Skeleton className="h-6 w-20" />
               </div>
             </div>
           </div>
-        ))
-        }
+        ))}
       </div>
-
     </div>
   )
 }
+
 export function SkeletonProjects() {
   return (
     <div>
@@ -156,6 +168,24 @@ export function SkeletonBlog({ cardcount = 6 }) {
                 <Skeleton className="h-9 w-24" />
               </div>
             </div>
+          </div>
+        ))
+        }
+      </div>
+
+    </div>
+  )
+}
+
+export function SkeletonCard({ cardcount = 6 , height= 50, className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 "}) {
+  return (
+    <div>
+
+
+      <div className={`${className}`} >
+        {Array.from({ length: cardcount }).map((_, i) => (
+          <div className="flex w-full  flex-col gap-3 bg-white/50 overflow-hidden rounded-md border-0" key={i}>
+            <Skeleton className={`h-${height} rounded-3xl`} />
           </div>
         ))
         }

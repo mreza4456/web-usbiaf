@@ -15,74 +15,79 @@ export default function AddCategoryPage() {
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = React.useState(false)
 
-   const handleSubmit = async (values: any) => {
-    try {
-        setIsSubmitting(true)
+    const handleSubmit = async (values: any) => {
+        try {
+            setIsSubmitting(true)
 
-        // 1. Pisahkan images, packages, DAN includes dari category data
-        const { images, packages, includes, ...categoryData } = values
+            // 1. Pisahkan images, packages, includes, DAN classIds dari category data
+            const { images, packages, includes, classIds, ...categoryData } = values
 
-        // 2. Create Category dengan images
-        const categoryRes = await addCategories(categoryData, images || [])
-
-        if (!categoryRes.success) {
-            throw new Error(categoryRes.message)
-        }
-
-        if (!categoryRes.data) {
-            throw new Error("Kategori dibuat tetapi data kosong")
-        }
-
-        const createdCategory = categoryRes.data
-
-        // 3. Create Includes jika ada
-        if (includes && includes.length > 0) {
-            const validIncludes = includes.filter((inc: any) => inc.include_name?.trim())
-
-            const includePromises = validIncludes.map((inc: any) =>
-                addInclude(createdCategory.id, inc.include_name)
+            // 2. Create Category dengan images + classIds (multi class)
+            const categoryRes = await addCategories(
+                categoryData,
+                images || [],
+                undefined,     // iconFile - icon sudah masuk lewat field "icon" di categoryData (via form)
+                classIds || [] // BARU: kirim classIds sebagai argumen terpisah
             )
 
-            const includeResults = await Promise.all(includePromises)
-            const failedInclude = includeResults.find(res => !res.success)
-            if (failedInclude) {
-                toast.warning(`Kategori dibuat, namun ada feature yang gagal: ${failedInclude.message}`)
+            if (!categoryRes.success) {
+                throw new Error(categoryRes.message)
             }
-        }
 
-        // 4. Create Packages jika ada
-        if (packages && packages.length > 0) {
-            const packagePromises = packages.map((pkg: any) => {
-                const packageData = {
-                    categories_id: createdCategory.id,
-                    name: pkg.name,
-                    price: pkg.price,
-                    package: pkg.package,
-                    description: pkg.description || "",
+            if (!categoryRes.data) {
+                throw new Error("Kategori dibuat tetapi data kosong")
+            }
+
+            const createdCategory = categoryRes.data
+
+            // 3. Create Includes jika ada
+            if (includes && includes.length > 0) {
+                const validIncludes = includes.filter((inc: any) => inc.include_name?.trim())
+
+                const includePromises = validIncludes.map((inc: any) =>
+                    addInclude(createdCategory.id, inc.include_name)
+                )
+
+                const includeResults = await Promise.all(includePromises)
+                const failedInclude = includeResults.find(res => !res.success)
+                if (failedInclude) {
+                    toast.warning(`Kategori dibuat, namun ada feature yang gagal: ${failedInclude.message}`)
                 }
-                return addPackageCategory(packageData)
-            })
-
-            const packageResults = await Promise.all(packagePromises)
-            const failedPackage = packageResults.find(res => !res.success)
-            if (failedPackage) {
-                toast.warning(`Services dan gambar dibuat, namun ada paket yang gagal: ${failedPackage.message}`)
-                router.push("/admin/categories")
-                return
             }
 
-            toast.success(`Services, ${images?.length || 0} gambar, ${includes?.length || 0} feature, dan ${packages.length} paket berhasil dibuat`)
-        } else {
-            toast.success(`Services dan ${images?.length || 0} gambar berhasil dibuat`)
-        }
+            // 4. Create Packages jika ada
+            if (packages && packages.length > 0) {
+                const packagePromises = packages.map((pkg: any) => {
+                    const packageData = {
+                        categories_id: createdCategory.id,
+                        name: pkg.name,
+                        price: pkg.price,
+                        package: pkg.package,
+                        description: pkg.description || "",
+                    }
+                    return addPackageCategory(packageData)
+                })
 
-        router.push("/admin/categories")
-    } catch (err: any) {
-        toast.error(err.message || "Terjadi kesalahan")
-    } finally {
-        setIsSubmitting(false)
+                const packageResults = await Promise.all(packagePromises)
+                const failedPackage = packageResults.find(res => !res.success)
+                if (failedPackage) {
+                    toast.warning(`Services dan gambar dibuat, namun ada paket yang gagal: ${failedPackage.message}`)
+                    router.push("/admin/categories")
+                    return
+                }
+
+                toast.success(`Services, ${images?.length || 0} gambar, ${includes?.length || 0} feature, dan ${packages.length} paket berhasil dibuat`)
+            } else {
+                toast.success(`Services dan ${images?.length || 0} gambar berhasil dibuat`)
+            }
+
+            router.push("/admin/categories")
+        } catch (err: any) {
+            toast.error(err.message || "Terjadi kesalahan")
+        } finally {
+            setIsSubmitting(false)
+        }
     }
-}
 
     return (
         <div>
@@ -95,7 +100,6 @@ export default function AddCategoryPage() {
                         className="cursor-pointer bg-white rounded-full shadow p-5 mr-5"
                     >
                         <ArrowLeft className="h-10 w-10" />
-                     
                     </Button>
                     <div className="">
                         <h1 className="text-3xl font-bold mb-2">Add Services & Packages</h1>

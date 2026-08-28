@@ -113,7 +113,7 @@ export default function Navbar(): React.ReactElement {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/projects", label: "Works" },
+    // { href: "/projects", label: "Works" },
     { href: "/service", label: "Commisions" },
     { href: "/blog", label: "Blog" },
     { href: "/teams", label: "Teams" },
@@ -130,34 +130,65 @@ export default function Navbar(): React.ReactElement {
   const avatarUrl = user?.avatar_url;
   return (
     <nav
-      className={`fixed top-0 w-full border border-b  border-primary  z-50 transition-all duration-300 bg-white`}
+      className={`fixed top-0 w-full  border-b  border-primary  z-55 transition-all duration-300 bg-white`}
     >
-      <div className="max-w-8xl px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-20">
-          <div className="flex items-center space-x-4 lg:space-x-8">
-            <button
-              onClick={() => setIsMenuOpen(true)}
-              className="xl:hidden p-2 -ml-2 text-primary hover:text-[#D78FEE] transition-colors active:scale-90"
-              aria-label="Open menu"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
+          <div className="flex items-center space-x-4  lg:space-x-8">
+            <div className="relative w-10 h-10 flex items-center justify-center -ml-2 lg:hidden">
+              {/* Tombol Close (X) */}
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setShowUserMenu(false);
+                }}
+                className={`absolute p-2 text-primary hover:text-[#D78FEE] transition-all duration-300 ease-in-out
+      ${isMenuOpen || showUserMenu
+                    ? "opacity-100 rotate-0 scale-100"
+                    : "opacity-0 -rotate-90 scale-50 pointer-events-none"
+                  }`}
+                aria-label="Close menu"
+              >
+                <X className="w-6 h-6" />
+              </button>
+
+              {/* Tombol Open (Menu) */}
+              <button
+                onClick={() => {
+                  setIsMenuOpen(true);
+                  setShowUserMenu(false);
+                }}
+                className={`absolute p-2 text-primary hover:text-[#D78FEE] transition-all duration-300 ease-in-out
+      ${!isMenuOpen && !showUserMenu
+                    ? "opacity-100 rotate-0 scale-100"
+                    : "opacity-0 rotate-90 scale-50 pointer-events-none"
+                  }`}
+                aria-label="Open menu"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            </div>
+
 
             <div>
-              <Link href="/" className="flex items-center space-x-2 group">
+              <Link href="/" className="flex items-center  space-x-2 group">
                 <Image alt="logo" src="/images/logonav.webp" width={150} height={42} />
               </Link>
             </div>
 
-            <div className="hidden xl:flex items-center space-x-7">
+            <div className="hidden lg:flex items-center space-x-7 ">
               {navLinks.map((link) => (
                 <div key={link.href}>
                   <Link
                     href={link.href}
-                    className={`arial font-medium relative group flex items-center gap-1 ${pathname === link.href ? "text-[#D78FEE]" : "text-primary"}`}
+                    className={`text-lilita relative group text-lg flex items-center gap-1 text-primary`}
                   >
                     {link.label}
-                    <span className="absolute -bottom-1 left-0 w-0 h-[2px] bg-[#F6CEFF] rounded-full transition-all duration-300 group-hover:w-full" />
+
+                    <span
+                      className={`absolute -bottom-0.5 left-0 h-[5px] bg-[#B081FE] clip-nav transition-all duration-300 ${pathname === link.href ? "w-full " : "w-0 group-hover:w-full"
+                        }`}
+                    />
                   </Link>
                 </div>
               ))}
@@ -171,17 +202,13 @@ export default function Navbar(): React.ReactElement {
               </div>
             ) : user ? (
               <div className="flex items-center space-x-3">
-                <Link
-                  href="/service"
-                  className="hidden xl:flex items-center gap-2 button-yellow px-5 transition-colors"
-                >
-                  Order Now
-                </Link>
+
 
                 <UserChat />
 
-                <Link href={"/cart"} className="mx-1 transition-transform duration-200 hover:scale-110">
-                  <img className="w-6 h-6" src="/icon/carticon.svg" alt="" />
+                <Link href={"/cart"} className="mx-1 transition-transform duration-200 hover:scale-110 " onClick={() => setIsMenuOpen(false)}>
+
+                  <Image src="/icon/SVG/carticon.svg" width={20} height={20} className="w-6 h-6 hover:scale-110 cursor-pointer transition-transform" alt="" />
                 </Link>
 
                 <div className="relative voucher-menu-container">
@@ -189,7 +216,8 @@ export default function Navbar(): React.ReactElement {
                     onClick={() => { setShowVoucherMenu(!showVoucherMenu); setShowUserMenu(false); }}
                     className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-white/10 transition-all"
                   >
-                    <img src="/icon/bellicon.svg" className="w-6 h-6 hover:scale-110 transition-transform" alt="" />
+
+                    <Image src="/icon/SVG/bellicon.svg" width={20} height={20} className="w-6 h-6 hover:scale-110 cursor-pointer transition-transform" alt="" />
                     {availableVoucherEvents.length > 0 && (
                       <span
                         className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold animate-pulse"
@@ -201,7 +229,7 @@ export default function Navbar(): React.ReactElement {
 
                   {showVoucherMenu && (
                     <div
-                      className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow overflow-hidden"
+                      className="absolute right-0 mt-2 w-80 z-100 bg-white rounded-xl shadow overflow-hidden"
                     >
                       <div className="p-3 bg-muted/50">
                         <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
@@ -250,10 +278,10 @@ export default function Navbar(): React.ReactElement {
                                         onClick={() => handleClaimVoucher(event.id)}
                                         disabled={isClaimed || isClaiming || isExpired || !user}
                                         className={`w-full py-2 rounded-full text-xs font-semibold transition-all active:scale-95 ${!isClaimed && !isExpired ? "hover:scale-105" : ""} ${isClaimed
-                                            ? 'bg-gray-200 cursor-not-allowed opacity-50'
-                                            : isExpired
-                                              ? 'bg-gray-500/10 text-gray-400 border border-gray-500/30 cursor-not-allowed'
-                                              : 'bg-primary text-white hover:opacity-90 cursor-pointer'
+                                          ? 'bg-gray-200 cursor-not-allowed opacity-50'
+                                          : isExpired
+                                            ? 'bg-gray-500/10 text-gray-400 border border-gray-500/30 cursor-not-allowed'
+                                            : 'bg-primary text-white hover:opacity-90 cursor-pointer'
                                           }`}
                                       >
                                         {isClaiming ? (
@@ -287,19 +315,19 @@ export default function Navbar(): React.ReactElement {
 
                 <div className="relative user-menu-container">
                   <button
-                    onClick={() => { setShowUserMenu(!showUserMenu); setShowVoucherMenu(false); }}
-                    className="relative flex items-center justify-center w-9 h-9 rounded-full  border border-gray-200 transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97]"
+                    onClick={() => { setShowUserMenu(!showUserMenu); setShowVoucherMenu(false); setIsMenuOpen(false) }}
+                    className="relative flex items-center justify-center w-7 h-7 rounded-full  border border-gray-200 transition-transform duration-150 hover:scale-[1.03] active:scale-[0.97]"
                     disabled={isLoggingOut}
                   >
                     {isLoggingOut ? (
                       <Loader2 className="w-4 h-4 text-primary animate-spin" />
                     ) : (
                       <img
-                        src={avatarUrl || "/icon/usericon.svg"}
+                        src={avatarUrl || "/icon/SVG/usericon.svg"}
                         className="w-full h-full object-cover rounded-full "
                         alt="avatar"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/icon/usericon.svg";
+                          (e.target as HTMLImageElement).src = "/icon/SVG/usericon.svg";
                         }}
                       />
                     )}
@@ -310,28 +338,28 @@ export default function Navbar(): React.ReactElement {
                       className="hidden sm:block absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
                     >
                       <div className="flex flex-col items-center pt-6 pb-4 px-4">
-                        <div className="relative w-16 h-16 rounded-full overflow-hidden border border-gray-200">
+                        <div className="relative w-9 h-9 rounded-full overflow-hidden">
                           <img
-                            src={avatarUrl || "/icon/usericon.svg"}
+                            src={avatarUrl || "/icon/SVG/usericon.svg"}
                             className="w-full h-full object-cover"
                             alt="avatar"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = "/icon/usericon.svg";
+                              (e.target as HTMLImageElement).src = "/icon/SVG/usericon.svg";
                             }}
                           />
                         </div>
-                        <p className="mt-3 text-primary font-semibold">{displayName}</p>
+                        <p className="mt-3 text-primary text-lilita font-semibold">{displayName}</p>
                         <Link
                           href="/service"
                           onClick={() => setShowUserMenu(false)}
-                          className="mt-4 w-full flex items-center justify-center gap-2 border border-[#D78FEE] text-[#D78FEE] rounded-full py-2 text-sm font-medium hover:bg-[#D78FEE]/10 transition-colors"
+                          className="mt-4 w-full flex items-center justify-center gap-2 border border-primary text-primary rounded-full py-2 text-sm text-lilita hover:bg-[#D78FEE]/10 transition-colors"
                         >
                           <FileText className="w-4 h-4" />
                           Order Now
                         </Link>
                       </div>
                       <div className="border-t border-gray-100" />
-                      <div className="py-2">
+                      <div className="py-2 text-lilita">
                         {[
                           { href: "/user/user-order", label: "My Order" },
                           { href: "/user/profile", label: "Profile" },
@@ -350,7 +378,7 @@ export default function Navbar(): React.ReactElement {
                       <button
                         onClick={handleLogout}
                         disabled={isLoggingOut}
-                        className="w-full flex items-center px-5 py-3 text-left text-primary hover:bg-gray-50 transition-colors"
+                        className="w-full flex items-center text-lilita px-5 py-3 text-left text-primary hover:bg-gray-50 transition-colors"
                       >
                         {isLoggingOut ? 'Logging out...' : 'Sign Out'}
                       </button>
@@ -373,36 +401,9 @@ export default function Navbar(): React.ReactElement {
 
       {showUserMenu && user && (
         <div
-          className="sm:hidden fixed inset-0 z-[70] bg-white flex flex-col"
+          className="sm:hidden fixed inset-0 border-t-2 border-primary   top-20 z-[70] bg-white flex flex-col"
         >
-          <div className="flex items-center justify-between h-20 px-4 border-b border-gray-100">
-            <button
-              onClick={() => setIsMenuOpen(true)}
-              className="p-2 -ml-2 text-primary"
-              aria-label="Open menu"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-            <Image alt="logo" src="/images/logonav.webp" width={130} height={36} />
-            <div className="flex items-center space-x-3">
-              <UserChat />
-              <img src="/icon/bellicon.svg" className="w-5 h-5" alt="" />
-              <button
-                onClick={() => setShowUserMenu(false)}
-                className="relative w-8 h-8 rounded-full overflow-hidden border-2 border-[#D78FEE]"
-                aria-label="Close profile menu"
-              >
-                <img
-                  src={avatarUrl || "/icon/usericon.svg"}
-                  className="w-full h-full object-cover"
-                  alt="avatar"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/icon/usericon.svg";
-                  }}
-                />
-              </button>
-            </div>
-          </div>
+
 
           <div className="flex-1 overflow-y-auto px-6 pt-8">
             <div className="flex flex-col items-center">
@@ -412,16 +413,16 @@ export default function Navbar(): React.ReactElement {
                   className="w-full h-full object-cover"
                   alt="avatar"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/icon/usericon.svg";
+                    (e.target as HTMLImageElement).src = "/icon/SVG/usericon.svg";
                   }}
                 />
               </div>
-              <p className="mt-4 text-lg text-primary font-semibold">{displayName}</p>
+              <p className="mt-4 text-lg text-primary text-lilita font-semibold">{displayName}</p>
 
               <Link
                 href="/service"
                 onClick={() => setShowUserMenu(false)}
-                className="mt-5 flex items-center gap-2 border border-gray-300 rounded-full px-5 py-2.5 text-sm font-medium text-primary hover:border-[#D78FEE] hover:text-[#D78FEE] transition-colors"
+                className="mt-5 text-lilita flex items-center gap-2 border border-gray-300 rounded-full px-5 py-2.5 text-sm font-medium text-primary hover:border-[#D78FEE] hover:text-[#D78FEE] transition-colors"
               >
                 <FileText className="w-4 h-4" />
                 Order Now
@@ -431,14 +432,14 @@ export default function Navbar(): React.ReactElement {
             <div className="mt-10 space-y-1">
               <Link
                 href="/user/user-order"
-                className="block py-3 text-primary text-base"
+                className="block py-3 text-lilita text-primary text-base"
                 onClick={() => setShowUserMenu(false)}
               >
                 My Order
               </Link>
               <Link
                 href="/user/profile"
-                className="block py-3 text-primary text-base"
+                className="block py-3 text-lilita text-primary text-base"
                 onClick={() => setShowUserMenu(false)}
               >
                 Profile
@@ -450,7 +451,7 @@ export default function Navbar(): React.ReactElement {
             <button
               onClick={handleLogout}
               disabled={isLoggingOut}
-              className="w-full text-left py-4 text-primary text-base flex items-center gap-2"
+              className="w-full text-left py-4 text-lilita text-primary text-base flex items-center gap-2"
             >
               {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               {isLoggingOut ? 'Logging out...' : 'Sign Out'}
@@ -461,47 +462,16 @@ export default function Navbar(): React.ReactElement {
 
       {isMenuOpen && (
         <div
-          className="xl:hidden fixed inset-0 z-[60] bg-white"
+          className={`xl:hidden fixed inset-0  top-20 border-t border-primary text-lilita z-[60] bg-white`}
         >
-          <div className="flex items-center justify-between h-20 px-4 border-b border-gray-100">
-            <button
-              onClick={() => setIsMenuOpen(false)}
-              className="p-2 -ml-2 text-primary hover:text-[#D78FEE] transition-colors active:scale-90"
-              aria-label="Close menu"
-            >
-              <X className="w-6 h-6" />
-            </button>
 
-            <Link href="/" onClick={() => setIsMenuOpen(false)}>
-              <Image alt="logo" src="/images/logonav.webp" width={130} height={36} />
-            </Link>
 
-            <div className="flex items-center space-x-3">
-              {user && <UserChat />}
-              <img src="/icon/bellicon.svg" className="w-5 h-5" alt="" />
-              {user ? (
-                <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gray-200">
-                  <img
-                    src={avatarUrl || "/icon/usericon.svg"}
-                    className="w-full h-full object-cover"
-                    alt="avatar"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/icon/usericon.svg";
-                    }}
-                  />
-                </div>
-              ) : (
-                <div className="w-8" />
-              )}
-            </div>
-          </div>
-
-          <div className="px-6 sm:px-10 py-8 space-y-6">
+          <div className="px-6 sm:px-10  py-8 space-y-6">
             {navLinks.map((link) => (
               <div key={link.href}>
                 <Link
                   href={link.href}
-                  className={`block text-lg font-bold arial ${pathname === link.href ? "text-[#D78FEE]" : "text-primary"}`}
+                  className={`block text-xl font-bold text-lilita ${pathname === link.href ? "text-primary" : "text-primary"}`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.label}
@@ -509,15 +479,7 @@ export default function Navbar(): React.ReactElement {
               </div>
             ))}
 
-            <div>
-              <Link
-                href="/service"
-                className=" text-lg font-bold button-yellow px-5"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Order Now
-              </Link>
-            </div>
+
           </div>
 
           {!user && (

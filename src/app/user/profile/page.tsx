@@ -24,6 +24,9 @@ import { getAllOrdersWithItems } from '@/action/order';
 import { IUser, IOrder } from '@/interface';
 import Link from 'next/link';
 import { ProfilePageSkeleton } from '@/components/skeleton-card';
+import { CardDashedThird } from '@/components/card-dashed';
+import Image from 'next/image';
+import { stat } from 'fs';
 
 export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
@@ -42,7 +45,7 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    
+
     if (user?.id) {
       loadUserData();
       loadUserOrders();
@@ -119,8 +122,9 @@ export default function ProfilePage() {
     const total = orders.length;
     const pending = orders.filter(o => o.status === 'pending').length;
     const completed = orders.filter(o => o.status === 'completed').length;
+    const onprogress = orders.filter(o => o.status === 'processing').length;
 
-    return { total, pending, completed };
+    return { total, pending, completed, onprogress };
   };
 
   const stats = getOrderStats();
@@ -135,16 +139,16 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen  ">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen p-10 ">
+      <div className=" mx-auto">
 
-        <div className="card-primary-white rounded-lg shadow-md overflow-hidden mb-6 ">
-          <div className="h-20 bg-muted/70"></div>
+        <div className=" rounded-lg mb-6 ">
+          <div className="h-45 rounded-4xl bg-primary"></div>
 
           <div className="px-6 pb-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-16 sm:-mt-12">
+            <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-15 sm:-mt-13 lg:ml-5">
               <div className="relative group">
-                <div className="w-32 h-32 rounded-full border-4 border-white shadow-xl">
+                <div className="w-40 h-40 rounded-full border-4 border-white shadow-xl">
                   <div className="w-full h-full rounded-full bg-white flex items-center justify-center text-4xl font-bold text-gray-700">
                     {userData?.avatar_url ? (
                       <img src={userData.avatar_url} alt="avatar" className="w-full h-full rounded-full object-cover" />
@@ -160,7 +164,7 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              <div className="flex-1 sm:ml-6 mt-4 arial sm:mt-0 text-center sm:text-left">
+              <div className="flex-1 sm:ml-6 mt-0 arial sm:-mt-20 text-center sm:text-left">
                 {isEditing ? (
                   <div className="space-y-2">
                     <Input
@@ -172,7 +176,8 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <>
-                    <h1 className="text-3xl font-bold text-gray-900">{displayName}</h1>
+                    <p className="text-3xl font-bold text-primary">{displayName}</p>
+                    <p className="text-lg font-bold text-primary">{userData?.email}</p>
                     <div className="flex items-center justify-center sm:justify-start gap-2 mt-2 flex-wrap">
                       <Badge variant="secondary" className="flex items-center gap-1">
                         <Shield className="w-3 h-3" />
@@ -200,9 +205,8 @@ export default function ProfilePage() {
                     </Button>
                   </div>
                 ) : (
-                  <Button onClick={() => setIsEditing(true)} variant="outline" size="sm">
-                    <Edit2 className="w-4 h-4 mr-2" />
-                    Edit Profile
+                  <Button onClick={() => setIsEditing(true)} variant="outline" className='bg-muted text-primary border-2 border-primary rounded-full' size="sm">
+                   <p className='text-lilita'>Edit Profile</p>
                   </Button>
                 )}
               </div>
@@ -210,108 +214,46 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-          <Link href="/myorder">
-            <div className="card-primary p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Orders</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+        <div className='px-6 sm:px-6'>
+          <CardDashedThird className='  '>
+            <div className=' grid grid-cols-2 sm:grid-cols-4  overflow-hidden rounded-[27px]'>
+              <Link href="/myorder">
+                <div className="p-5 flex gap-10 items-center border-primary border-r-2 border-b-2 sm:border-b-0 ">
+                  <div className='text-start text-primary'>
+                    <p>Total Order</p>
+                    <h1 className='text-3xl'>{stats.total}</h1>
+                  </div>
+                  <Image alt="" src="/SVG/icontotal.svg" className='hidden lg:block' width={40} height={40} />
                 </div>
-                <ShoppingBag className="w-8 h-8 text-blue-500" />
+              </Link>
+              <div className="p-5 flex gap-10 sm:bg-muted/50    border-primary sm:border-r-2  border-b-2 sm:border-b-0">
+                <div className="flex">
+                  <div className='text-start text-primary '>
+                    <p>Pending</p>
+                    <h1 className='text-3xl'>{stats.pending}</h1>
+                  </div>
+                </div>
+                <Image alt="" src="/SVG/iconsales.svg" className='hidden lg:block' width={40} height={40} />
+              </div>
+              <div className="p-5 flex gap-10   border-primary border-r-2 ">
+                <div className='text-start text-primary'>
+                  <p>On Progress</p>
+                  <h1 className='text-3xl'>{stats.onprogress}</h1>
+                </div>
+                <Image alt="" src="/SVG/iconreview.svg" className='hidden lg:block' width={40} height={40} />
+              </div>
+              <div className="p-5 flex gap-10   border-primary  ">
+                <div className='text-start text-primary'>
+                  <p>Completed</p>
+                  <h1 className='text-3xl'>{stats.completed}</h1>
+                </div>
+                <Image alt="" src="/SVG/iconmember.svg" className='hidden lg:block' width={40} height={40} />
               </div>
             </div>
-          </Link>
-          <div className="card-primary p-6 rounded-lg shadow-md border-2 border-transparent">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-orange-500">{stats.pending}</p>
-              </div>
-              <Clock className="w-8 h-8 text-orange-500" />
-            </div>
-          </div>
-          <div className="card-primary p-6 rounded-lg shadow-md border-2 border-transparent">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Completed</p>
-                <p className="text-2xl font-bold text-green-500">{stats.completed}</p>
-              </div>
-              <Award className="w-8 h-8 text-green-500" />
-            </div>
-          </div>
+          </CardDashedThird>
         </div>
 
-        {/* Profile Details */}
-        <div className="card-primary-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4 text-borsok">Profile Information</h2>
-
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <Mail className="w-5 h-5 text-gray-400 text-primary mt-0.5" />
-              <div className="flex-1">
-                <Label className="text-sm text-gray-600 arial">Email</Label>
-                {isEditing ? (
-                  <Input
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="mt-1"
-                  />
-                ) : (
-                  <p className="text-gray-900">{userData?.email || user?.email}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <User className="w-5 h-5 text-primary text-gray-400 mt-0.5" />
-              <div className="flex-1">
-                <Label className="text-sm text-gray-600 arial">Full Name</Label>
-                <p className="text-gray-900">{userData?.full_name || displayName}</p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <Calendar className="w-5 h-5 text-primary mt-0.5" />
-              <div className="flex-1">
-                <Label className="text-sm text-gray-600 arial">Member Since</Label>
-                <p className="text-gray-900">
-                  {userData?.created_at ? new Date(userData.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  }) : 'N/A'}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Link to Milestone Page */}
-        <div className="card-primary rounded-lg shadow-md p-6 ">
-          <div className="flex md:flex-row flex-col gap-5 items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Award className="w-6 h-6 text-primary mb-2" />
-                <h2 className="text-2xl font-bold text-gray-900 text-borsok ">Stamp Journey</h2>
-              </div>
-              <p className="text-gray-600 mb-4 " >
-                Complete orders to collect stamps and unlock exclusive rewards!
-              </p>
-              <Badge className="bg-primary">
-                {stats.completed} Completed Orders
-              </Badge>
-            </div>
-            <Link href="/milestone">
-              <Button className="bg-primary hover:bg-purple-700 ">
-                View Milestones
-                <Award className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-          </div>
-        </div>
+        
       </div>
     </div>
   );

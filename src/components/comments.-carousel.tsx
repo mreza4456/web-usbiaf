@@ -15,9 +15,10 @@ import {
     CarouselNext,
     CarouselPrevious,
 } from "@/components/ui/carousel"
-import { SkeletonBlog } from './skeleton-card';
+import { SkeletonBlog, SkeletonCard } from './skeleton-card';
 import { getAllComments } from '@/action/comment';
 import Image from 'next/image';
+import { BadgeCard, CardReview, CardSecondary } from './card-dashed';
 
 export default function CommmentsCarousel() {
     const [searchQuery, setSearchQuery] = useState('');
@@ -47,14 +48,13 @@ export default function CommmentsCarousel() {
 
     return (
         <div>
-            <section id="testimonials" className="px-6 relative overflow-hidden">
-                <div className="absolute top-10 left-20 text-5xl text-primary opacity-10 rotate-12">★</div>
-                <div className="absolute bottom-20 right-40 text-6xl text-primary opacity-10">✦</div>
+            <section id="testimonials" className=" relative overflow-hidden">
+         
 
                 <div className="container mx-auto max-w-7xl">
 
                     {loading ? (
-                        <SkeletonBlog cardcount={3} />
+                        <SkeletonCard cardcount={3} />
                     ) : comment.length === 0 ? (
                         <div></div>
                     ) : (
@@ -62,41 +62,43 @@ export default function CommmentsCarousel() {
                             <CarouselContent className="-ml-4">
                                 {comment.map((testimonial, i) => (
                                     <CarouselItem key={i} className="pl-4 md:basis-1/2 lg:basis-1/3 p-10">
-                                        <Card className=" stats backdrop-blur-sm border-2 border-primary/20 transition-all  h-full ">
-                                            <CardHeader>
-                                                <div className="flex justify-between items-center mb-3 ">
-                                                    {testimonial.order_items?.category_name && (
-                                                        <Badge className="bg-purple-100 rotate-5 text-purple-700 hover:bg-purple-200">
-                                                            <MessageSquare className="w-3 h-3 mr-1" />
-                                                            {testimonial.order_items.category_name}
-                                                        </Badge>
-                                                    )}
+                                        <CardReview className="transition-all">
+                                            {testimonial.order_items?.category_name && (
+                                                <BadgeCard className=" w-fit absolute left-4 -top-3 -rotate-2 z-101 ">
 
-                                                    <div className="flex items-center gap-1 px-3 rotate-5 mt-5 ">
+                                                    {testimonial.order_items.category_name}
+                                                </BadgeCard>
+                                            )}
+                                            <div className="p-3 text-lilita z-10 relative ">
+                                                <div className=" items-center mb-3 ">
+
+
+                                                    <div className="flex items-center gap-1 px-3  ">
                                                         {[...Array(Number(testimonial.rating))].map((_, j) => (
-                                                            <Star key={j} className="w-4 h-4 fill-[#FFE66D] text-[#FFE66D]" />
+                                                            // <Star key={j} className="w-4 h-4 fill-[#FFE66D] text-[#FFE66D]" />
+                                                            <Image key={j} src={"/images/SVG/stars.svg"} width={25} height={25} alt='' />
                                                         ))}
                                                     </div>
                                                 </div>
-                                                <CardDescription className="text-gray-500 px-3 rotate-5 text-base italic leading-relaxed">
+                                                <div className="text-gray-500 px-3   text-base italic leading-relaxed">
                                                     "{testimonial.message}"
-                                                </CardDescription>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="flex items-center gap-2 rotate-5">
+                                                </div>
+
+
+                                                <div className="flex items-center gap-2  mt-5">
                                                     <Image
                                                         src={testimonial.users?.avatar_url ?? "/default-avatar.png"}
                                                         width={50}
                                                         height={50}
                                                         alt={testimonial.users?.full_name ?? "User avatar"}
-                                                        className="w-12 h-12 rounded-full border-2 border-white"
+                                                        className="w-10 h-10 rounded-full border-2 border-white"
                                                     />
                                                     <div>
-                                                        <div className="font-semibold text-primary arial">{testimonial.users?.full_name}</div>
+                                                        <div className="text-primary text-lilita">{testimonial.users?.full_name}</div>
                                                     </div>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
+                                        </CardReview>
                                     </CarouselItem>
                                 ))}
                             </CarouselContent>
@@ -107,11 +109,7 @@ export default function CommmentsCarousel() {
                     )}
                     <div className="text-center mt-8">
 
-                        <Link href="reviews">
-                            <Button className="bg-white cursor-pointer hover:bg-gray-50 text-[#50398e] px-10 py-6 rounded-full shadow-md border-2 border-[#50398e]">
-                                Show All Reviews
-                            </Button>
-                        </Link>
+                       
                     </div>
                 </div>
             </section>

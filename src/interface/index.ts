@@ -189,17 +189,34 @@ export interface ICategory {
   is_best_seller: boolean;
   is_popular: boolean;
   is_handpick: boolean;
-  sales:string;
-  class_id: number;
+  sales: string;
+
+  badge_id?: number | string;
   created_at?: string;
   updated_at?: string;
 
-  class:IClass;
+  badge?: IBadge;
 }
 
 export interface IClass {
   id: number;
   class_name: string;
+  created_at?: string;
+
+}
+
+export interface IClassService{
+  id:number;
+  class_id:number;
+  categories_id:string;
+
+  categories:ICategory;
+  class:IClass;
+}
+
+export interface IBadge {
+  id: number;
+  name: string;
   created_at?: string;
 
 }

@@ -12,7 +12,7 @@ import { IBlogPost } from '@/interface';
 import { SkeletonBlog } from '@/components/skeleton-card';
 
 import { useRouter } from 'next/navigation';
-import CardDashed from '@/components/card-dashed';
+import CardDashed, { BadgeCard, CardDashedBlogCard, CardDashedBlogMain } from '@/components/card-dashed';
 
 // ─── Static data ────────────────────────────────────────────────────────────
 
@@ -169,23 +169,19 @@ export default function BlogPage() {
   );
 
   return (
-    <div>
+    <div className='max-w-7xl mx-auto'>
 
       {/* ── Hero + Search Section ── */}
-      <section className="pt-16 sm:pt-30 pb-5 px-4 sm:px-6">
+      <section className="pt-16 sm:pt-30 pb-5 px-4 sm:px-6 ">
         <div className="container mx-auto">
-          <div>
-            <p className="text-2xl sm:text-3xl text-borsok text-primary">
-              READ OUR
-            </p>
-            <h1 className="text-6xl sm:text-8xl leading-[0.9] text-borsok text-primary -mt-1">
-              BLOGS
-            </h1>
-         
+          <div className="flex flex-col  w-full mt-10">
+            <h1 className="text-4xl sm:text-6xl  w-full text-primary leading-5 " >READ OUR</h1>
+            <h1 className="text-6xl sm:text-8xl  w-full text-primary" > <span className='bg-title'>BLOGS</span></h1>
           </div>
 
+
           {/* Search + Category + Sort row */}
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 mt-10">
+          <div className="flex flex-col text-lilita lg:flex-row items-stretch lg:items-center gap-3 mt-10">
             <div className="relative flex-1 max-w-xl">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary w-5 h-5" />
               <input
@@ -193,7 +189,7 @@ export default function BlogPage() {
                 placeholder="Search everything..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full arial px-12 h-11 bg-white border-2 border-primary rounded-full text-primary placeholder-primary/40 focus:outline-none focus:border-primary transition-all"
+                className="w-full arial px-12 h-10 bg-white border-2 border-primary rounded-full text-primary text-lilita placeholder-primary/40 focus:outline-none focus:border-primary transition-all"
               />
               {searchQuery && (
                 <button
@@ -205,14 +201,11 @@ export default function BlogPage() {
               )}
             </div>
 
-            <button className="arial px-6 h-11 rounded-full border-2 border-primary text-primary whitespace-nowrap hover:bg-primary hover:text-white transition-colors">
-              Category
-            </button>
 
             <div className="flex flex-wrap gap-2">
 
               {categoryFilters.length > 1 && (
-                <div className="flex items-center rounded-full border border-primary border-2 overflow-hidden bg-white shrink-0">
+                <div className="flex items-center rounded-full border  border-primary border-2 overflow-hidden bg-white shrink-0">
                   {categoryFilters.map((cat, idx) => {
                     return (
                       <button
@@ -240,7 +233,7 @@ export default function BlogPage() {
               </span>
               <button
                 onClick={() => setSortOpen((o) => !o)}
-                className="arial flex items-center gap-1 px-4 py-2 rounded-full border-0 text-primary font-semibold hover:border-primary transition-colors"
+                className="text-lilita flex items-center gap-1 px-4 py-2 rounded-full border-0 text-primary font-semibold hover:border-primary transition-colors"
               >
                 {sortOrder}
                 <ChevronDown className="w-4 h-4" />
@@ -254,7 +247,7 @@ export default function BlogPage() {
                         setSortOrder(opt);
                         setSortOpen(false);
                       }}
-                      className="block w-full text-left px-5 py-2 arial text-primary hover:bg-primary/10"
+                      className="block w-full text-left px-5 py-2 text-lilita text-primary hover:bg-primary/10"
                     >
                       {opt}
                     </button>
@@ -267,7 +260,7 @@ export default function BlogPage() {
       </section>
 
       {/* ── Featured Posts (1 large + 3 side) ── */}
-      <section className="pb-16 px-4 sm:px-6">
+      <section className="py-5 px-4 sm:px-6">
         <div className="container mx-auto">
           {loading ? (
             <SkeletonBlog />
@@ -280,51 +273,52 @@ export default function BlogPage() {
               <p className="text-primary/30 arial">Try adjusting your search</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-8">
               {/* Large featured card */}
               <div
                 onClick={() => handleClick(featuredPost.id)}
                 className="group cursor-pointer"
               >
-                <CardDashed className="relative bg-white  rounded-3xl border-2 border-primary/20 shadow-md  h-full min-h-[420px]">
-                  <div className="relative w-full h-full ">
+                <CardDashedBlogMain className="relative  ">
+                  <div className="relative aspect-[4/3] overflow-hidden ">
                     {featuredPost.image ? (
                       <img
                         src={featuredPost.image}
                         alt={featuredPost.title}
-                        className="w-full h-full object-cover rounded-2xl  transition-transform duration-400 ease-out group-hover:scale-105"
+                        className="aspect-[4/3] object-cover  transition-transform duration-400 ease-out group-hover:scale-105"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-6xl">
+                      <div className="aspect-[4/3] flex items-center justify-center text-6xl">
                         📝
                       </div>
                     )}
 
                     <div className="absolute bottom-0 left-0 p-8 w-full">
-                      <Badge className="mb-4 py-2 px-4 arial text-white bg-muted">
+                      <BadgeCard className="mb-4 w-fit -rotate-3 text-lilita">
                         EN VTubers
-                      </Badge>
-                      <h3 className="text-3xl text-arial text-white font-semibold">
+                      </BadgeCard>
+                      <h3 className="text-3xl text-lilita  text-primary font-semibold">
                         {featuredPost.title}
                       </h3>
-                      <p className="text-white/70 arial mt-3 text-sm">
-                        by: <span className="font-semibold text-white">Nemuneko</span>{' '}
+
+                      <p className=" text-muted text-sm mt-2">
+                        by: <b>Nemuneko</b>{' '}
                         &nbsp;{formatDate(featuredPost.created_at)}
                       </p>
                     </div>
                   </div>
-                </CardDashed>
+                </CardDashedBlogMain>
               </div>
 
               {/* Side stacked cards */}
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col justify-between h-full">
                 {sidePosts.map((post) => (
                   <div key={post.id} onClick={() => handleClick(post.id)} className=''>
                     <div
-                      className=" cursor-pointer  gap-4 p-4 bg-white flex   rounded-3xl transition-shadow">
-                      <div className="flex gap-10  w-full">
-                        <CardDashed className='rounded-xl'>
-                          <div className="relative w-28 sm:w-32 aspect-square rounded-[10px] overflow-hidden bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 shrink-0">
+                      className=" cursor-pointer  gap-4 ">
+                      <div className="grid grid-cols-5 gap-5  w-full items-center mb-8 h-full">
+                        <CardDashedBlogCard className=' col-span-2 aspect-[4/3] '>
+                          <div className="relative w-full h-full aspect-[4/3] rounded-[10px] overflow-hidden bg-gradient-to-br from-[#9B5DE0]/20 to-[#D78FEE]/20 shrink-0">
                             {post.image ? (
                               <img
                                 src={post.image}
@@ -337,18 +331,20 @@ export default function BlogPage() {
                               </div>
                             )}
                           </div>
-                        </CardDashed>
-                        <div className="flex flex-col  justify-start">
-                          <Badge className="mb-5 w-fit py-1 px-3 text-xs arial bg-muted text-white">
+                        </CardDashedBlogCard>
+                        <div className="col-span-3 relative flex flex-col gap-5 h-full  justify-start ">
+                          <BadgeCard className="w-fit -rotate-3 text-xs md:text-md lg:text-lg ">
                             EN VTubers
-                          </Badge>
-                          <h4 className="text-arial font-semibold text-primary leading-snug line-clamp-2">
-                            {post.title}
-                          </h4>
-                          <p className="arial text-primary/50 text-xs mt-2">
-                            by: <span className="font-semibold text-primary/70">Nemuneko</span>{' '}
-                            &nbsp;{formatDate(post.created_at)}
-                          </p>
+                          </BadgeCard>
+                          <div>
+                            <h4 className="text-lilita font-semibold sm:text-2xl  text-lg text-primary leading-snug line-clamp-2">
+                              {post.title}
+                            </h4>
+                            <p className=" text-primary text-xs mt-2">
+                              by: <b>Nemuneko</b>{' '}
+                              &nbsp;{formatDate(post.created_at)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -384,10 +380,11 @@ export default function BlogPage() {
         <section key={idx} className="pb-16 px-4 sm:px-6">
           <div className="container mx-auto">
             <div className="mb-10">
-              <h2 className="text-4xl text-borsok text-primary">Whats New!</h2>
-              <div className="max-w-[170px] text-primary/70">
-                {/* <Squiggle /> */}
-              </div>
+             <div className='relative  w-fit'>
+              <h1 className="text-6xl sm:text-7xl w-full text-primary mb-4" >Whats New!</h1>
+              <div className='w-[70%] float-end -mt-5 h-3 bg-muted rounded-xs text-accent'></div>
+            </div>
+       
             </div>
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -398,11 +395,11 @@ export default function BlogPage() {
                   className="group cursor-pointer transition-transform duration-300 ease-out hover:-translate-y-1.5"
                 >
                   <div className="relative">
-                    <Badge className="absolute bg-secondary -top-3 left-4 z-10 py-2 px-4 arial text-white shadow-sm">
+                    <BadgeCard className="absolute w-fit z-20 -rotate-3 top-3 left-5">
                       EN VTubers
-                    </Badge>
-                    <CardDashed className='rounded-3xl'>
-                      <div className="relative aspect-square rounded-[15px] overflow-hidden ">
+                    </BadgeCard>
+                    <CardDashedBlogCard className=''>
+                      <div className="relative aspect-[4/3]  overflow-hidden ">
                         {post.image ? (
                           <img
                             src={post.image}
@@ -415,10 +412,10 @@ export default function BlogPage() {
                           </div>
                         )}
                       </div>
-                    </CardDashed>
+                    </CardDashedBlogCard>
                   </div>
 
-                  <h3 className="text-xl text-arial font-semibold text-primary mt-4 leading-snug line-clamp-2">
+                  <h3 className="text-xl text-lilita-light  font-semibold text-primary mt-4 leading-snug line-clamp-2">
                     {post.title}
                   </h3>
                   <div className="flex items-center gap-2 mt-3">
@@ -438,9 +435,9 @@ export default function BlogPage() {
 
 
       {/* ── FAQ Section ── */}
-      <section className="max-w-7xl w-full mx-auto">
-        <hr className="bg-primary p-[1px]" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-10">
+      <section className="max-w-7xl w-full mt-20 mx-auto">
+
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-10">
           {faqCategories.map((cat) => (
             <div key={cat.title} className="p-5 my-5">
               <h2 className="text-primary text-xl text-borsok mb-5">
@@ -457,7 +454,7 @@ export default function BlogPage() {
               ))}
             </div>
           ))}
-        </div>
+        </div> */}
 
         {/* Support CTA */}
         <div>

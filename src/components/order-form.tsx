@@ -308,7 +308,7 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
               );
             })}
           </div>
-          <Card className='card-primary-white rounded rounded-2xl overflow-hidden border-2 shadow-lg mt-5 p-0'>
+          <Card className='rounded rounded-2xl overflow-hidden border-2 shadow-lg mt-5 p-0'>
 
             {/* Step 1: Contact Information */}
             {currentStep === 1 && (

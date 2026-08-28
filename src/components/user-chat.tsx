@@ -12,6 +12,7 @@ import {
 import { IChatMessage } from "@/interface/";
 import { supabase } from "@/config/supabase";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function UserChat() {
   const [isOpen, setIsOpen] = useState(false);
@@ -313,7 +314,8 @@ export default function UserChat() {
         onClick={handleChatButtonClick}
         className="relative flex items-center justify-center hover:scale-110 transition-transform z-50 "
       >
-         <img src="/icon/messageicon.svg" className="w-6 h-6" alt="" />
+
+        <Image src="/icon/SVG/mailicon.svg" width={20} height={20} className="w-6 h-6 hover:scale-110 cursor-pointer transition-transform" alt="" />
         {unreadCount > 0 && (
           <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
             {unreadCount}
@@ -327,7 +329,7 @@ export default function UserChat() {
           {/* Header */}
           <div className="flex items-center justify-between p-4 rounded-t-lg border-gray-800 bg-secondary">
             <div className="flex items-center gap-2">
-             <img src="icon/messageicon.svg" className="w-6 h-6" alt="" />
+              <img src="icon/messageicon.svg" className="w-6 h-6" alt="" />
               <h3 className="font-semibold text-white">Chat Support</h3>
             </div>
             <div className="flex items-center justify-between gap-3">
@@ -391,8 +393,8 @@ export default function UserChat() {
                       >
                         <div
                           className={`max-w-[70%] ${isOwn
-                              ? "bg-primary text-white tooltip"
-                              : "bg-muted text-primary tooltipleft"
+                            ? "bg-primary text-white tooltip"
+                            : "bg-muted text-primary tooltipleft"
                             } rounded-xl px-4 py-2`}
                         >
                           <p className="text-sm break-words">{msg.message}</p>

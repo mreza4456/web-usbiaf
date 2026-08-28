@@ -1,22 +1,23 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Zap, Shield, Star, Clock, ImageIcon, ChevronLeft, ChevronRight, ChevronDown, Search, Flame, TrendingUp, X, SlidersHorizontal } from 'lucide-react';
+import { ArrowRight, Zap, Shield, Star, Clock, ImageIcon, ChevronLeft, ChevronRight, ChevronDown, Search, Flame, TrendingUp, X, SlidersHorizontal, Check } from 'lucide-react';
 import { getAllCategories } from '@/action/categories';
 import { getAllPosters } from '@/action/poster'; // sesuaikan import path
-import { getAllClasses } from '@/action/class';
-import type { ICategory, IImageCategories, IPoster, IClass } from '@/interface';
-import SkeletonService from '@/components/skeleton-card';
+import { getAllClasses } from '@/action/badge';
+import SkeletonService, { SkeletonCard } from '@/components/skeleton-card';
 import Link from 'next/link';
 import { Textstyle, Textstylegreen } from '@/components/font-design';
 import Image from 'next/image';
 import { getCloudflareImageUrl } from '@/lib/storage-utils';
-import CardDashed from '@/components/card-dashed';
+import CardDashed, { BadgeCard, CardSecondary } from '@/components/card-dashed';
 import { title } from 'process';
-
+import { getAllClasses as getAllClassOptions } from '@/action/class'; // beda dari getAllClasses di action/badge yang sudah ada
+import type { ICategory, IImageCategories, IPoster, IClass, IBadge, IClassService } from '@/interface';
+import { CTASection } from '../page';
 
 function Pagination({
   currentPage, totalPages, onPageChange,
@@ -43,11 +44,11 @@ function Pagination({
   }, [currentPage, totalPages]);
 
   return (
-    <div className="flex items-center justify-center gap-2 mt-10 flex-wrap">
+    <div className="flex items-center border-2 border-primary w-fit mx-auto rounded-full justify-center  mt-10 flex-wrap">
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="p-2 rounded-full border border-primary/30 text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/10 transition-colors"
+        className="p-2  text-primary  disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/10 transition-colors"
         aria-label="Previous page"
       >
         <ChevronLeft className="w-5 h-5" />
@@ -62,9 +63,9 @@ function Pagination({
           <button
             key={p}
             onClick={() => onPageChange(p)}
-            className={`min-w-[2.5rem] h-10 px-3 rounded-full text-sm font-medium transition-colors ${p === currentPage
-              ? 'bg-primary text-white'
-              : 'text-primary border border-primary/30 hover:bg-primary/10'
+            className={`min-w-[2.5rem] h-10 px-3  border-l-2 border-primary text-sm font-medium transition-colors ${p === currentPage
+              ? 'bg-muted/80 text-primary'
+              : 'text-primary border-r-2 border-primary cursor-pointer'
               }`}
             aria-current={p === currentPage ? 'page' : undefined}
           >
@@ -76,96 +77,12 @@ function Pagination({
       <button
         onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         disabled={currentPage === totalPages}
-        className="p-2 rounded-full border border-primary/30 text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/10 transition-colors"
+        className="p-2  text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/10 transition-colors"
         aria-label="Next page"
       >
         <ChevronRight className="w-5 h-5" />
       </button>
     </div>
-  );
-}
-
-// ─── PosterCarousel ────────────────────────────────────────────────────────────
-
-function PosterCarousel({ posters }: { posters: IPoster[] }) {
-  const [current, setCurrent] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  const goTo = useCallback((index: number, dir?: 1 | -1) => {
-    if (isAnimating || index === current) return;
-    setDirection(dir ?? (index > current ? 1 : -1));
-    setIsAnimating(true);
-    setCurrent(index);
-    setTimeout(() => setIsAnimating(false), 500);
-  }, [isAnimating, current]);
-
-  const prev = () => goTo((current - 1 + posters.length) % posters.length, -1);
-  const next = () => goTo((current + 1) % posters.length, 1);
-
-  if (!posters.length) return null;
-
-  const variants = {
-    enter: (dir: number) => ({ x: dir > 0 ? '100%' : '-100%' }),
-    center: { x: '0%' },
-    exit: (dir: number) => ({ x: dir > 0 ? '-100%' : '100%' }),
-  };
-
-  return (
-    <section className="relative w-full overflow-hidden mt-20" style={{ height: '400px' }}>
-      <div>
-        <div
-          key={current}
-          className="absolute inset-0 w-full h-full"
-        >
-          <Image
-            className="w-full h-full object-cover"
-            src={getCloudflareImageUrl(posters[current].image_url, "large")}
-            alt={posters[current].id}
-            fill
-            priority={current === 0}
-            loading={current === 0 ? 'eager' : 'lazy'}
-            sizes="100vw"
-            onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder-image.svg'; }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-        </div>
-      </div>
-
-      {posters.length > 1 && (
-        <>
-          <button
-            onClick={prev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-muted hover:bg-muted text-white rounded-full p-2 transition-all duration-200"
-            aria-label="Previous slide"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          <button
-            onClick={next}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-muted hover:bg-muted text-white rounded-full p-2 transition-all duration-200"
-            aria-label="Next slide"
-          >
-            <ChevronRight className="w-6 h-6" />
-          </button>
-
-          <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 flex gap-2">
-            {posters.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => goTo(i)}
-                className={`transition-all duration-300 rounded-full ${i === current
-                  ? 'w-3 h-3 bg-primary'
-                  : 'w-3 h-3 border border-primary border-2 '
-                  }`}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </section>
   );
 }
 
@@ -200,15 +117,15 @@ function Dropdown({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 px-4 h-10 rounded-full border border-2 border-primary text-primary text-sm font-medium hover:bg-primary/5 transition-colors whitespace-nowrap"
+        className="flex items-center gap-2  h-9  text-lilita  text-primary text-sm font-medium \transition-colors whitespace-nowrap"
       >
         {label && <span className="text-gray-500 font-normal">{label}</span>}
-        <span className="font-semibold">{activeLabel}</span>
+        <span className="font-semibold"><p>{activeLabel}</p></span>
         <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-48 py-1.5 bg-white rounded-2xl border border-primary/20 shadow-lg z-20">
+        <div className="absolute right-0 mt-2 w-48 py-1.5 bg-white overflow-hidden rounded-2xl border border-primary/20 shadow-lg z-20">
           {options.map((opt) => (
             <button
               key={opt.key}
@@ -216,12 +133,12 @@ function Dropdown({
                 onChange(opt.key);
                 setOpen(false);
               }}
-              className={`w-full text-left px-4 py-2 text-sm transition-colors ${opt.key === value
-                ? 'text-primary font-semibold bg-primary/5'
-                : 'text-gray-700 hover:bg-gray-50'
+              className={`w-full text-left px-4 py-2 text-sm text-lilita transition-colors ${opt.key === value
+                ? 'text-primary font-semibold bg-muted/50'
+                : 'text-primary '
                 }`}
             >
-              {opt.label}
+              <p>{opt.label}</p>
             </button>
           ))}
         </div>
@@ -232,25 +149,25 @@ function Dropdown({
 
 // ─── ServiceToolbar ─────────────────────────────────────────────────────────────
 
-type BadgeFilter = 'best_seller' | 'popular' | 'handpick' | null;
+type Filter = 'best_seller' | 'popular' | 'handpick' | null;
 type SortKey = 'best_seller' | 'popular' | 'newest' | 'price_low' | 'price_high' | 'name_asc';
 
 function ServiceToolbar({
-  classes,
-  selectedClassId,
-  onSelectClass,
-  selectedBadge,
-  onSelectBadge,
+  badges,
+  selectedBadgesId,
+  onSelectBadges,
+  selectedFilter,
+  onSelectFilter,
   search,
   onSearchChange,
   sortBy,
   onSortChange,
 }: {
-  classes: IClass[];
-  selectedClassId: string | number | null;
-  onSelectClass: (id: string | number | null) => void;
-  selectedBadge: BadgeFilter;
-  onSelectBadge: (badge: BadgeFilter) => void;
+  badges: IBadge[];
+  selectedBadgesId: string | number | null;
+  onSelectBadges: (id: string | number | null) => void;
+  selectedFilter: Filter;
+  onSelectFilter: (badge: Filter) => void;
   search: string;
   onSearchChange: (v: string) => void;
   sortBy: SortKey;
@@ -274,20 +191,20 @@ function ServiceToolbar({
 
   const pillOptions: { key: string | number | null; label: string }[] = [
     { key: null, label: 'All' },
-    ...classes.map((c) => ({ key: c.id, label: c.class_name })),
+    ...badges.map((c) => ({ key: c.id, label: c.name })),
   ];
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
-        <div className="relative flex-1 max-w-xl">
+        <div className="relative flex-1 max-w-xl text-lilita">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
           <input
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search everything..."
-            className="w-full h-10 pl-10 pr-9 rounded-full border border-primary border-2 bg-white text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full h-10 pl-10 pr-9 rounded-full border border-primary border-2 bg-white text-sm text-gray-700 placeholder:font-light  focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           {search && (
             <button
@@ -300,39 +217,44 @@ function ServiceToolbar({
           )}
         </div>
 
-        {/* Category dropdown (Highlight filter) */}
-
-
-        {/* Class pill group */}
-        <div className='rounded-full flex px-4 items-center border h-9.5 text-sm font-medium border-primary border-2 bg-white arial text-primary'>Category</div>
+        {/* Class pill group (badges) */}
         {pillOptions.length > 1 && (
           <div className="flex items-center rounded-full border border-primary border-2 overflow-hidden bg-white shrink-0">
             {pillOptions.map((opt, idx) => {
-              const isActive = String(selectedClassId) === String(opt.key) || (selectedClassId === null && opt.key === null);
+              const isActive = String(selectedBadgesId) === String(opt.key) || (selectedBadgesId === null && opt.key === null);
               return (
                 <button
                   key={String(opt.key)}
-                  onClick={() => onSelectClass(opt.key)}
-                  className={`px-4 h-9.5 text-sm font-medium whitespace-nowrap cursor-pointer transition-colors ${isActive
+                  onClick={() => onSelectBadges(opt.key)}
+                  className={`px-4 h-9 text-sm font-medium text-lilita whitespace-nowrap cursor-pointer transition-colors ${isActive
                     ? 'bg-muted/80 text-primary'
                     : 'text-primary hover:bg-gray-50'
                     } ${idx !== pillOptions.length - 1 ? ' border-r-2 border-primary ' : ''}`}
                 >
-                  {opt.label}
+                  <p>{opt.label}</p>
                 </button>
               );
             })}
           </div>
         )}
 
-
-        {/* Sort by */}
-        <div className="flex items-center gap-2 ml-auto">
-          <span className="text-sm text-primary hidden sm:inline">Sort by:</span>
+        {/* Filter dropdown (Popular / Handpick / Best Seller) */}
+        {/* <div className="flex text-lilita items-center gap-2">
+          <span className="text-sm text-primary hidden font-normal sm:inline">Filter:</span>
           <Dropdown
-            value={selectedBadge ?? 'all'}
+            value={selectedFilter ?? 'all'}
             options={categoryOptions}
-            onChange={(key) => onSelectBadge(key === 'all' ? null : (key as BadgeFilter))}
+            onChange={(key) => onSelectFilter(key === 'all' ? null : (key as Filter))}
+          />
+        </div> */}
+
+        {/* Sort by dropdown (termasuk Price) */}
+        <div className="flex text-lilita items-center gap-2 ml-auto">
+          <span className="text-md text-primary hidden font-normal sm:inline"><p>Sort by:</p></span>
+          <Dropdown
+            value={sortBy}
+            options={sortOptions}
+            onChange={(key) => onSortChange(key as SortKey)}
           />
         </div>
       </div>
@@ -344,25 +266,39 @@ function ServiceToolbar({
 
 interface ICategoryWithImages extends ICategory {
   images?: IImageCategories[];
+  classServices?: IClassService[]; // relasi many-to-many dari class_services
 }
-
 const ITEMS_PER_PAGE = 15;
 
-// ─── Main Component ────────────────────────────────────────────────────────────
+// ─── Inner Component (butuh useSearchParams, jadi harus di dalam Suspense) ─────
 
-export default function ServicesPage() {
+function ServicesPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [categories, setCategories] = useState<ICategoryWithImages[]>([]);
   const [poster, setPoster] = useState<IPoster[]>([]);
-  const [classes, setClasses] = useState<IClass[]>([]);
+  const [badges, setBadges] = useState<IBadge[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedClassId, setSelectedClassId] = useState<string | number | null>(null);
-  const [selectedBadge, setSelectedBadge] = useState<BadgeFilter>(null);
+
+  // ── Baca initial value dari query params (badge & classes) ──
+  const [selectedBadgesId, setSelectedBadgesId] = useState<string | number | null>(
+    searchParams.get('badge')
+  );
+  const [selectedFilter, setSelectedFilter] = useState<Filter>(null);
   const [sortBy, setSortBy] = useState<SortKey>('best_seller');
+
+  const [classOptions, setClassOptions] = useState<IClass[]>([]);
+  const [selectedClassIds, setSelectedClassIds] = useState<(string | number)[]>(
+    searchParams.get('classes')?.split(',').filter(Boolean) ?? []
+  );
+
+  // Guard supaya efek sync-ke-URL nggak jalan sebelum initial read dari URL selesai
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -397,23 +333,38 @@ export default function ServicesPage() {
       }
     };
 
-    const fetchClasses = async () => {
+    const fetchBadges = async () => {
       try {
         const result = await getAllClasses();
         if (result.success && Array.isArray(result.data)) {
-          setClasses(result.data);
+          setBadges(result.data);
         } else {
-          setClasses([]);
+          setBadges([]);
         }
       } catch (error) {
-        console.error('Failed to fetch Classes:', error);
-        setClasses([]);
+        console.error('Failed to fetch Badges:', error);
+        setBadges([]);
+      }
+    };
+
+    const fetchClassOptions = async () => {
+      try {
+        const result = await getAllClassOptions();
+        if (result.success && Array.isArray(result.data)) {
+          setClassOptions(result.data);
+        } else {
+          setClassOptions([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch Class Options:', error);
+        setClassOptions([]);
       }
     };
 
     fetchCategories();
     fetchPoster();
-    fetchClasses();
+    fetchBadges();
+    fetchClassOptions();
   }, []);
 
   // Debounce search input so filtering doesn't run on every keystroke
@@ -422,35 +373,82 @@ export default function ServicesPage() {
     return () => clearTimeout(t);
   }, [search]);
 
+  // ── Sync selectedBadgesId & selectedClassIds ke URL query params ──
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (selectedBadgesId) {
+      params.set('badge', String(selectedBadgesId));
+    } else {
+      params.delete('badge');
+    }
+
+    if (selectedClassIds.length > 0) {
+      params.set('classes', selectedClassIds.join(','));
+    } else {
+      params.delete('classes');
+    }
+
+    const qs = params.toString();
+    router.replace(qs ? `/service?${qs}` : '/service', { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBadgesId, selectedClassIds]);
+
   const handleCategoryClick = (categoryId: string) => {
     router.push(`/service/detail/${categoryId}`);
   };
 
-  // ── Map class_id -> class_name untuk ditampilkan di card ──
+  // toggle pilih/hapus class dari filter (multi-select)
+  const toggleClassFilter = (classId: string | number) => {
+    setSelectedClassIds((prev) => {
+      const exists = prev.some((id) => String(id) === String(classId));
+      if (exists) {
+        return prev.filter((id) => String(id) !== String(classId));
+      }
+      return [...prev, classId];
+    });
+  };
+
+  const clearClassFilter = () => setSelectedClassIds([]);
+
+  // ── Map badge_id -> class_name untuk ditampilkan di card ──
   const classMap = useMemo(() => {
     const map = new Map<string, string>();
-    classes.forEach((c) => map.set(String(c.id), c.class_name));
+    badges.forEach((c) => map.set(String(c.id), c.name));
     return map;
-  }, [classes]);
+  }, [badges]);
 
   const filteredCategories = useMemo(() => {
     const term = debouncedSearch.trim().toLowerCase();
     const list = categories.filter((category) => {
       const matchesSearch = term ? category.name.toLowerCase().includes(term) : true;
 
-      const matchesClass = selectedClassId
-        ? String((category as any).class_id) === String(selectedClassId)
+      const matchesClass = selectedBadgesId
+        ? String((category as any).badge_id) === String(selectedBadgesId)
         : true;
 
-      const matchesBadge = selectedBadge
-        ? selectedBadge === 'best_seller'
+      const matchesBadge = selectedFilter
+        ? selectedFilter === 'best_seller'
           ? !!(category as any).is_best_seller
-          : selectedBadge === 'popular'
+          : selectedFilter === 'popular'
             ? !!(category as any).is_popular
             : !!(category as any).is_handpick
         : true;
 
-      return matchesSearch && matchesClass && matchesBadge;
+      // filter multi-class — category harus punya minimal 1 class yang match dengan selectedClassIds
+      const matchesMultiClass =
+        selectedClassIds.length === 0
+          ? true
+          : category.classServices?.some((cs) =>
+            selectedClassIds.some((id) => String(id) === String(cs.class_id))
+          ) ?? false;
+
+      return matchesSearch && matchesClass && matchesBadge && matchesMultiClass;
     });
 
     const sorted = [...list];
@@ -479,7 +477,7 @@ export default function ServicesPage() {
         break;
     }
     return sorted;
-  }, [categories, debouncedSearch, selectedClassId, selectedBadge, sortBy]);
+  }, [categories, debouncedSearch, selectedBadgesId, selectedFilter, sortBy, selectedClassIds]);
 
   // ── Pagination derived values (pakai filteredCategories) ──
   const totalPages = Math.max(1, Math.ceil(filteredCategories.length / ITEMS_PER_PAGE));
@@ -493,7 +491,7 @@ export default function ServicesPage() {
   // Reset ke halaman 1 setiap kali filter berubah
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, selectedClassId, selectedBadge, sortBy]);
+  }, [debouncedSearch, selectedBadgesId, selectedFilter, sortBy, selectedClassIds]);
 
   const paginatedCategories = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
@@ -522,98 +520,60 @@ export default function ServicesPage() {
     }).format(numAmount);
   };
 
-const service = [
-  {
-    title: "Illustration",
-    link: "/services/illustration",
-  },
-  {
-    title: "Design",
-    link: "/services/design",
-  },
-  {
-    title: "Animation",
-    link: "/services/animation",
-  },
-  {
-    title: "Coded",
-    link: "/services/coded",
-  },
-  {
-    title: "3D Model",
-    link: "/services/3d-model",
-  },
-  {
-    title: "Editing",
-    link: "/services/editing",
-  },
-  {
-    title: "Music",
-    link: "/services/music",
-  },
-  {
-    title: "VTuber",
-    link: "/services/vtuber",
-  },
-  {
-    title: "PonyTuber",
-    link: "/services/ponytuber",
-  },
-  {
-    title: "VTuber",
-    link: "/services/vtuber",
-  },
-  {
-    title: "Social Media",
-    link: "/services/social-media",
-  },
-  {
-    title: "Branding",
-    link: "/services/branding",
-  },
-  {
-    title: "Bundling",
-    link: "/services/bundling",
-  },
-  {
-    title: "Other",
-    link: "/services/other",
-  },
-]
   return (
-    <div className="min-h-screen">
-
- 
+    <div className="min-h-screen mt-30 sm:mt-10 max-w-7xl mx-auto">
 
       {/* ── Hero Section ── */}
       <section className="pb-5 sm:pt-30  px-4 sm:px-6">
         <div className="container mx-auto">
           <div>
-            <div className="flex gap-5 w-full mt-5">
-              <h1 className="text-4xl sm:text-6xl  w-full text-[#6B50B0] text-borsok" >Find Our Services</h1>
+            <div className="flex flex-col  w-full mt-5">
+              <h1 className="text-5xl sm:text-7xl  w-full text-primary" >COMMISIONS</h1>
+              <h1 className="text-5xl sm:text-7xl  w-full text-primary" >FOR <span className='bg-title'>VTUBER</span></h1>
             </div>
           </div>
-          <div className="max-w-3xl">
-            <p
 
-              className="text-lg  arial"
-            >
-              Explore our collection and portofolio and browse for your reffrences
-            </p>
-          </div>
         </div>
       </section>
-           <section className="py-10  px-4 sm:px-6">
-        <div className=" container mx-auto grid xl:grid-cols-7 lg:grid-cols-6 md:grid-cols-5 sm:grid-cols-4 grid-cols-3 gap-7">
-          {service.map((service, i) => (
-            <div key={i} className="card-secondary-white rounded rounded-3xl ">
-              <div className='card-shadow rounded-3xl '></div>
-              <div className='md:pt-10 pt-5   pb-3 px-5 arial bg-white h-full rounded-2xl'>
-                {service.title}
+
+      <section className="py-10  px-4 sm:px-6">
+        {loading ? (
+          <SkeletonCard height={20} cardcount={14} className='grid xl:grid-cols-7 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-7' />
+        ) : (
+          <div className="container mx-auto grid xl:grid-cols-7 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-7">
+            {classOptions.map((c) => {
+              const isActive = selectedClassIds.some((id) => String(id) === String(c.id));
+              return (
+                <CardSecondary
+                  key={c.id}
+                  onClick={() => toggleClassFilter(c.id)}
+                  className={`h-full relative min-w-[110px] cursor-pointer transition`}
+                >
+                  {isActive ? (
+                    <div>
+                      <Check className='w-5 h-5 absolute z-10 text-primary top-3 right-3' />
+                    </div>
+                  ) : (
+                    <div></div>
+                  )}
+                  <div className={`md:pt-10 pt-5 text-xs md:text-lg pb-3 px-3  ${isActive ? 'bg-muted/50' : ''
+                    }  text-lilita text-primary h-full`}>
+                    {c.class_name}
+                  </div>
+                </CardSecondary>
+              );
+            })}
+            <CardSecondary
+              onClick={clearClassFilter}
+              className={`h-full relative min-w-[110px] cursor-pointer transition `}
+            >
+              <div className={`md:pt-10 pt-5 text-xs md:text-lg pb-3 px-3  ${selectedClassIds.length === 0 ? 'bg-muted/50' : ''
+                }  text-lilita text-primary h-full`}>
+                All
               </div>
-            </div>
-          ))}
-        </div>
+            </CardSecondary>
+          </div>
+        )}
       </section>
 
       {/* ── Toolbar + Service Categories ── */}
@@ -621,11 +581,11 @@ const service = [
         <div className="container mx-auto">
           <div className="mb-8">
             <ServiceToolbar
-              classes={classes}
-              selectedClassId={selectedClassId}
-              onSelectClass={setSelectedClassId}
-              selectedBadge={selectedBadge}
-              onSelectBadge={setSelectedBadge}
+              badges={badges}
+              selectedBadgesId={selectedBadgesId}
+              onSelectBadges={setSelectedBadgesId}
+              selectedFilter={selectedFilter}
+              onSelectFilter={setSelectedFilter}
               search={search}
               onSearchChange={setSearch}
               sortBy={sortBy}
@@ -636,7 +596,7 @@ const service = [
           {/* Content */}
           <div className="min-w-0">
             {loading ? (
-              <SkeletonService />
+              <SkeletonService height={60} className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" count={10} />
             ) : error ? (
               <div>
                 <Card className="bg-muted/50 backdrop-blur-sm border-[#9B5DE0]/30">
@@ -665,11 +625,10 @@ const service = [
                 >
                   {paginatedCategories.map((category, index) => {
                     const primaryImage = category.images?.[0]?.image_url || '';
-                    const className = classMap.get(String((category as any).class_id));
+                    const className = classMap.get(String((category as any).badge_id));
                     const isBestSeller = (category as any).is_best_seller;
                     const isTopPopular = (category as any).is_popular;
                     const isHandpick = (category as any).is_handpick;
-                    // Only the very first row of cards is likely above the fold on first paint
                     const isAboveFold = currentPage === 1 && index < 4;
 
                     return (
@@ -678,11 +637,11 @@ const service = [
                           onClick={(e) => { e.stopPropagation(); handleCategoryClick(category.id); }}
                           className=" relative h-full hover:scale-[1.05] transition     cursor-pointer gap-0"
                         >
-                          <CardDashed className='rounded-4xl'>
+                          <CardDashed>
                             <div className="relative aspect-square ">
                               {primaryImage ? (
                                 <Image
-                                  className="object-cover rounded  rounded-xl"
+                                  className="object-cover rounded   rounded-[14%]"
                                   src={primaryImage}
                                   alt={category.name}
                                   fill
@@ -696,72 +655,28 @@ const service = [
                                   <ImageIcon className="w-16 h-16 text-gray-400" />
                                 </div>
                               )}
+                              {className && (
+                                <BadgeCard className="inline-flex absolute top-[-12px] -rotate-4 left-4 z-10 items-center rounded-full text-[10px] sm:text-sm">
+                                  {className}
+                                </BadgeCard>
+                              )}
                             </div>
                           </CardDashed>
-                          {(isHandpick || isTopPopular || isBestSeller) && (
-                            <div className="flex flex-wrap gap-1.5 mt-2 absolute top-2 left-2 z-10">
-                              {isTopPopular && (
-                                <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-pink-100 text-pink-700">
-                                  <TrendingUp className="w-3 h-3" />
-                                  Popular
-                                </span>
-                              )}
-                              {isHandpick && (
-                                <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-green-100 text-green-700">
-                                  <Flame className="w-3 h-3" />
-                                  Handpick
-                                </span>
-                              )}
-                              {isBestSeller && (
-                                <span className="inline-flex  items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-yellow-100 text-yellow-700">
-                                  <Star className="w-3 h-3" />
-                                  Best Seller
-                                </span>
-                              )}
-                            </div>
-
-
-                          )}
 
                           <div className="p-3 ">
                             <div>
-                              {/* Nama */}
-                              <h3
+                              <h1
                                 onClick={(e) => { e.stopPropagation(); handleCategoryClick(category.id); }}
-                                className=" sm:text-lg text-sm  text-eliane text-primary line-clamp-2 group-hover:text-primary/80 transition-colors"
+                                className=" sm:text-2xl text-lg text-primary line-clamp-2 group-hover:text-primary/80 transition-colors"
                               >
                                 {category.name
                                   ?.split(" ")
                                   .slice(0, 4)
                                   .join(" ")}
-                              </h3>
-
-                              {/* Class - di bawah nama */}
-
-                              {/* <p className="text-xs sm:text-sm text-gray-400 mt-0.5">
-                                {className}
-                              </p> */}
-                              <p className='arial text-xl'>{formatCurrency(category.start_price as any)}  </p>
+                              </h1>
+                              <h1 className=' text-primary bg-title w-fit  text-2xl md:text-3xl'>{formatCurrency(category.start_price as any)}  </h1>
                             </div>
-                            {/* Best Seller & Popular badges - di bawah class */}
-
-                            {/* <div className="flex justify-between items-center">
-
-                              {category.sales != null && (
-                                <p className="arial text-sm">
-                                  ({formatSales(category.sales as any)}){" "}
-                                  <span className="text-gray-500">sold</span>
-                                </p>
-                              )}
-                            </div> */}
                           </div>
-                          {/* {isBestSeller && (
-                            <div className="absolute top-0 right-3 md:right-5 w-7 h-10 md:h-18 rounded-b-full md:w-12 bg-yellow-500 flex flex-col justify-end items-center">
-                              <div className="clip-stars md:h-6 md:w-6 w-3 h-3 bg-white mb-2 md:mb-5" />
-                            </div>
-                          )} */}
-
-
                         </div>
                       </div>
                     );
@@ -780,30 +695,25 @@ const service = [
       </section>
 
       {/* ── CTA Section ── */}
-      <section className="py-20 px-4 sm:px-6">
-        <div className="container mx-auto">
-          <div>
-            <Card className="bg-[#e6dcff] md:rounded-[100px] ">
-              <CardContent className="text-center py-12 sm:py-16 px-4 sm:px-6">
-                <h2 className="text-3xl sm:text-4xl md:text-5xl text-borsok text-primary mb-4 sm:mb-6">
-                  Can't Find What You're{' '}
-                  <span className="text-primary">Looking For?</span>
-                </h2>
-                <p className="text-arial text-primary/50 sm:text-lg mb-6 sm:mb-8 max-w-3xl mx-auto">
-                  Contact us to make custom project to fit with your request and personalized
-                </p>
-                <Link href="/order">
-                  <div>
-                    <Button size="sm" className="button-yellow text-xl p-5 ">
-                      Request Custom Project
-                    </Button>
-                  </div>
-                </Link>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      <CTASection />
     </div>
+  );
+}
+
+// ─── Main Component (wrapper Suspense) ─────────────────────────────────────────
+
+export default function ServicesPage() {
+  return (
+    <Suspense
+      fallback={
+        <SkeletonCard
+          height={20}
+          cardcount={14}
+          className="grid xl:grid-cols-7 lg:grid-cols-5 md:grid-cols-4 sm:grid-cols-3 grid-cols-2 gap-7"
+        />
+      }
+    >
+      <ServicesPageInner />
+    </Suspense>
   );
 }

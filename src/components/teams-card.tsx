@@ -21,6 +21,7 @@ import { getAllProducts } from '@/action/product';
 import { Textstyle, TextstyleEliane, TextstyleElianeGreen } from './font-design';
 import { getAllTeams } from '@/action/teams';
 import { useRouter } from 'next/navigation';
+import { start } from 'repl';
 
 export default function TeamsCard() {
 
@@ -76,26 +77,17 @@ export default function TeamsCard() {
             ) : filteredTeams.length === 0 ? (
                 <div className='flex justify-center itenms-center text-gray-300'>Not Found</div>
             ) : (
-                <div className="grid lg:grid-cols-4 grid-cols-2 gap-8">
+                <div className="grid lg:grid-cols-3 grid-cols-2 gap-8">
                     {teams.map((stat, i) => (
-                        <div className='relative aspect-[2/3] w-full ' key={i} onClick={() => handleClick(stat.id)}>
-                            <div className='absolute inset-0 translate-y-2 bg-[#f99c08] rounded-[40px] border-3 border-[#ad4512] z-0'></div>
-
-                            <div className='relative z-10 h-full bg-[#faca06] border-3 rounded-[40px] border-[#ad4512] p-2 sm:p-3 md:p-4 lg:p-5'>
-                                <div className=''>
-                                    <div className="h-1/2 w-5 md:w-8 absolute bottom-0 left-[30%] bg-[#fff8dc] -z-1 -skew-x-20"></div>
-                                    <div className="h-1/2 w-10 md:w-15 absolute bottom-0 md:left-[45%] left-[50%]   bg-[#fff8dc] -z-1 -skew-x-20"></div>
-                                </div>
-                                <div className="w-full h-full bg-gradient-to-r rounded-[30px] from-[#493977] relative to-[#6b53ac] p-2 border-3 border-[#ad4512] shadow-box1 z-20">
-                                    <div className="bg-gradient-to-t from-[#4c3b7c]  to-transparent absolute rounded-[25px] bottom-0 left-0  z-10 w-full h-2/3"></div>
-                                    <div className="w-full h-full bg-gradient-to-r relative rounded-[25px] from-[#6b53ac] to-[#493977]">
-                                        <img src={stat.photo_url} className='absolute top-[-15%] left-1/2 -translate-x-1/2 md:w-[95%]' alt="" />
-                                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-20">
-                                            <Textstyle Title={stat.name} className=' text-5xl w-full mb-4' color='text-purple' />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div className='relative  w-full' key={i} onClick={() => handleClick(stat.id)}>
+                     
+                                        <img src={stat.photo_url} className=' aspect-square w-full' alt="" />
+<div className='absolute bottom-12 bg-primary text-[#E1C5FF] rounded-xl flex justify-between items-center gap-5 py-3 px-5 w-[90%] left-1/2 -translate-x-1/2'>
+    <h1>{stat.position}</h1>
+    <img src="/icon/SVG/iconteams.svg" className='w-5' alt="" />
+</div>
+                                            <h1  className=' text-3xl text-center w-full mt-4 text-primary'  >{stat.name}</h1>
+                 
                         </div>
                     ))}
 

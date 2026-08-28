@@ -29,12 +29,12 @@ import NoNetwork from "./no-network"
 
 import { supabase } from '@/config/supabase'
 import SocialMediaModal from '@/components/social-media-form'
-import { 
-  Banknote, 
-  ChevronRight, 
-  LayoutDashboard, 
-  LogOut, 
-  Package, 
+import {
+  Banknote,
+  ChevronRight,
+  LayoutDashboard,
+  LogOut,
+  Package,
   Settings,
   User,
   MapPin,
@@ -45,25 +45,30 @@ import {
   Lock,
   MessageCircle,
   Ticket,
-  Gift
+  Gift,
+  Menu,
+  X
 } from "lucide-react"
 import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Image from "next/image"
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
 
   const isAdminLayout =
     pathname?.startsWith("/admin") && pathname !== ("/admin/")
 
   const isUserLayout =
-    pathname?.startsWith("/user") && pathname !== ("/user/")
+    pathname?.startsWith("/user") && pathname !== ("/user/") || pathname.startsWith("/chat")
 
   const isAdminChat =
     pathname?.startsWith("/admin/chat/") && pathname !== ("/admin/chat")
 
   const authLayout =
-    pathname?.startsWith("/auth/") || pathname?.startsWith("/chat") ||
+    pathname?.startsWith("/auth/")  ||
     /^\/4\d{2}(\/|$)/.test(pathname);
 
   const [showSocialMediaModal, setShowSocialMediaModal] = useState(false)
@@ -142,51 +147,81 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }
 
-
   const userMenuItems = [
     {
-      url: '/user/profile',
-      name: 'Personal Information',
-      icon: User,
+      group: "Dashboard",
+      items: [
+        {
+          url: '/user/profile',
+          name: 'Overview',
+          icon: '/icon/SVG/dashboardicon.svg',
+        },
+        {
+          url: '/chat',
+          name: 'Inbox',
+          icon: '/icon/SVG/inboxicon.svg',
+        },
+        {
+          url: '/user/user-order',
+          name: 'Orders History',
+          icon: '/icon/SVG/ordericon.svg',
+        },
+        {
+          url: '/user/voucher',
+          name: 'Campaign',
+          icon: '/icon/SVG/crownicon.svg',
+        },
+        {
+          url: '/user/milestone',
+          name: 'Missions',
+          icon: '/icon/SVG/targeticon.svg',
+        },
+        {
+          url: '/user/ticket',
+          name: 'Ticket',
+          icon: '/icon/SVG/ticketicon.svg',
+        },
+        {
+          url: '/user/brand',
+          name: 'Brand Identity',
+          icon: '/icon/SVG/starsicon.svg',
+        },
+      ],
     },
+
     {
-      url: '/user/user-order',
-      name: 'My Orders',
-      icon: ShoppingBag,
+      group: "Account",
+      items: [
+        {
+          url: '/user/setting',
+          name: 'Setting',
+          icon: '/icon/SVG/settingicon.svg',
+        },
+        {
+          name: 'Logout',
+          icon: '/icon/SVG/logouticon.svg',
+          onClick: handleLogout,
+        },
+      ],
     },
-    {
-      url: '/user/voucher',
-      name: 'My Vouchers',
-      icon: Ticket,
-    },
-    {
-      url: '/user/milestone',
-      name: 'Get New Vouchers',
-      icon: Gift,
-    },
-    {
-      url: '/chat',
-      name: 'Chat Support',
-      icon: MessageCircle,
-    },
-  ]
+  ];
 
   if (isAdminLayout) {
     return (
       <NoNetwork>
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 60)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as React.CSSProperties
-        }
-      >
-        <AppSidebar variant="inset" />
-        <SidebarInset >
-          {children}
-        </SidebarInset>
-      </SidebarProvider>
+        <SidebarProvider
+          style={
+            {
+              "--sidebar-width": "calc(var(--spacing) * 60)",
+              "--header-height": "calc(var(--spacing) * 12)",
+            } as React.CSSProperties
+          }
+        >
+          <AppSidebar variant="inset" />
+          <SidebarInset >
+            {children}
+          </SidebarInset>
+        </SidebarProvider>
       </NoNetwork>
     )
   }
@@ -195,116 +230,152 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <>
         {/* <LenisScroll /> */}
         <NoNetwork>
-        {children}
+          {children}
         </NoNetwork>
       </>
     )
   }
   else if (isUserLayout) {
     return (
+
+
       <>
         {/* <LenisScroll /> */}
-
         <div className="min-h-screen background relative overflow-hidden">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-[#FFE66D] rounded-full opacity-20 blur-3xl"></div>
-          <div className="absolute top-40 right-20 w-40 h-40 bg-[#c09afe] rounded-full opacity-20 blur-3xl"></div>
-
-          {/* Star decorations */}
-          <div className="absolute top-32 right-40 text-4xl">✦</div>
-          <div className="absolute top-60 left-32 text-2xl rotate-12">★</div>
-          <div className="absolute bottom-40 right-60 text-3xl">✦</div>
-
           <NoNetwork>
-          <Navbar />
+            <Navbar />
             <AuthProvider>
-              <div className="container mx-auto  px-4 mt-30 max-w-7xl">
-                <div className="flex flex-col lg:flex-row gap-6">
-                  {/* User Sidebar */}
-                  <aside className="w-full  lg:w-64 flex-shrink-0">
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
-                      {/* Profile Header */}
-                      <div className="p-6 bg-gradient-to-br from-gray-50 to-white border-b border-gray-100">
-                        <div className="flex items-center gap-3 mb-2">
-                          <Avatar className="h-12 w-12 ring-2 ring-white shadow-md">
-                            <AvatarImage src={userProfile.avatar} alt={userProfile.name} />
-                            <AvatarFallback className="bg-secondary text-white font-semibold">
-                              {userProfile.name.split(' ').map(n => n[0]).join('').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-500">Hello,</p>
-                            <h3 className="font-semibold text-gray-900 truncate">{userProfile.name}</h3>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Navigation Menu */}
-                      <nav className="p-3">
-                        <div className="space-y-1">
-                          {userMenuItems.map((item) => {
-                            const isActive = pathname === item.url
-                            const Icon = item.icon
-                            return (
-                              <Link
-                                key={item.url}
-                                href={item.url}
-                                className={`
-                                  flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
-                                  transition-all duration-200 group
-                                  ${isActive 
-                                    ? 'bg-muted   arial' 
-                                    : 'text-dark arial hover:bg-gray-50 hover:text-gray-900'
-                                  }
-                                `}
-                              >
-                                <Icon className={`h-4 w-4 transition-transform group-hover:scale-110 ${isActive ? 'text-primary' : ''}`} />
-                                <span className="flex-1">{item.name}</span>
-                                {isActive && (
-                                  <ChevronRight className="h-4 w-4 text-primary" />
-                                )}
-                              </Link>
-                            )
-                          })}
-                        </div>
+              {sidebarOpen && (
+                <div
+                  className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+                  onClick={() => setSidebarOpen(false)}
+                />
+              )}
 
-                        {/* Logout Button */}
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                          <button
-                            onClick={handleLogout}
-                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 w-full transition-all duration-200 group"
-                          >
-                            <LogOut className="h-4 w-4 transition-transform group-hover:scale-110" />
-                            <span>Logout</span>
-                          </button>
-                        </div>
-                      </nav>
-
-                      {/* Help Section */}
-                      <div className="p-6 border-t border-gray-100 bg-gray-50">
-                        <div className="flex flex-col items-center text-center">
-                          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mb-3">
-                            <MessageCircle className="h-8 w-8 text-gray-400" />
-                          </div>
-                          <h4 className="font-semibold text-gray-900 mb-1">Need Help?</h4>
-                          <p className="text-xs text-gray-500">
-                            Have questions or concerns regarding your account?
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </aside>
-
-                  {/* Main Content */}
-                  <main className="flex-1 min-w-0">
-                    <div className="rounded-2xl ">
-                      {children}
-                    </div>
-                  </main>
+              <aside
+                className={`
+            fixed top-0 left-0 h-screen w-72 lg:w-60 xl:w-70 z-50
+            bg-white border-primary border-r-1
+            transform transition-transform duration-300 ease-in-out
+            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+            lg:translate-x-0
+            overflow-y-auto
+          `}
+              >
+                <div className="lg:hidden flex justify-end p-3">
+                  <button
+                    onClick={() => setSidebarOpen(false)}
+                    className="p-2 rounded-lg hover:bg-gray-100"
+                    aria-label="Tutup menu"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
-              </div>
+
+              
+
+                {/* Navigation Menu dengan grouping */}
+                <nav className="p-3 pt-25">
+                  {userMenuItems.map((group) => (
+                    <div key={group.group} className="mb-4">
+                      {/* Label group */}
+                      <p className="px-4 pt-2 pb-5 text-lg font-bold tracking-wider text-primary">
+                        {group.group}
+                      </p>
+
+                      <div className="space-y-2 pl-10">
+                        {group.items.map((item) => {
+                          const isActive = item.url ? pathname === item.url : false;
+
+                          if (item.onClick) {
+                            return (
+                              <button
+                                key={item.name}
+                                type="button"
+                                onClick={item.onClick}
+                                className="
+          flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium
+          transition-all duration-200 group
+          w-full text-left text-dark arial
+          hover:bg-gray-50 hover:text-gray-900
+        "
+                              >
+                                <Image
+                                  src={item.icon}
+                                  alt={item.name}
+                                  width={16}
+                                  height={16}
+                                  className="transition-transform group-hover:scale-110 "
+                                />
+
+                                    <p className="flex-1 text-primary text-[17px]">{item.name}</p>
+
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <Link
+                              key={item.url}
+                              href={item.url!}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`
+        flex items-center gap-3 px-4 py-3 rounded-full text-sm font-medium
+        transition-all duration-200 group
+        ${isActive
+                                  ? "bg-muted "
+                                  : "text-dark  hover:bg-gray-50 hover:text-gray-900"
+                                }
+      `}
+                            >
+                              <Image
+                                src={item.icon}
+                                alt={item.name}
+                                width={16}
+                                height={16}
+                                className={`
+          transition-transform group-hover:scale-110
+          ${isActive ? "opacity-100" : ""}
+        `}
+                              />
+
+                              <p className="flex-1 text-primary text-[17px]">{item.name}</p>
+
+                              {isActive && (
+                                <ChevronRight className="h-4 w-4 text-primary" />
+                              )}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+            
+                </nav>
+
+              </aside>
+
+              <main className="pt-28 lg:pt-20 pl-0 lg:pl-60 xl:pl-70 min-h-screen">
+                <div className="container mx-auto ">
+                  <div className="">
+                    {children}
+                  </div>
+                </div>
+              </main>
+
             </AuthProvider>
-          <Footer />
           </NoNetwork>
+          <div className="lg:hidden fixed bottom-10 left-2 bg-muted text-white rounded-full text-primary flex justify-center w-10 h-10">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2"
+              aria-label="Buka menu"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
         </div>
       </>
     )
@@ -316,26 +387,26 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       {/* <LenisScroll /> */}
 
       <div className="min-h-screen bg-board relative overflow-hidden">
-      
+
 
         <NoNetwork>
-        <Navbar />
+          <Navbar />
           <AuthProvider>
             {children}
           </AuthProvider>
-      
-        <Footer />
-        </NoNetwork>
-        </div>
 
-        {/* Render modal OUTSIDE AuthProvider to avoid blocking */}
-        {!isLoading && (
-          <SocialMediaModal
-            open={showSocialMediaModal}
-            onOpenChange={setShowSocialMediaModal}
-          />
-        )}
- 
+          <Footer />
+        </NoNetwork>
+      </div>
+
+      {/* Render modal OUTSIDE AuthProvider to avoid blocking */}
+      {!isLoading && (
+        <SocialMediaModal
+          open={showSocialMediaModal}
+          onOpenChange={setShowSocialMediaModal}
+        />
+      )}
+
     </>
   )
 }

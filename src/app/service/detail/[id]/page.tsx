@@ -460,7 +460,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
               {packages.map((pkg) => (
                 <Card
                   key={pkg.id}
-                  className="transition-all hover:shadow-xl card-primary-white"
+                  className="transition-all hover:shadow-xl "
                 >
                   <CardHeader className="pb-3">
                     <Badge className="w-fit mb-2 bg-purple-100 text-purple-700">
@@ -608,7 +608,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             </div>
 
             {/* Rating Breakdown */}
-            <Card className="mb-6 card-primary-white">
+            <Card className="mb-6 ">
               <CardContent className="pt-6">
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className="flex items-center justify-center gap-6">
@@ -750,7 +750,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                   {packages.map((pkg) => (
                     <Card
                       key={pkg.id}
-                      className="transition-all hover:shadow-2xl card-primary-white"
+                      className="transition-all hover:shadow-2xl "
                     >
                       <CardHeader className="pb-3">
                         <Badge className="w-fit mb-2 bg-purple-100 text-purple-700">

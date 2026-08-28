@@ -28,9 +28,12 @@ import { Plus, Trash2, Upload, X, Image as ImageIcon, GripVertical, ArrowUp, Arr
 import { ManagePackageNamesModal } from "./page-modal"
 import { RichTextEditor } from "./text-editor"
 import { getAllPackageNames } from "@/action/package"
-import { getAllClasses } from "@/action/class"
-import { ICategory, IPackageCategories, IImageCategories, IPackageName, IIncludes, IClass } from "@/interface"
+import { getAllClasses } from "@/action/badge"
+
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
+import { getAllClasses as getAllClassOptions } from "@/action/class" // action multi-class, beda dari getAllClasses di action/badge
+import { ICategory, IPackageCategories, IImageCategories, IPackageName, IIncludes, IBadge, IClass, IClassService } from "@/interface"
 
 const packageSchema = z.object({
     id: z.union([z.string(), z.number()]).optional(),
@@ -53,15 +56,14 @@ const includeSchema = z.object({
     id: z.union([z.string(), z.number()]).optional(),
     include_name: z.string().min(1, "Nama include tidak boleh kosong"),
 })
-
 const categorySchema = z.object({
     name: z.string().min(2, "Minimal 2 karakter"),
     description: z.string().optional(),
     start_price: z.string().optional(),
     icon: z.string().optional(),
-    class_id: z.union([z.string(), z.number(), z.literal("")]).refine(
+    badge_id: z.union([z.string(), z.number(), z.literal("")]).refine(
         v => v !== "" && v !== undefined,
-        "Class harus dipilih"
+        "Badge harus dipilih"
     ),
     is_best_seller: z.boolean(),
     is_popular: z.boolean(),
@@ -70,6 +72,8 @@ const categorySchema = z.object({
     images: z.array(imageSchema).min(1, "Minimal 1 gambar harus diupload"),
     includes: z.array(includeSchema).optional(),
     packages: z.array(packageSchema).optional(),
+    // BARU: multi class
+    classIds: z.array(z.union([z.string(), z.number()])).min(1, "Minimal pilih 1 class"),
 })
 
 type CategoryFormValues = z.infer<typeof categorySchema>
@@ -79,28 +83,24 @@ interface CategoryFormProps {
         packages?: IPackageCategories[]
         images?: IImageCategories[]
         includes?: IIncludes[]
+        classServices?: IClassService[] // BARU
     }
     onSubmit: (values: CategoryFormValues) => Promise<void>
     isSubmitting?: boolean
 }
-
 export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFormProps) {
     const [uploading, setUploading] = React.useState(false)
     const [uploadMethod, setUploadMethod] = React.useState<"upload" | "url">("upload")
     const [urlInput, setUrlInput] = React.useState("")
     const fileInputRef = React.useRef<HTMLInputElement>(null)
     const [packageNameModalOpen, setPackageNameModalOpen] = React.useState(false)
-    // state untuk drag & drop reorder gambar
     const [dragIndex, setDragIndex] = React.useState<number | null>(null)
     const [overIndex, setOverIndex] = React.useState<number | null>(null)
     const [packageNames, setPackageNames] = React.useState<IPackageName[]>([])
     const [iconUploading, setIconUploading] = React.useState(false)
     const iconInputRef = React.useRef<HTMLInputElement>(null)
-    const [classes, setClasses] = React.useState<IClass[]>([])
-
-
-
-
+    const [classes, setClasses] = React.useState<IBadge[]>([])
+    const [classOptions, setClassOptions] = React.useState<IClass[]>([]) // BARU: opsi multi class
 
     const form = useForm<CategoryFormValues>({
         resolver: zodResolver(categorySchema),
@@ -109,7 +109,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
             description: initialData?.description || "",
             start_price: initialData?.start_price || "",
             icon: initialData?.icon || "",
-            class_id: initialData?.class_id ?? initialData?.class?.id ?? "",
+            badge_id: initialData?.badge_id ?? initialData?.badge?.id ?? "",
             is_best_seller: initialData?.is_best_seller ?? false,
             is_popular: initialData?.is_popular ?? false,
             is_handpick: initialData?.is_handpick ?? false,
@@ -135,13 +135,21 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                 package_id: pkg.package_id,
                 description: pkg.description || "",
             })) || [],
+            // BARU: default classIds dari relasi class_services yang sudah ada
+            classIds: initialData?.classServices?.map(cs => cs.class_id) || [],
         },
     })
+
     const loadClasses = React.useCallback(async () => {
         const res = await getAllClasses()
         if (res.success) setClasses(res.data)
     }, [])
 
+    // BARU: load opsi multi class
+    const loadClassOptions = React.useCallback(async () => {
+        const res = await getAllClassOptions()
+        if (res.success) setClassOptions(res.data)
+    }, [])
     const { fields: imageFields, append: appendImage, remove: removeImage, move: moveImage } = useFieldArray({
         control: form.control,
         name: "images",
@@ -172,10 +180,11 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
         if (res.success) setPackageNames(res.data)
     }, [])
 
-    React.useEffect(() => {
+        React.useEffect(() => {
         loadPackageNames()
         loadClasses()
-    }, [loadPackageNames, loadClasses])
+        loadClassOptions() // BARU
+    }, [loadPackageNames, loadClasses, loadClassOptions])
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
@@ -363,6 +372,24 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
             description: "",
         })
     }
+        const toggleClassId = (classId: number | string) => {
+        const current = form.getValues("classIds") || []
+        const exists = current.some((id) => String(id) === String(classId))
+
+        if (exists) {
+            form.setValue(
+                "classIds",
+                current.filter((id) => String(id) !== String(classId)),
+                { shouldDirty: true, shouldValidate: true }
+            )
+        } else {
+            form.setValue(
+                "classIds",
+                [...current, classId],
+                { shouldDirty: true, shouldValidate: true }
+            )
+        }
+    }
 
     return (
         <Form {...form}>
@@ -444,31 +471,75 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                             />
                         </div>
 
+                        {/* Multi Class Selection - BARU */}
+                        <FormField
+                            control={form.control}
+                            name="classIds"
+                            render={() => (
+                                <FormItem>
+                                    <FormLabel>Class (bisa pilih lebih dari satu)</FormLabel>
+                                    <FormControl>
+                                        <div className="flex flex-wrap gap-2 border rounded-lg p-3">
+                                            {classOptions.length === 0 ? (
+                                                <p className="text-sm text-muted-foreground">
+                                                    Belum ada class tersedia
+                                                </p>
+                                            ) : (
+                                                classOptions.map((c) => {
+                                                    const selected = form
+                                                        .watch("classIds")
+                                                        ?.some((id) => String(id) === String(c.id))
+
+                                                    return (
+                                                        <label
+                                                            key={c.id}
+                                                            className={`flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer text-sm transition-colors ${
+                                                                selected
+                                                                    ? "bg-slate-800 text-white border-slate-800"
+                                                                    : "bg-white text-slate-700 border-gray-300 hover:bg-gray-50"
+                                                            }`}
+                                                        >
+                                                            <Checkbox
+                                                                checked={selected}
+                                                                onCheckedChange={() => toggleClassId(c.id)}
+                                                                className="hidden"
+                                                            />
+                                                            {c.class_name}
+                                                        </label>
+                                                    )
+                                                })
+                                            )}
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField
                             control={form.control}
-                            name="class_id"
+                            name="badge_id"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Class *</FormLabel>
+                                    <FormLabel>Badge</FormLabel>
                                     <Select
                                         value={field.value ? String(field.value) : ""}
                                         onValueChange={(val) => field.onChange(val)}
                                     >
                                         <SelectTrigger className="w-full">
-                                            <SelectValue placeholder="Select a Class" />
+                                            <SelectValue placeholder="Select a Badge" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectGroup>
-                                                <SelectLabel>Class</SelectLabel>
+                                                <SelectLabel>Badge</SelectLabel>
                                                 {classes.length === 0 ? (
                                                     <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                                                        Belum ada class
+                                                        Belum ada Badge
                                                     </div>
                                                 ) : (
                                                     classes.map((c) => (
                                                         <SelectItem key={c.id} value={String(c.id)}>
-                                                            {c.class_name}
+                                                            {c.name}
                                                         </SelectItem>
                                                     ))
                                                 )}

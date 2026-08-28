@@ -1,5 +1,6 @@
 "use server";
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { IUser } from "@/interface";
 
@@ -15,6 +16,21 @@ const createClient = async () => {
         get(name: string) {
           return cookieStore.get(name)?.value
         },
+      },
+    }
+  )
+}
+
+// Admin client khusus untuk operasi yang butuh service role key
+// (mis. hapus user dari auth.users). JANGAN pernah expose key ini ke client.
+const createAdminClient = () => {
+  return createSupabaseAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     }
   )
@@ -151,6 +167,133 @@ export const updateUsers = async (id: string, userData: Partial<IUser>) => {
     return { success: true, message: "User berhasil diupdate", data: data as IUser };
   } catch (error: any) {
     console.error("updateUsers error:", error);
+    return { success: false, message: error.message || "Terjadi kesalahan", data: null };
+  }
+};
+
+// Update password milik user yang sedang login.
+// Verifikasi ulang currentPassword dengan sign-in sebelum mengizinkan perubahan,
+// supaya tidak ada orang lain yang bisa ganti password hanya karena sesi masih aktif.
+export const updatePassword = async (
+  id: string,
+  payload: { currentPassword: string; newPassword: string }
+) => {
+  try {
+    const user = await getAuthenticatedUser();
+
+    // Hanya boleh mengubah password milik sendiri
+    if (user.id !== id) {
+      return {
+        success: false,
+        message: "Akses ditolak. Anda hanya bisa mengubah password Anda sendiri.",
+        data: null
+      };
+    }
+
+    if (!payload.currentPassword || !payload.newPassword) {
+      return {
+        success: false,
+        message: "Password saat ini dan password baru wajib diisi.",
+        data: null
+      };
+    }
+
+    if (payload.newPassword.length < 8) {
+      return {
+        success: false,
+        message: "Password baru minimal 8 karakter.",
+        data: null
+      };
+    }
+
+    if (!user.email) {
+      return {
+        success: false,
+        message: "Email user tidak ditemukan.",
+        data: null
+      };
+    }
+
+    const supabase = await createClient();
+
+    // Verifikasi currentPassword benar dengan mencoba sign-in ulang
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: payload.currentPassword,
+    });
+
+    if (signInError) {
+      return {
+        success: false,
+        message: "Password saat ini salah.",
+        data: null
+      };
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+      password: payload.newPassword,
+    });
+
+    if (error) {
+      console.error("Update password error:", error);
+      return { success: false, message: error.message, data: null };
+    }
+
+    return { success: true, message: "Password berhasil diubah", data: null };
+  } catch (error: any) {
+    console.error("updatePassword error:", error);
+    return { success: false, message: error.message || "Terjadi kesalahan", data: null };
+  }
+};
+
+// Hapus akun milik sendiri secara permanen (data di tabel users + akun auth).
+// Butuh SUPABASE_SERVICE_ROLE_KEY karena auth.admin.deleteUser tidak bisa dipanggil dengan anon key.
+export const deleteAccount = async (id: string) => {
+  try {
+    const user = await getAuthenticatedUser();
+
+    // Hanya boleh menghapus akun milik sendiri lewat fungsi ini
+    // (untuk admin menghapus user lain, tetap pakai deleteUsers)
+    if (user.id !== id) {
+      return {
+        success: false,
+        message: "Akses ditolak. Anda hanya bisa menghapus akun Anda sendiri.",
+        data: null
+      };
+    }
+
+    const supabase = await createClient();
+
+    // Hapus dulu row di tabel public.users
+    const { error: deleteRowError } = await supabase
+      .from("users")
+      .delete()
+      .eq("id", id);
+
+    if (deleteRowError) {
+      console.error("Delete user row error:", deleteRowError);
+      return { success: false, message: deleteRowError.message, data: null };
+    }
+
+    // Hapus akun dari auth.users pakai admin client (service role)
+    const adminClient = createAdminClient();
+    const { error: deleteAuthError } = await adminClient.auth.admin.deleteUser(id);
+
+    if (deleteAuthError) {
+      console.error("Delete auth user error:", deleteAuthError);
+      return {
+        success: false,
+        message: "Data profil terhapus, tapi gagal menghapus akun auth: " + deleteAuthError.message,
+        data: null
+      };
+    }
+
+    // Sign out sesi yang sedang berjalan
+    await supabase.auth.signOut();
+
+    return { success: true, message: "Akun berhasil dihapus", data: null };
+  } catch (error: any) {
+    console.error("deleteAccount error:", error);
     return { success: false, message: error.message || "Terjadi kesalahan", data: null };
   }
 };
