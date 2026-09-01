@@ -27,21 +27,6 @@ const Live2DWidget = dynamic(() => import('@/components/live2d-widget'), {
   ssr: false,
 });
 
-// ─── Shared UI Components ─────────────────────────────────────────────────────
-
-function ShowMoreButton({ href }: { href: string }) {
-  return (
-    <div className="flex justify-center">
-      <Link href={href} className="px-6">
-        <button className="rounded-full flex items-center gap-2 bg-primary h-14 px-6 text-white hover:bg-primary/90 transition-colors">
-          Show More
-          <ArrowRight className="w-5 h-5" />
-        </button>
-      </Link>
-    </div>
-  );
-}
-
 // ─── Section Components ───────────────────────────────────────────────────────
 function HeroSection() {
 
@@ -52,7 +37,7 @@ function HeroSection() {
         <div className='px-6 grid grid-cols-1 md:grid-cols-2 items-center gap-10'>
 
           {/* Text kiri */}
-          <div className="text-left xl:p-0 p-10 text-primary md:mb-15">
+          <div className="text-left xl:p-0 p-10 text-primary md:mb-15 animate-fade-right">
 
             <h1 className='text-6xl lg:text-7xl xl:text-8xl '>ONE STOP</h1>
             <h1 className=' text-7xl lg:text-8xl xl:text-9xl '>SERVICE</h1>
@@ -78,7 +63,7 @@ function HeroSection() {
 
         </div>
 <div className='px-6 sm:px-6'>
-        <CardDashedThird className='  mx-auto mt-15 md:mt-0 md:-top-[220px]  '>
+      <CardDashedThird className='mx-auto mt-15 md:mt-0 md:-top-[220px] animate-fade-up'>
           <div className=' grid grid-cols-2 sm:grid-cols-4  overflow-hidden rounded-[27px]'>
             <div className="p-5 flex gap-10 items-center border-primary border-r-2 border-b-2 sm:border-b-0 ">
               <div className='text-start text-primary'>

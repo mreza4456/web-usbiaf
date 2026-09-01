@@ -6,6 +6,7 @@ import {
   IconDashboard,
   IconFileDescription,
   IconFilter,
+  IconFlag,
   IconFolder,
   IconImageInPicture,
   IconInnerShadowTop,
@@ -28,7 +29,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { Grid, LayoutDashboardIcon } from "lucide-react"
+import { Badge, Grid, HeadsetIcon, LayoutDashboardIcon } from "lucide-react"
 
 const data = {
   user: {
@@ -49,9 +50,14 @@ const data = {
         { title: "Projects", url: "/admin/products", icon: IconListDetails },
         { title: "Services", url: "/admin/categories", icon: IconChartBar },
         {
-          title: "Services Categories",
+          title: "Categories",
           url: "/admin/categories/class",
           icon: LayoutDashboardIcon,
+        },
+        {
+          title: "Badges",
+          url: "/admin/categories/badge",
+          icon: Badge,
         },
       ],
     },
@@ -71,6 +77,8 @@ const data = {
       label: "Konten",
       items: [
         { title: "Blog", url: "/admin/blog", icon: IconFileDescription },
+        { title: "Campaign", url: "/admin/campaign", icon: IconFlag },
+        { title: "Missions", url: "/admin/mission", icon: IconTargetArrow },
         { title: "Posters", url: "/admin/posters", icon: IconImageInPicture },
       ],
     },
@@ -80,6 +88,7 @@ const data = {
         { title: "User", url: "/admin/users", icon: IconUsers },
         { title: "Teams", url: "/admin/teams", icon: IconUsersPlus },
         { title: "Chat Customers", url: "/admin/chat", icon: IconMessage2 },
+        { title: "Customers Service", url: "/admin/tickets", icon: HeadsetIcon },
       ],
     },
   ],

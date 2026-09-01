@@ -71,6 +71,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/auth/")  ||
     /^\/4\d{2}(\/|$)/.test(pathname);
 
+      const isChatRoute = pathname?.startsWith("/chat")
   const [showSocialMediaModal, setShowSocialMediaModal] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [userProfile, setUserProfile] = useState({
@@ -167,12 +168,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           icon: '/icon/SVG/ordericon.svg',
         },
         {
-          url: '/user/voucher',
+          url: '/user/campaign',
           name: 'Campaign',
           icon: '/icon/SVG/crownicon.svg',
         },
         {
-          url: '/user/milestone',
+          url: '/user/mission',
           name: 'Missions',
           icon: '/icon/SVG/targeticon.svg',
         },
@@ -241,11 +242,10 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
       <>
         {/* <LenisScroll /> */}
-        <div className="min-h-screen background relative overflow-hidden">
+      <div className="h-screen background relative overflow-hidden">
           <NoNetwork>
             <Navbar />
             <AuthProvider>
-
               {sidebarOpen && (
                 <div
                   className="fixed inset-0 bg-black/40 z-40 lg:hidden"
@@ -357,9 +357,15 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
               </aside>
 
-              <main className="pt-28 lg:pt-20 pl-0 lg:pl-60 xl:pl-70 min-h-screen">
-                <div className="container mx-auto ">
-                  <div className="">
+              <main
+                className={`
+                  h-[calc(100vh-7rem)] lg:h-[calc(100vh-5rem)]
+                  pl-0 lg:pl-60 xl:pl-70 mt-20
+                  ${isChatRoute ? "overflow-hidden" : "overflow-y-auto"}
+                `}
+              >
+                <div className={`h-full ${isChatRoute ? "" : "container mx-auto"}`}>
+                  <div className="h-full">
                     {children}
                   </div>
                 </div>

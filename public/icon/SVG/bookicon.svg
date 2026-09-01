@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13.66 17.97">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #6e52b4;
+      }
+
+      .cls-2 {
+        fill: #ceb6ff;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g>
+      <rect class="cls-2" x="3.14" y="1.02" width="10.52" height="10.16"/>
+      <path class="cls-1" d="M3.11,3.67c.04.65.62,1.14,1.27,1.14h8.24c.57,0,1.04.46,1.04,1.04v11.09c0,.57-.46,1.04-1.04,1.04H3.45c-1.9,0-3.45-1.54-3.45-3.45V3.45C0,1.54,1.54,0,3.45,0h9.18c.57,0,1.04.47,1.04,1.04v.32c0,.57-.46,1.04-1.04,1.04H4.31c-.69,0-1.24.58-1.21,1.28Z"/>
+    </g>
+  </g>
+</svg>

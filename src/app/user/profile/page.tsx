@@ -139,7 +139,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen p-10 ">
+    <div className="min-h-screen p-6 md:p-15  ">
       <div className=" mx-auto">
 
         <div className=" rounded-lg mb-6 ">

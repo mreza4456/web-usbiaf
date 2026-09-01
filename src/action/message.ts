@@ -77,31 +77,6 @@ export const getUserChatRoom = async (userId: string) => {
   return { success: true, data: data as IChatRoom };
 };
 
-// Send message
-export const sendMessage = async (chatRoomId: string, senderId: string, message: string) => {
-  const { data, error } = await supabase
-    .from("chat_messages")
-    .insert([{
-      chat_room_id: chatRoomId,
-      sender_id: senderId,
-      message: message
-    }])
-    .select()
-    .single();
-
-  if (error) {
-    return { success: false, message: error.message, data: null };
-  }
-
-  // Update last_message_at in chat_room
-  await supabase
-    .from("chat_rooms")
-    .update({ last_message_at: new Date().toISOString() })
-    .eq("id", chatRoomId);
-
-  return { success: true, data: data as IChatMessage };
-};
-
 // Get messages for a chat room
 export const getChatMessages = async (chatRoomId: string) => {
   const { data, error } = await supabase
@@ -246,4 +221,112 @@ export const createChatRoomForUser = async (userId: string, adminId: string) => 
 
   console.log("[CREATE CHAT ROOM] Room created:", data);
   return { success: true, data: data as IChatRoom };
+};
+
+// @/actions/chat.actions.ts
+import { uploadToCloudflare } from '@/lib/storage'; // sesuaikan path file kamu
+
+interface SendMessageOptions {
+  file?: File; // image only untuk sekarang, file lain nunggu R2
+}
+
+const NON_IMAGE_MESSAGE = "Upload file selain gambar belum tersedia (menunggu aktivasi R2). Coming soon.";
+
+export const sendMessage = async (
+  chatRoomId: string,
+  senderId: string,
+  message: string,
+  options?: SendMessageOptions
+) => {
+  let attachment = {
+    message_type: "text" as "text" | "image",
+    attachment_url: null as string | null,
+    attachment_id: null as string | null,
+    attachment_name: null as string | null,
+    attachment_size: null as number | null,
+  };
+
+  if (options?.file) {
+    const file = options.file;
+
+    if (!file.type.startsWith("image/")) {
+      return { success: false, message: NON_IMAGE_MESSAGE, data: null };
+    }
+
+    const uploaded = await uploadToCloudflare(file);
+
+    if (!uploaded.success || !uploaded.url) {
+      return { success: false, message: uploaded.message, data: null };
+    }
+
+    attachment = {
+      message_type: "image",
+      attachment_url: uploaded.url,
+      attachment_id: uploaded.imageId,
+      attachment_name: file.name,
+      attachment_size: file.size,
+    };
+  }
+
+  // Cegah kirim kosong (tanpa teks & tanpa file)
+  if (!message?.trim() && !attachment.attachment_url) {
+    return { success: false, message: "Pesan tidak boleh kosong", data: null };
+  }
+
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .insert([{
+      chat_room_id: chatRoomId,
+      sender_id: senderId,
+      message: message?.trim() || "",
+      ...attachment,
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    return { success: false, message: error.message, data: null };
+  }
+
+  await supabase
+    .from("chat_rooms")
+    .update({ last_message_at: new Date().toISOString() })
+    .eq("id", chatRoomId);
+
+  return { success: true, data: data as IChatMessage };
+};
+
+// @/actions/chat.actions.ts
+import { deleteFromCloudflare } from '@/lib/storage'; // sesuaikan path file kamu
+
+export const deleteChatMessage = async (messageId: string) => {
+  const { data: msg, error: fetchError } = await supabase
+    .from("chat_messages")
+    .select("attachment_id, message_type")
+    .eq("id", messageId)
+    .single();
+
+  if (fetchError) {
+    return { success: false, message: fetchError.message };
+  }
+
+  // Hapus gambar di Cloudflare dulu kalau ada
+  if (msg?.message_type === "image" && msg.attachment_id) {
+    const del = await deleteFromCloudflare(msg.attachment_id);
+    if (!del.success) {
+      console.warn("[DELETE MSG] Gagal hapus image di Cloudflare:", del.message);
+      // tetap lanjut hapus row-nya, jangan blok user
+    }
+  }
+
+  const { error } = await supabase
+    .from("chat_messages")
+    .delete()
+    .eq("id", messageId);
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  return { success: true };
 };

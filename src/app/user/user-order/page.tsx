@@ -463,7 +463,7 @@ export default function UserOrdersPage() {
     }
 
     return (
-        <div className="relative z-10 w-full px-5 mx-auto text-primary px-4 sm:px-6 lg:px-8 py-8">
+        <div className="relative z-10 w-full mx-auto text-primary w-full px-6 sm:px-15 mx-auto sm:py-8">
             {/* Cancel Order Dialog */}
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent>
@@ -721,9 +721,9 @@ export default function UserOrdersPage() {
             </Dialog>
 
             {/* Header, sesuai mockup: judul + search + toggle Board/Status */}
-            <div className="mb-8 space-y-6">
+            <div className="mb-8 space-y-6 ">
            
-                    <h1 className="text-4xl sm:text-6xl  w-full text-primary leading-5 " >ORDER <span className='text-5xl sm:text-7xl bg-title'>TRACKING</span></h1>
+                    <h1 className="text-4xl sm:text-6xl  w-full text-primary leading-5 mb-10" >ORDER <span className='text-5xl sm:text-7xl bg-title'>TRACKING</span></h1>
              
              
 

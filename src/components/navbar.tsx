@@ -12,6 +12,13 @@ import { checkVoucherEventClaimed, claimVoucherEvent } from "@/action/vouchers";
 import { IVoucherEvents } from "@/interface";
 import { Card } from "./ui/card";
 import Image from "next/image";
+import {
+  FaInstagram,
+  FaDiscord,
+  FaYoutube,
+  FaTwitter,
+  FaTiktok,
+} from "react-icons/fa6"
 
 export default function Navbar(): React.ReactElement {
   const [isScrolled, setIsScrolled] = React.useState(false)
@@ -229,7 +236,7 @@ export default function Navbar(): React.ReactElement {
 
                   {showVoucherMenu && (
                     <div
-                      className="absolute right-0 mt-2 w-80 z-100 bg-white rounded-xl shadow overflow-hidden"
+                      className="absolute right-0 mt-2 w-80 z-100 bg-white card-campaign border-2 border-primary rounded-4xl shadow overflow-hidden"
                     >
                       <div className="p-3 bg-muted/50">
                         <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
@@ -335,7 +342,7 @@ export default function Navbar(): React.ReactElement {
 
                   {showUserMenu && (
                     <div
-                      className="hidden sm:block absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden"
+                      className="hidden sm:block absolute right-0 mt-2 w-72 bg-white card-campaign border-2 border-primary rounded-4xl shadow-lg overflow-hidden"
                     >
                       <div className="flex flex-col items-center pt-6 pb-4 px-4">
                         <div className="relative w-9 h-9 rounded-full overflow-hidden">
@@ -348,40 +355,103 @@ export default function Navbar(): React.ReactElement {
                             }}
                           />
                         </div>
-                        <p className="mt-3 text-primary text-lilita font-semibold">{displayName}</p>
+                        <p className="mt-3 text-primary uppercase text-lilita text-xl font-semibold">{displayName}</p>
                         <Link
-                          href="/service"
+                          href="/user/profile"
                           onClick={() => setShowUserMenu(false)}
-                          className="mt-4 w-full flex items-center justify-center gap-2 border border-primary text-primary rounded-full py-2 text-sm text-lilita hover:bg-[#D78FEE]/10 transition-colors"
+                          className="mt-2 w-full flex items-center justify-center gap-2 border-2 bg-muted text-fredoka border-primary text-primary rounded-full py-1 text-md font-semibold hover:bg-[#D78FEE]/10 transition-colors"
                         >
-                          <FileText className="w-4 h-4" />
-                          Order Now
+
+                          Profile Dashboard
                         </Link>
                       </div>
-                      <div className="border-t border-gray-100" />
+                      <div className="border-t border-secondary w-[90%] mx-auto " />
                       <div className="py-2 text-lilita">
                         {[
-                          { href: "/user/user-order", label: "My Order" },
-                          { href: "/user/profile", label: "Profile" },
+                          { href: "/user/user-order", label: "My requests", icon: "handicon.svg" },
+                          { href: "/user/user-order", label: "My order", icon: "boxicon.svg" },
+                          { href: "/chat", label: "Inbox messages", icon: "mailicon.svg" },
+                          { href: "/user/tickets", label: "My tickets", icon: "ticketicon.svg" },
+                          // { href: "/user/profile", label: "Profile" },
                         ].map((item) => (
                           <Link
                             key={item.label}
                             href={item.href}
-                            className="block px-5 py-2.5 text-primary hover:bg-gray-50 transition-colors"
+                            className="block flex gap-3 px-5 py-2 text-primary text-fredoka font-medium hover:bg-gray-50 transition-colors"
                             onClick={() => setShowUserMenu(false)}
                           >
+                            <Image alt="" src={`/icon/SVG/${item.icon}`} className='' width={20} height={20} />
                             {item.label}
                           </Link>
                         ))}
                       </div>
-                      <div className="border-t border-gray-100" />
-                      <button
-                        onClick={handleLogout}
-                        disabled={isLoggingOut}
-                        className="w-full flex items-center text-lilita px-5 py-3 text-left text-primary hover:bg-gray-50 transition-colors"
-                      >
-                        {isLoggingOut ? 'Logging out...' : 'Sign Out'}
-                      </button>
+                      <div className="border-t border-secondary w-[90%] mx-auto " />
+                      <div className="py-2 text-lilita">
+                        {[
+                          { href: "/user/user-order", label: "Contact support", icon: "phoneicon.svg" },
+                          { href: "/user/user-order", label: "Settings", icon: "settingicon.svg" },
+
+                          // { href: "/user/profile", label: "Profile" },
+                        ].map((item) => (
+                          <Link
+                            key={item.label}
+                            href={item.href}
+                            className="block flex gap-3 px-5 py-2 text-primary text-fredoka font-medium hover:bg-gray-50 transition-colors"
+                            onClick={() => setShowUserMenu(false)}
+                          >
+                            <Image alt="" src={`/icon/SVG/${item.icon}`} className='' width={20} height={20} />
+                            {item.label}
+                          </Link>
+                        ))}
+                        <button
+                          onClick={handleLogout}
+                          disabled={isLoggingOut}
+                          className="w-full flex gap-3 items-center  px-5 py-2 text-left text-primary text-fredoka font-medium hover:bg-gray-50 transition-colors"
+                        >
+                          <Image alt="" src={`/icon/SVG/logouticon.svg`} className='' width={20} height={20} /> {isLoggingOut ? 'Logging out...' : 'Log Out'}
+                        </button>
+                      </div>
+                      <div className="border-t border-secondary w-[90%] mx-auto " />
+                      <div className="flex flex-wrap justify-center gap-1 items-center py-3">
+                        <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                          About Us
+                        </Link>
+                        <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                          Terms of Service
+                        </Link>
+                        <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                          Pricing
+                        </Link>
+                        <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                          Refunds & Disputes
+                        </Link>
+                        <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                          Trust & Safety
+                        </Link>
+                        <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                          Privacy & Policy
+                        </Link>
+                      </div>
+                      <div className="flex justify-center gap-1 items-center px-15 pb-3">
+                        <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                          <FaYoutube className="h-4 w-4" />
+                        </Link>
+                        <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                          <FaDiscord className="h-4 w-4" />
+                        </Link>
+                        <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                          <FaInstagram className="h-4 w-4" />
+                        </Link>
+                        <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                          <FaTwitter className="h-4 w-4" />
+                        </Link>
+                        <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                          <FaTiktok className="h-4 w-4" />
+                        </Link>
+                      </div>
+                      <p className="text-[10px] text-secondary text-center mb-2">
+                        © 2026 NemunekoStudio
+                      </p>
                     </div>
                   )}
                 </div>
@@ -406,56 +476,118 @@ export default function Navbar(): React.ReactElement {
 
 
           <div className="flex-1 overflow-y-auto px-6 pt-8">
-            <div className="flex flex-col items-center">
-              <div className="relative w-20 h-20 rounded-full overflow-hidden border border-gray-200">
-                <img
-                  src={avatarUrl || "/icon/usericon.svg"}
-                  className="w-full h-full object-cover"
-                  alt="avatar"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/icon/SVG/usericon.svg";
-                  }}
-                />
-              </div>
-              <p className="mt-4 text-lg text-primary text-lilita font-semibold">{displayName}</p>
-
-              <Link
-                href="/service"
-                onClick={() => setShowUserMenu(false)}
-                className="mt-5 text-lilita flex items-center gap-2 border border-gray-300 rounded-full px-5 py-2.5 text-sm font-medium text-primary hover:border-[#D78FEE] hover:text-[#D78FEE] transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                Order Now
-              </Link>
-            </div>
-
-            <div className="mt-10 space-y-1">
-              <Link
-                href="/user/user-order"
-                className="block py-3 text-lilita text-primary text-base"
-                onClick={() => setShowUserMenu(false)}
-              >
-                My Order
-              </Link>
-              <Link
-                href="/user/profile"
-                className="block py-3 text-lilita text-primary text-base"
-                onClick={() => setShowUserMenu(false)}
-              >
-                Profile
-              </Link>
-            </div>
-
-            <div className="border-t border-gray-200 mt-2" />
-
-            <button
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="w-full text-left py-4 text-lilita text-primary text-base flex items-center gap-2"
+            <div
+              className=""
             >
-              {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {isLoggingOut ? 'Logging out...' : 'Sign Out'}
-            </button>
+              <div className="flex flex-col items-center pt-6 pb-4 px-4">
+                <div className="relative w-9 h-9 rounded-full overflow-hidden">
+                  <img
+                    src={avatarUrl || "/icon/SVG/usericon.svg"}
+                    className="w-full h-full object-cover"
+                    alt="avatar"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/icon/SVG/usericon.svg";
+                    }}
+                  />
+                </div>
+                <p className="mt-3 text-primary uppercase text-lilita text-xl font-semibold">{displayName}</p>
+                <Link
+                  href="/user/profile"
+                  onClick={() => setShowUserMenu(false)}
+                  className="mt-2 w-full flex items-center justify-center gap-2 border-2 bg-muted text-fredoka border-primary text-primary rounded-full py-1 text-md font-semibold hover:bg-[#D78FEE]/10 transition-colors"
+                >
+
+                  Profile Dashboard
+                </Link>
+              </div>
+              <div className="border-t border-secondary w-[90%] mx-auto " />
+              <div className="py-2 text-lilita">
+                {[
+                  { href: "/user/user-order", label: "My requests", icon: "handicon.svg" },
+                  { href: "/user/user-order", label: "My order", icon: "boxicon.svg" },
+                  { href: "/chat", label: "Inbox messages", icon: "mailicon.svg" },
+                  { href: "/user/tickets", label: "My tickets", icon: "ticketicon.svg" },
+                  // { href: "/user/profile", label: "Profile" },
+                ].map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="block flex gap-3 px-5 py-2 text-primary text-fredoka font-medium hover:bg-gray-50 transition-colors"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <Image alt="" src={`/icon/SVG/${item.icon}`} className='' width={20} height={20} />
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+              <div className="border-t border-secondary w-[90%] mx-auto " />
+              <div className="py-2 text-lilita">
+                {[
+                  { href: "/user/user-order", label: "Contact support", icon: "phoneicon.svg" },
+                  { href: "/user/user-order", label: "Settings", icon: "settingicon.svg" },
+
+                  // { href: "/user/profile", label: "Profile" },
+                ].map((item) => (
+                  <Link
+                    key={item.label}
+                    href={item.href}
+                    className="block flex gap-3 px-5 py-2 text-primary text-fredoka font-medium hover:bg-gray-50 transition-colors"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <Image alt="" src={`/icon/SVG/${item.icon}`} className='' width={20} height={20} />
+                    {item.label}
+                  </Link>
+                ))}
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="w-full flex gap-3 items-center  px-5 py-2 text-left text-primary text-fredoka font-medium hover:bg-gray-50 transition-colors"
+                >
+                  <Image alt="" src={`/icon/SVG/logouticon.svg`} className='' width={20} height={20} /> {isLoggingOut ? 'Logging out...' : 'Log Out'}
+                </button>
+              </div>
+              <div className="border-t border-secondary w-[90%] mx-auto " />
+              <div className="flex flex-wrap justify-center gap-1 items-center py-3">
+                <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                  About Us
+                </Link>
+                <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                  Terms of Service
+                </Link>
+                <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                  Pricing
+                </Link>
+                <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                  Refunds & Disputes
+                </Link>
+                <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                  Trust & Safety
+                </Link>
+                <Link href="#" className="text-[10px] text-fredoka text-secondary text-center ">
+                  Privacy & Policy
+                </Link>
+              </div>
+              <div className="flex justify-center gap-1 items-center px-15 pb-3">
+                <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                  <FaYoutube className="h-4 w-4" />
+                </Link>
+                <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                  <FaDiscord className="h-4 w-4" />
+                </Link>
+                <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                  <FaInstagram className="h-4 w-4" />
+                </Link>
+                <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                  <FaTwitter className="h-4 w-4" />
+                </Link>
+                <Link href="#" className="text-[10px] text-fredoka text-primary text-center mx-auto ">
+                  <FaTiktok className="h-4 w-4" />
+                </Link>
+              </div>
+              <p className="text-[10px] text-secondary text-center mb-2">
+                © 2026 NemunekoStudio
+              </p>
+            </div>
           </div>
         </div>
       )}

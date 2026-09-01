@@ -16,6 +16,10 @@ import {
 import { IChatRoom, IChatMessage } from "@/interface/";
 import { supabase } from "@/config/supabase";
 
+// Tambahkan import
+import { ImagePlus } from "lucide-react"; // gabungkan ke import lucide-react yang sudah ada
+import { getCloudflareImageUrl } from "@/lib/storage-utils"
+
 interface IUser {
   id: string;
   email: string;
@@ -42,6 +46,52 @@ export default function AdminChatDashboard() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const user = useAuthStore((s) => s.user);
+
+
+
+  // Tambahkan state (dekat state messages/isSending)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [attachError, setAttachError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+  const VALID_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif"];
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const handlePickImage = () => fileInputRef.current?.click();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setAttachError(null);
+    if (!VALID_IMAGE_TYPES.includes(file.type)) {
+      setAttachError("Format tidak didukung. Gunakan JPG, PNG, WEBP, atau GIF.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      setAttachError("Ukuran gambar maksimal 10MB.");
+      return;
+    }
+
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const clearSelectedFile = () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setAttachError(null);
+  };
 
   console.log("[DASHBOARD] Current user:", user);
 
@@ -283,31 +333,23 @@ export default function AdminChatDashboard() {
       await markMessagesAsRead(room.id, user.id);
     }
   };
-
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[ADMIN SEND] Submit triggered");
-    console.log("[ADMIN SEND] State:", {
-      newMessage: newMessage.trim(),
-      selectedRoom: selectedRoom?.id,
-      userId: user?.id,
-      userRole: user?.role,
-    });
 
-    if (!newMessage.trim() || !selectedRoom || !user?.id) {
-      console.warn("[ADMIN SEND] Validation failed");
-      return;
-    }
+    const trimmed = newMessage.trim();
+    if ((!trimmed && !selectedFile) || !selectedRoom || !user?.id) return;
 
     setIsSending(true);
 
     try {
-      console.log("[ADMIN SEND] Calling sendMessage...");
-      const result = await sendMessage(selectedRoom.id, user.id, newMessage.trim());
-      console.log("[ADMIN SEND] Result:", result);
+      const result = await sendMessage(
+        selectedRoom.id,
+        user.id,
+        trimmed,
+        selectedFile ? { file: selectedFile } : undefined
+      );
 
       if (!result) {
-        console.error("[ADMIN SEND] Result is null/undefined");
         alert("Gagal mengirim pesan. Silakan coba lagi.");
         return;
       }
@@ -318,14 +360,13 @@ export default function AdminChatDashboard() {
         return;
       }
 
-      console.log("[ADMIN SEND] Message sent successfully");
       setNewMessage("");
+      clearSelectedFile();
     } catch (error) {
       console.error("[ADMIN SEND] Exception:", error);
       alert("Terjadi kesalahan saat mengirim pesan.");
     } finally {
       setIsSending(false);
-      console.log("[ADMIN SEND] Send complete");
     }
   };
 
@@ -411,11 +452,10 @@ export default function AdminChatDashboard() {
                       <button
                         key={room.id}
                         onClick={() => selectChatRoom(room)}
-                        className={`w-full p-4 text-left transition-all border-b border-gray-100 ${
-                          selectedRoom?.id === room.id
-                            ? "bg-gray-100"
-                            : "hover:bg-gray-50"
-                        }`}
+                        className={`w-full p-4 text-left transition-all border-b border-gray-100 ${selectedRoom?.id === room.id
+                          ? "bg-gray-100"
+                          : "hover:bg-gray-50"
+                          }`}
                       >
                         <div className="flex items-start justify-between mb-1.5">
                           <span className="font-medium text-gray-900 text-sm">
@@ -563,47 +603,42 @@ export default function AdminChatDashboard() {
                   {messages.map((msg) => {
                     const isOwn = msg.sender_id === user?.id;
                     const read = msg.is_read === true;
-
-                    console.log("[RENDER MESSAGE]", {
-                      id: msg.id,
-                      sender_id: msg.sender_id,
-                      sender: msg.sender,
-                      sender_name: msg.sender?.full_name,
-                      isOwn,
-                      message: msg.message
-                    });
+                    const hasImage = msg.message_type === "image" && !!msg.attachment_url;
 
                     return (
                       <div key={msg.id} className="flex flex-col">
-                        <span className={`text-xs text-gray-400 mb-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                          {isOwn ? 'Admin' : (msg.sender?.full_name || 'User')}
+                        <span className={`text-xs text-gray-400 mb-1 ${isOwn ? "text-right" : "text-left"}`}>
+                          {isOwn ? "Admin" : (msg.sender?.full_name || "User")}
                         </span>
 
                         <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                           <div
-                            className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
-                              isOwn
+                            className={`max-w-[75%] rounded-2xl px-4 py-2.5 space-y-2 ${isOwn
                                 ? "bg-gray-800 text-white rounded-br-sm"
                                 : "bg-white text-gray-900 border border-gray-200 rounded-bl-sm"
-                            }`}
+                              }`}
                           >
-                            <p className="text-sm break-words leading-relaxed">{msg.message}</p>
+                            {hasImage && (
+                              <a
+                                href={getCloudflareImageUrl(msg.attachment_url, "public")}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block"
+                              >
+                                <img
+                                  src={getCloudflareImageUrl(msg.attachment_url, "small")}
+                                  alt={msg.attachment_name ?? "attachment"}
+                                  className="rounded-xl max-w-[220px] max-h-[220px] object-cover"
+                                />
+                              </a>
+                            )}
+                            {msg.message && <p className="text-sm break-words leading-relaxed">{msg.message}</p>}
                           </div>
                         </div>
 
-                        <div className={`flex items-center gap-1 mt-1 ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                          <span className="text-[11px] text-gray-400">
-                            {formatTime(msg.created_at)}
-                          </span>
-                          {isOwn && (
-                            <>
-                              {read ? (
-                                <CheckCheck className="w-3.5 h-3.5 text-blue-500" />
-                              ) : (
-                                <Check className="w-3.5 h-3.5 text-gray-400" />
-                              )}
-                            </>
-                          )}
+                        <div className={`flex items-center gap-1 mt-1 ${isOwn ? "justify-end" : "justify-start"}`}>
+                          <span className="text-[11px] text-gray-400">{formatTime(msg.created_at)}</span>
+                          {isOwn && (read ? <CheckCheck className="w-3.5 h-3.5 text-blue-500" /> : <Check className="w-3.5 h-3.5 text-gray-400" />)}
                         </div>
                       </div>
                     );
@@ -615,30 +650,52 @@ export default function AdminChatDashboard() {
 
             {/* Input - Sticky */}
             {selectedRoom.status === "open" && (
-              <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 flex-shrink-0 bg-white">
-                <div className="flex gap-2 items-end">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Ketik pesan..."
-                    className="flex-1 bg-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800 border border-gray-200 resize-none"
-                    disabled={isSending}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={!newMessage.trim() || isSending}
-                    className="bg-gray-800 hover:bg-gray-700 text-white flex justify-center items-center p-5 rounded-xl shrink-0"
-                  >
-                    {isSending ? (
-                      <Loader2 className="w-10 h-10 animate-spin" />
-                    ) : (
-                      <Send className="w-10 h-10" />
-                    )}
-                  </Button>
-                </div>
-              </form>
-            )}
+  <form onSubmit={handleSendMessage} className="p-4 border-t border-gray-200 flex-shrink-0 bg-white">
+    {previewUrl && (
+      <div className="mb-3 flex items-center gap-3 bg-gray-100 rounded-xl p-2">
+        <img src={previewUrl} alt="preview" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+        <p className="text-xs text-gray-700 truncate flex-1">{selectedFile?.name}</p>
+        <button type="button" onClick={clearSelectedFile} disabled={isSending} className="text-gray-500 hover:text-gray-800 shrink-0">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    )}
+    {attachError && <p className="text-xs text-red-500 mb-2">{attachError}</p>}
+    <div className="flex gap-2 items-end">
+      <button
+        type="button"
+        onClick={handlePickImage}
+        disabled={isSending}
+        className="p-2.5 text-gray-500 hover:text-gray-800 transition-colors shrink-0 disabled:opacity-50"
+        aria-label="Lampirkan gambar"
+      >
+        <ImagePlus className="w-5 h-5" />
+      </button>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={VALID_IMAGE_TYPES.join(",")}
+        onChange={handleFileChange}
+        hidden
+      />
+      <input
+        type="text"
+        value={newMessage}
+        onChange={(e) => setNewMessage(e.target.value)}
+        placeholder="Ketik pesan..."
+        className="flex-1 bg-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-800 border border-gray-200 resize-none"
+        disabled={isSending}
+      />
+      <Button
+        type="submit"
+        disabled={(!newMessage.trim() && !selectedFile) || isSending}
+        className="bg-gray-800 hover:bg-gray-700 text-white flex justify-center items-center p-5 rounded-xl shrink-0"
+      >
+        {isSending ? <Loader2 className="w-10 h-10 animate-spin" /> : <Send className="w-10 h-10" />}
+      </Button>
+    </div>
+  </form>
+)}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center bg-gray-50">
@@ -649,6 +706,6 @@ export default function AdminChatDashboard() {
           </div>
         )}
       </div>
-    </div>
+    </div >
   );
 }

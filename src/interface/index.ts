@@ -340,19 +340,20 @@ export interface IChatRoom {
   last_message?: string;
 }
 
+// @/interface/index.ts
 export interface IChatMessage {
   id: string;
   chat_room_id: string;
   sender_id: string;
   message: string;
+  message_type: "text" | "image" | "file";
+  attachment_url: string | null;
+  attachment_id: string | null;
+  attachment_name: string | null;
+  attachment_size: number | null;
   is_read: boolean;
   created_at: string;
-  sender?: {
-    id: string;
-    email: string;
-    full_name: string;
-    avatar_url: string;
-  };
+  sender?: { id: string; email: string; full_name: string; avatar_url: string };
 }
 
 // Tambahkan interface berikut ke file interface.ts yang sudah ada
@@ -386,3 +387,229 @@ export interface IComment {
   users?: IUser;
   order_items?: IOrderItem;
 }
+
+export interface ICampaign {
+    id: number;
+    created_at: string;
+    title: string | null;
+    description: string | null;
+    views: number | null;
+    click: number | null;
+    categories: string | null;
+    expired: string | null; // date, format YYYY-MM-DD
+    date: string | null;    // date, format YYYY-MM-DD
+}
+// Tambahkan ini ke file interface kamu (misal: @/interface/index.ts)
+
+export type TicketStatus = "open" | "in_progress" | "resolved" | "closed";
+export type TicketPriority = "low" | "normal" | "high" | "urgent";
+
+export interface ITicket {
+    id: number;
+    ticket_number: string;
+    name: string;
+    email: string;
+    social_media: string | null;
+    subject: string;
+    message: string;
+    status: TicketStatus;
+    priority: TicketPriority;
+    admin_reply: string | null;
+    user_id: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+
+// interface/mission.ts
+// Tipe & interface untuk sistem Mission / Quest Event.
+// Semua tipe di sini bersifat generik: menambah mission type atau event type baru
+// TIDAK memerlukan perubahan struktur, cukup tambah value baru di union type + config di UI admin.
+
+/** Semua event yang bisa terjadi di sistem. Tambahkan value baru di sini kalau ada aktivitas baru. */
+export type MissionEventType =
+    | "USER_LOGIN"
+    | "ORDER_COMPLETED"
+    | "PRODUCT_PURCHASED"
+    | "PROFILE_COMPLETED"
+    | "PAGE_VISITED";
+
+/** Semua tipe mission yang didukung engine secara generik. */
+export type MissionType =
+    | "LOGIN_COUNT"          // login N kali
+    | "LOGIN_STREAK_DAYS"    // login pada N hari berbeda
+    | "PRODUCT_PURCHASE_COUNT" // beli produk tertentu N kali
+    | "CATEGORY_PURCHASE_COUNT" // beli dari kategori tertentu N kali
+    | "TOTAL_SPEND"          // total nominal pembelian >= target
+    | "ORDER_COMPLETED_COUNT" // menyelesaikan order N kali
+    | "PROFILE_COMPLETED"    // melengkapi profile (target selalu 1)
+    | "PAGE_VISIT_COUNT";    // mengunjungi halaman tertentu N kali
+
+export type MissionStatus = "IN_PROGRESS" | "COMPLETED" | "CLAIMED" | "EXPIRED";
+
+export type RewardType = "POINTS" | "XP" | "VOUCHER" | "COUPON" | "ITEM" | "BADGE";
+
+export type UserRewardStatus = "PENDING_CLAIM" | "CLAIMED";
+
+/** Grouping mission untuk kebutuhan UI/kategori masa depan (daily, weekly, dst). */
+export type MissionCategory =
+    | "DAILY"
+    | "WEEKLY"
+    | "LIMITED_TIME"
+    | "ACHIEVEMENT"
+    | "GENERAL";
+
+/**
+ * Kondisi/config tambahan mission, disimpan sebagai JSONB di kolom `config`.
+ * Engine mencocokkan config ini terhadap `metadata` event menggunakan jsonb containment (config <@ metadata),
+ * artinya: SEMUA key/value di config harus ada & sama persis di metadata event.
+ * Kosongkan ({}) kalau mission tidak butuh syarat tambahan (mis. LOGIN_COUNT).
+ */
+export interface IMissionConfig {
+    product_id?: string;
+    category_id?: string;
+    page?: string;
+    [key: string]: string | number | boolean | undefined;
+}
+
+/** Reward master data (katalog reward yang bisa dipakai berulang oleh banyak mission). */
+export interface IReward {
+    id: string;
+    type: RewardType;
+    name: string;
+    description?: string | null;
+    /** Detail reward spesifik per tipe, mis. { amount: 100 } untuk POINTS/XP, { voucher_code: "..." } untuk VOUCHER */
+    value: Record<string, any>;
+    created_at?: string;
+}
+
+export interface IMission {
+    id: string;
+    title: string;
+    description?: string | null;
+    mission_type: MissionType;
+    /** Event yang memicu evaluasi mission ini. Di-derive otomatis dari mission_type saat create, tapi disimpan eksplisit. */
+    event_type: MissionEventType;
+    target: number;
+    config: IMissionConfig;
+    reward_id?: string | null;
+    reward?: IReward | null;
+    category: MissionCategory;
+    start_date?: string | null;
+    end_date?: string | null;
+    is_active: boolean;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface IMissionEvent {
+    id: string;
+    user_id: string;
+    event_type: MissionEventType;
+    reference_id?: string | null;
+    metadata: Record<string, any>;
+    created_at: string;
+}
+
+export interface IUserMission {
+    id: string;
+    user_id: string;
+    mission_id: string;
+    progress: number;
+    /** Data bantu progress, mis. { days: ["2026-01-01", "2026-01-02"] } untuk LOGIN_STREAK_DAYS */
+    progress_meta: Record<string, any>;
+    status: MissionStatus;
+    completed_at?: string | null;
+    claimed_at?: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+/** Bentuk gabungan mission + progress user, dipakai di halaman user. */
+export interface IMissionWithProgress extends IMission {
+    user_mission?: IUserMission | null;
+    /** progress ternormalisasi untuk UI, 0 kalau user belum mulai */
+    progress: number;
+    status: MissionStatus | "NOT_STARTED";
+}
+
+export interface IUserReward {
+    id: string;
+    user_id: string;
+    mission_id: string;
+    user_mission_id: string;
+    reward_id: string;
+    reward?: IReward | null;
+    mission?: Pick<IMission, "id" | "title"> | null;
+    status: UserRewardStatus;
+    granted_at: string;
+    claimed_at?: string | null;
+}
+
+/** Statistik dashboard admin untuk satu mission. */
+export interface IMissionStats {
+    mission_id: string;
+    total_participants: number;
+    total_completed: number;
+    total_claimed: number;
+}
+
+/** Payload untuk create/update mission dari form admin. */
+export interface IMissionFormInput {
+    title: string;
+    description?: string;
+    mission_type: MissionType;
+    event_type: MissionEventType;
+    target: number;
+    config: IMissionConfig;
+    reward_id?: string | null;
+    category: MissionCategory;
+    start_date?: string | null;
+    end_date?: string | null;
+    is_active: boolean;
+}
+
+/** Mapping default mission_type -> event_type. Dipakai UI admin supaya event ter-derive otomatis. */
+export const MISSION_TYPE_EVENT_MAP: Record<MissionType, MissionEventType> = {
+    LOGIN_COUNT: "USER_LOGIN",
+    LOGIN_STREAK_DAYS: "USER_LOGIN",
+    PRODUCT_PURCHASE_COUNT: "ORDER_COMPLETED",
+    CATEGORY_PURCHASE_COUNT: "ORDER_COMPLETED",
+    TOTAL_SPEND: "ORDER_COMPLETED",
+    ORDER_COMPLETED_COUNT: "ORDER_COMPLETED",
+    PROFILE_COMPLETED: "PROFILE_COMPLETED",
+    PAGE_VISIT_COUNT: "PAGE_VISITED",
+};
+
+/** Label ramah-manusia untuk tiap mission type, dipakai di admin dropdown & user page. */
+export const MISSION_TYPE_LABEL: Record<MissionType, string> = {
+    LOGIN_COUNT: "Login beberapa kali",
+    LOGIN_STREAK_DAYS: "Login pada beberapa hari berbeda",
+    PRODUCT_PURCHASE_COUNT: "Membeli produk tertentu",
+    CATEGORY_PURCHASE_COUNT: "Membeli dari kategori tertentu",
+    TOTAL_SPEND: "Total nominal pembelian",
+    ORDER_COMPLETED_COUNT: "Menyelesaikan order",
+    PROFILE_COMPLETED: "Melengkapi profile",
+    PAGE_VISIT_COUNT: "Mengunjungi halaman tertentu",
+};
+
+/** Field config yang relevan per mission_type, dipakai untuk render form dinamis di admin. */
+export const MISSION_TYPE_CONFIG_FIELDS: Record<MissionType, (keyof IMissionConfig)[]> = {
+    LOGIN_COUNT: [],
+    LOGIN_STREAK_DAYS: [],
+    PRODUCT_PURCHASE_COUNT: ["product_id"],
+    CATEGORY_PURCHASE_COUNT: ["category_id"],
+    TOTAL_SPEND: [],
+    ORDER_COMPLETED_COUNT: [],
+    PROFILE_COMPLETED: [],
+    PAGE_VISIT_COUNT: ["page"],
+};
+
+export const REWARD_TYPE_LABEL: Record<RewardType, string> = {
+    POINTS: "Points",
+    XP: "XP",
+    VOUCHER: "Voucher",
+    COUPON: "Coupon",
+    ITEM: "Item",
+    BADGE: "Badge",
+};
