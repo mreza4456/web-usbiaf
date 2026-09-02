@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -34,6 +34,38 @@ import type { ICartItemDetail, IVoucher } from '@/interface';
 import { useAuthStore } from '@/store/auth';
 import Link from 'next/link';
 import { SkeletonCarts } from '@/components/skeleton-card';
+
+function isVoucherApplicable(
+  voucher: IVoucher,
+  cartItems: ICartItemDetail[]
+): boolean {
+  // Voucher tanpa kategori = berlaku untuk semua produk
+  if (!voucher.applicable_categories_id) return true;
+
+  return cartItems.some(
+    (item) => item.categories_id === voucher.applicable_categories_id
+  );
+}
+
+function calculateVoucherDiscount(
+  voucher: IVoucher,
+  cartItems: ICartItemDetail[]
+): number {
+  const eligibleItems = voucher.applicable_categories_id
+    ? cartItems.filter((i) => i.categories_id === voucher.applicable_categories_id)
+    : cartItems;
+  const eligibleSubtotal = eligibleItems.reduce(
+    (sum, i) => sum + (i.item_total || 0),
+    0
+  );
+  const percentageMatch = voucher.value.match(/(\d+)%/);
+  if (percentageMatch) {
+    const percentage = parseInt(percentageMatch[1]);
+    return (eligibleSubtotal * percentage) / 100;
+  }
+  const nominalValue = parseFloat(voucher.value.replace(/[^\d.]/g, ""));
+  return isNaN(nominalValue) ? 0 : Math.min(nominalValue, eligibleSubtotal);
+}
 
 export default function CartPage() {
   const router = useRouter();
@@ -87,6 +119,7 @@ export default function CartPage() {
         const validVouchers = result.data.filter(v =>
           !v.is_used && new Date(v.expired_at) > new Date()
         );
+        // vouchers akan di-filter ulang tiap cartItems berubah (lihat useEffect di bawah)
         setVouchers(validVouchers);
       }
     } catch (err) {
@@ -173,12 +206,19 @@ export default function CartPage() {
   };
 
   const handleVoucherSelect = (voucher: IVoucher) => {
+    const applicable = isVoucherApplicable(voucher, cartItems);
+
+    if (!applicable) {
+      return;
+    }
+
     if (selectedVoucher?.id === voucher.id) {
       setSelectedVoucher(null);
       setVoucherCode('');
     } else {
       setSelectedVoucher(voucher);
       setVoucherCode(voucher.code);
+
       setTimeout(() => {
         setIsVoucherOpen(false);
       }, 300);
@@ -199,19 +239,11 @@ export default function CartPage() {
     return cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0);
   };
 
+
+
   const calculateDiscount = () => {
     if (!selectedVoucher) return 0;
-
-    const subtotal = calculateSubtotal();
-    const percentageMatch = selectedVoucher.value.match(/(\d+)%/);
-
-    if (percentageMatch) {
-      const percentage = parseInt(percentageMatch[1]);
-      return (subtotal * percentage) / 100;
-    } else {
-      const nominalValue = parseFloat(selectedVoucher.value.replace(/[^\d.]/g, ''));
-      return isNaN(nominalValue) ? 0 : nominalValue;
-    }
+    return calculateVoucherDiscount(selectedVoucher, cartItems);
   };
 
   const calculateTotal = () => {
@@ -248,9 +280,17 @@ export default function CartPage() {
     }
   }, [user, router]);
 
+  const usableVouchers = useMemo(
+    () => vouchers.filter((voucher) => isVoucherApplicable(voucher, cartItems)),
+    [vouchers, cartItems]
+  );
 
-
-
+  useEffect(() => {
+    if (selectedVoucher && !usableVouchers.find(v => v.id === selectedVoucher.id)) {
+      setSelectedVoucher(null);
+      setVoucherCode('');
+    }
+  }, [usableVouchers, selectedVoucher]);
   return (
     <div className="min-h-screen  py-6 sm:py-12 px-4 mt-16 sm:mt-20">
       <div className="max-w-7xl w-full mx-auto">
@@ -311,7 +351,7 @@ export default function CartPage() {
                   const isUpdating = updatingItems.has(item.id!);
 
                   return (
-                    <Card key={item.id} className={`${isUpdating ? 'opacity-50' : ''} transition-opacity card-primary-white relative mb-5`}>
+                    <Card key={item.id} className={`${isUpdating ? 'opacity-50' : ''} transition-opacity  relative mb-5`}>
                       <CardContent className="p-3 sm:p-6">
                         <div className="block sm:hidden">
                           <div className="flex items-start gap-3 mb-3">
@@ -431,7 +471,7 @@ export default function CartPage() {
             <div className="lg:sticky lg:top-24 lg:self-start">
               <Card className="card-primary">
                 <CardContent className="space-y-4 ">
-                  <Card className='card-primary-white'>
+                  <Card className=''>
                     <CardHeader
                       className="cursor-pointer transition-colors "
                       onClick={() => setIsVoucherOpen(!isVoucherOpen)}
@@ -445,6 +485,7 @@ export default function CartPage() {
                               Applied
                             </Badge>
                           )}
+
                         </CardTitle>
                         {isVoucherOpen ? (
                           <ChevronUp className="w-5 h-5 text-gray-500" />
@@ -457,6 +498,11 @@ export default function CartPage() {
                           {selectedVoucher.code} - {selectedVoucher.value} discount
                         </CardDescription>
                       )}
+                      {/* {selectedVoucher?.applicable_categories_id && (
+                            <p className="text-xs text-amber-600 mt-1">
+                            This voucher is only valid for certain products in your cart.
+                            </p>
+                          )} */}
                     </CardHeader>
 
                     {isVoucherOpen && (
@@ -471,38 +517,76 @@ export default function CartPage() {
                           </Alert>
                         ) : (
                           <div className="space-y-3">
-                            {vouchers.map((voucher) => (
-                              <div
-                                key={voucher.id}
-                                onClick={() => handleVoucherSelect(voucher)}
-                                className={`px-3 py-1 border-2 rounded-lg cursor-pointer transition-all ${selectedVoucher?.id === voucher.id
-                                  ? 'border-purple-500 bg-purple-50'
-                                  : 'border-gray-300 hover:border-primary'
-                                  }`}
-                              >
-                                <div className="flex items-center justify-between gap-2">
-                                  <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
-                                      <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                            {vouchers.map((voucher) => {
+                              const isApplicable = isVoucherApplicable(voucher, cartItems);
+                              const isSelected = selectedVoucher?.id === voucher.id;
+
+                              return (
+                                <div
+                                  key={voucher.id}
+                                  onClick={() => handleVoucherSelect(voucher)}
+                                  className={`
+        px-3 py-3 border-2 rounded-lg transition-all
+        ${!isApplicable
+                                      ? 'border-gray-200 bg-gray-50 opacity-70 '
+                                      : isSelected
+                                        ? 'border-purple-500 bg-purple-50 cursor-pointer'
+                                        : 'border-gray-300 hover:border-primary cursor-pointer'
+                                    }
+      `}
+                                >
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                                      <div
+                                        className={`
+              w-8 h-8 sm:w-10 sm:h-10 rounded-lg
+              flex items-center justify-center flex-shrink-0
+              ${isApplicable ? 'bg-primary' : 'bg-gray-300'}
+            `}
+                                      >
+                                        <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                                      </div>
+
+                                      <div className="min-w-0">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                          <div className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                                            {voucher.code}
+                                          </div>
+
+                                         
+                                          {isApplicable && isSelected && (
+                                            <Badge className="bg-green-100 text-green-700 text-[10px] sm:text-xs">
+                                              Applied
+                                            </Badge>
+                                          )}
+                                        </div>
+
+                                        <div className="text-xs sm:text-sm text-gray-600">
+                                          Discount: {voucher.value}
+                                        </div>
+
+                                        <div className="text-xs text-gray-500">
+                                          Expires: {new Date(voucher.expired_at).toLocaleDateString()}
+                                        </div>
+
+                                        {!isApplicable && voucher.applicable_categories_id && (
+                                          <div className="flex items-start gap-1.5 mt-1.5 text-xs text-red-600">
+                                            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                            <span>
+                                              This voucher can only be used for eligible products.
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                    <div className="min-w-0">
-                                      <div className="font-semibold text-gray-900 text-sm sm:text-base truncate">
-                                        {voucher.code}
-                                      </div>
-                                      <div className="text-xs sm:text-sm text-gray-600">
-                                        Discount: {voucher.value}
-                                      </div>
-                                      <div className="text-xs text-gray-500">
-                                        Expires: {new Date(voucher.expired_at).toLocaleDateString()}
-                                      </div>
-                                    </div>
+
+                                    {isSelected && isApplicable && (
+                                      <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0" />
+                                    )}
                                   </div>
-                                  {selectedVoucher?.id === voucher.id && (
-                                    <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0" />
-                                  )}
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         )}
                       </CardContent>

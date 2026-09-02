@@ -1,7 +1,7 @@
 "use server";
 
 import { createClient, getAuthenticatedUser, isAdmin } from '@/config/supabase-server';
-import { IVoucher } from "@/interface";
+import { ICartItemDetail, IVoucher } from "@/interface";
 
 // Generate voucher code
 function generateVoucherCode(): string {

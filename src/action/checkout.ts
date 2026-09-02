@@ -4,7 +4,7 @@ import { createClient, getAuthenticatedUser, isAdmin } from "@/config/supabase-s
 import { revalidatePath } from 'next/cache';
 import { verifyPayPalOrder } from './paypal';
 import { computeVerifiedTotal } from './pricing';
-
+import { recordOrderCompletedEvent } from './mission';
 interface CheckoutData {
   user_id: string;
   discord: string;
@@ -264,6 +264,23 @@ export async function processCheckout(checkoutData: CheckoutData) {
         console.log('✅ Voucher marked as used successfully');
       }
     }
+    // Setelah mark voucher used, sebelum return success:
+
+
+// Fire-and-forget per cart item (jangan blokir return order)
+try {
+    for (const item of cart_items) {
+        const verified = verifiedItemMap.get(item.cart_id)!;
+        await recordOrderCompletedEvent({
+            orderId: order.id,
+            productId: item.categories_id,
+            amount: verified.item_total,
+            quantity: verified.quantity,
+        });
+    }
+} catch (missionErr) {
+    console.warn('Mission event error (non-fatal):', missionErr);
+}
 
     // 7. DELETE cart items after successful order creation
     const { error: deleteError } = await supabase

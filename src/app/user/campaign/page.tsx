@@ -123,7 +123,7 @@ export default function CampaignListPage() {
 
         return (
             <BadgeCard
-                className={`absolute -top-4 left-65 font-extrabold text-xl w-fit tracking-wide -rotate-3`}
+                className={`absolute -top-4 left-50 font-extrabold text-xl w-fit tracking-wide -rotate-3`}
                
             >
                 {upper}

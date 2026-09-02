@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2, Chrome, Twitch } from "lucide-react";
 import { supabase } from '@/config/supabase';
+import { recordLoginEvent } from '@/action/mission';
 
 type LoginFormValues = {
   email: string;
@@ -100,6 +101,10 @@ export default function Login(): React.ReactElement {
 
       if (data?.user) {
         setSuccess("Login successful! Redirecting...");
+
+        // Catat event login ke mission engine (fire-and-forget, tidak blokir redirect).
+        // Harus dipanggil SETELAH session terbentuk supaya auth.uid() di RPC tersedia.
+        recordLoginEvent().catch(console.error);
 
         // Always redirect to home, let home page handle the social media modal
         setTimeout(() => {

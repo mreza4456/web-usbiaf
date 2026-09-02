@@ -135,7 +135,7 @@ export interface IVoucher {
   milestone_order: string;
   voucher_event_id?: string; // Tambahkan ini untuk relasi ke voucher_events
   created_at: string;
-
+applicable_categories_id?: string | null; // Tambahkan ini untuk relasi ke categories (produk) jika voucher khusus produk tertentu
   users: IUser;
   voucher_events?: IVoucherEvents; // Optional relasi
 }
@@ -421,10 +421,18 @@ export interface ITicket {
 }
 
 
+
 // interface/mission.ts
 // Tipe & interface untuk sistem Mission / Quest Event.
 // Semua tipe di sini bersifat generik: menambah mission type atau event type baru
 // TIDAK memerlukan perubahan struktur, cukup tambah value baru di union type + config di UI admin.
+//
+// RELASI PENTING (baca ini sebelum ubah-ubah):
+// - config.product_id  -> merujuk ke tabel `categories` (yang sekarang berfungsi sebagai PRODUCT,
+//   namanya belum diganti di database).
+// - config.category_id -> merujuk ke tabel `class` (yang sekarang berfungsi sebagai CATEGORY/grup jasa).
+// - reward.applicable_categories_id -> merujuk ke tabel `categories` (produk) juga, dipakai untuk
+//   reward tipe ITEM (voucher 100% khusus produk tsb) atau reward VOUCHER umum (boleh null).
 
 /** Semua event yang bisa terjadi di sistem. Tambahkan value baru di sini kalau ada aktivitas baru. */
 export type MissionEventType =
@@ -438,8 +446,8 @@ export type MissionEventType =
 export type MissionType =
     | "LOGIN_COUNT"          // login N kali
     | "LOGIN_STREAK_DAYS"    // login pada N hari berbeda
-    | "PRODUCT_PURCHASE_COUNT" // beli produk tertentu N kali
-    | "CATEGORY_PURCHASE_COUNT" // beli dari kategori tertentu N kali
+    | "PRODUCT_PURCHASE_COUNT" // beli produk tertentu (categories.id) N kali
+    | "CATEGORY_PURCHASE_COUNT" // beli dari kategori tertentu (class.id) N kali
     | "TOTAL_SPEND"          // total nominal pembelian >= target
     | "ORDER_COMPLETED_COUNT" // menyelesaikan order N kali
     | "PROFILE_COMPLETED"    // melengkapi profile (target selalu 1)
@@ -464,6 +472,10 @@ export type MissionCategory =
  * Engine mencocokkan config ini terhadap `metadata` event menggunakan jsonb containment (config <@ metadata),
  * artinya: SEMUA key/value di config harus ada & sama persis di metadata event.
  * Kosongkan ({}) kalau mission tidak butuh syarat tambahan (mis. LOGIN_COUNT).
+ *
+ * - product_id  : uuid dari tabel `categories` (produk)
+ * - category_id : id dari tabel `class` (kategori/grup jasa)
+ * - page        : path halaman, mis. "/promo"
  */
 export interface IMissionConfig {
     product_id?: string;
@@ -478,8 +490,20 @@ export interface IReward {
     type: RewardType;
     name: string;
     description?: string | null;
-    /** Detail reward spesifik per tipe, mis. { amount: 100 } untuk POINTS/XP, { voucher_code: "..." } untuk VOUCHER */
+    /** Dipakai untuk POINTS/XP, mis. { amount: 100 } */
     value: Record<string, any>;
+    /** Dipakai untuk type VOUCHER (nilai diskon umum, mis. "10%" atau "50000"). Null untuk type lain. */
+    voucher_value?: string | null;
+    /**
+     * Wajib diisi untuk type ITEM (produk yang akan digratiskan lewat voucher 100%).
+     * Untuk type VOUCHER dibiarkan null (voucher umum, tidak dikunci ke produk tertentu).
+     * Merujuk ke categories.id (produk).
+     */
+    applicable_categories_id?: string | null;
+    /** Masa berlaku voucher hasil klaim, dalam hari. Default 30. Dipakai untuk VOUCHER & ITEM. */
+    valid_days?: number;
+    /** Hasil join ke tabel categories, hanya terisi kalau applicable_categories_id di-set. */
+    product?: { id: string; name: string } | null;
     created_at?: string;
 }
 
@@ -546,6 +570,16 @@ export interface IUserReward {
     claimed_at?: string | null;
 }
 
+/** Hasil pemanggilan RPC fn_claim_reward — kalau reward berupa VOUCHER/ITEM, voucher_id & voucher_code terisi. */
+export interface IClaimRewardResult {
+    user_reward_id: string;
+    reward_id: string;
+    reward_type: RewardType;
+    voucher_id: string | null;
+    voucher_code: string | null;
+    status: "CLAIMED";
+}
+
 /** Statistik dashboard admin untuk satu mission. */
 export interface IMissionStats {
     mission_id: string;
@@ -569,12 +603,26 @@ export interface IMissionFormInput {
     is_active: boolean;
 }
 
+/** Payload untuk create/update reward dari form admin. */
+export interface IRewardFormInput {
+    type: RewardType;
+    name: string;
+    description?: string;
+    /** Dipakai untuk POINTS/XP: { amount: number } */
+    value?: Record<string, any>;
+    /** WAJIB untuk type VOUCHER, mis. "10%" atau "50000" */
+    voucher_value?: string | null;
+    /** WAJIB untuk type ITEM — produk (categories.id) yang jadi gratis */
+    applicable_categories_id?: string | null;
+    valid_days?: number;
+}
+
 /** Mapping default mission_type -> event_type. Dipakai UI admin supaya event ter-derive otomatis. */
 export const MISSION_TYPE_EVENT_MAP: Record<MissionType, MissionEventType> = {
     LOGIN_COUNT: "USER_LOGIN",
     LOGIN_STREAK_DAYS: "USER_LOGIN",
-    PRODUCT_PURCHASE_COUNT: "ORDER_COMPLETED",
-    CATEGORY_PURCHASE_COUNT: "ORDER_COMPLETED",
+    PRODUCT_PURCHASE_COUNT: "PRODUCT_PURCHASED",
+    CATEGORY_PURCHASE_COUNT: "PRODUCT_PURCHASED",
     TOTAL_SPEND: "ORDER_COMPLETED",
     ORDER_COMPLETED_COUNT: "ORDER_COMPLETED",
     PROFILE_COMPLETED: "PROFILE_COMPLETED",
@@ -583,14 +631,14 @@ export const MISSION_TYPE_EVENT_MAP: Record<MissionType, MissionEventType> = {
 
 /** Label ramah-manusia untuk tiap mission type, dipakai di admin dropdown & user page. */
 export const MISSION_TYPE_LABEL: Record<MissionType, string> = {
-    LOGIN_COUNT: "Login beberapa kali",
-    LOGIN_STREAK_DAYS: "Login pada beberapa hari berbeda",
-    PRODUCT_PURCHASE_COUNT: "Membeli produk tertentu",
-    CATEGORY_PURCHASE_COUNT: "Membeli dari kategori tertentu",
-    TOTAL_SPEND: "Total nominal pembelian",
-    ORDER_COMPLETED_COUNT: "Menyelesaikan order",
-    PROFILE_COMPLETED: "Melengkapi profile",
-    PAGE_VISIT_COUNT: "Mengunjungi halaman tertentu",
+    LOGIN_COUNT: "Log in multiple times",
+    LOGIN_STREAK_DAYS: "Log in on different days",
+    PRODUCT_PURCHASE_COUNT: "Purchase a specific product",
+    CATEGORY_PURCHASE_COUNT: "Purchase from a specific category",
+    TOTAL_SPEND: "Reach a total spending amount",
+    ORDER_COMPLETED_COUNT: "Complete orders",
+    PROFILE_COMPLETED: "Complete your profile",
+    PAGE_VISIT_COUNT: "Visit a specific page",
 };
 
 /** Field config yang relevan per mission_type, dipakai untuk render form dinamis di admin. */
@@ -610,6 +658,6 @@ export const REWARD_TYPE_LABEL: Record<RewardType, string> = {
     XP: "XP",
     VOUCHER: "Voucher",
     COUPON: "Coupon",
-    ITEM: "Item",
+    ITEM: "Item (Free via Voucher 100%)",
     BADGE: "Badge",
 };

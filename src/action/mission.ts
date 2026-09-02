@@ -7,6 +7,8 @@ import {
     IMissionWithProgress,
     IMissionStats,
     IReward,
+    IRewardFormInput,
+    IClaimRewardResult,
     IUserReward,
     MissionEventType,
     MISSION_TYPE_EVENT_MAP,
@@ -58,6 +60,10 @@ const isAdmin = async (userId: string) => {
     return data?.role === "admin";
 };
 
+// Query select yang dipakai berulang: reward + join produk (categories) untuk reward ITEM.
+const REWARD_JOIN_SELECT = `*, product:categories(id, name)`;
+const MISSION_WITH_REWARD_SELECT = `*, reward:rewards(${REWARD_JOIN_SELECT})`;
+
 // ============================================================================
 // EVENT RECORDING — satu-satunya pintu masuk untuk memicu mission engine.
 // Panggil fungsi ini dari alur bisnis lain (login handler, checkout handler,
@@ -103,10 +109,17 @@ export const recordMissionEvent = async (
 export const recordLoginEvent = async () =>
     recordMissionEvent("USER_LOGIN", {});
 
+/**
+ * Panggil ini di dalam/​setelah processCheckout (action/checkout) untuk setiap
+ * ITEM di order yang baru saja completed, supaya mission PRODUCT_PURCHASE_COUNT /
+ * CATEGORY_PURCHASE_COUNT / TOTAL_SPEND / ORDER_COMPLETED_COUNT ikut terproses.
+ * productId di sini adalah categories.id (karena categories = produk),
+ * categoryId adalah class.id (karena class = kategori/grup jasa).
+ */
 export const recordOrderCompletedEvent = async (params: {
     orderId: string;
-    productId?: string;
-    categoryId?: string;
+    productId?: string;   // categories.id
+    categoryId?: string;  // class.id
     amount: number;
     quantity?: number;
 }) =>
@@ -142,7 +155,7 @@ export const getActiveMissionsForUser = async (): Promise<{
 
         const { data: missions, error: missionError } = await supabase
             .from("missions")
-            .select(`*, reward:rewards(*)`)
+            .select(MISSION_WITH_REWARD_SELECT)
             .eq("is_active", true)
             .or(`start_date.is.null,start_date.lte.${new Date().toISOString()}`)
             .or(`end_date.is.null,end_date.gte.${new Date().toISOString()}`)
@@ -171,7 +184,9 @@ export const getActiveMissionsForUser = async (): Promise<{
                 ...m,
                 user_mission: um ?? null,
                 progress: um?.progress ?? 0,
-                status: um?.status ?? "NOT_STARTED",
+                // "IN_PROGRESS" dengan progress=0 berarti mission belum disentuh user
+                // (belum ada baris di user_missions). "NOT_STARTED" bukan status valid di DB.
+                status: um?.status ?? "IN_PROGRESS",
             };
         });
 
@@ -193,7 +208,7 @@ export const getMyRewards = async (): Promise<{
 
         const { data, error } = await supabase
             .from("user_rewards")
-            .select(`*, reward:rewards(*), mission:missions(id, title)`)
+            .select(`*, reward:rewards(${REWARD_JOIN_SELECT}), mission:missions(id, title)`)
             .eq("user_id", user.id)
             .order("granted_at", { ascending: false });
 
@@ -211,8 +226,10 @@ export const getMyRewards = async (): Promise<{
 
 /**
  * Klaim reward untuk sebuah user_mission yang statusnya COMPLETED.
- * Logic anti-double-claim & validasi kepemilikan dilakukan di dalam
- * fn_claim_reward (database, SECURITY DEFINER) — bukan di sini.
+ * Kalau reward bertipe VOUCHER atau ITEM, ini akan MENGHASILKAN baris baru di
+ * tabel `vouchers` (bisa langsung dipakai di checkout) — voucher_code dikirim
+ * balik supaya bisa ditampilkan ke user. Logic anti-double-claim & validasi
+ * kepemilikan dilakukan di dalam fn_claim_reward (database, SECURITY DEFINER).
  */
 export const claimMissionReward = async (userMissionId: string) => {
     try {
@@ -228,7 +245,10 @@ export const claimMissionReward = async (userMissionId: string) => {
             return { success: false, message: error.message };
         }
 
-        return { success: true, message: "Reward berhasil diklaim", data };
+        // fn_claim_reward adalah function RETURNS TABLE -> supabase-js mengembalikan array.
+        const result = (Array.isArray(data) ? data[0] : data) as IClaimRewardResult | undefined;
+
+        return { success: true, message: "Reward berhasil diklaim", data: result };
     } catch (error: any) {
         console.error("claimMissionReward error:", error);
         return { success: false, message: error.message || "Terjadi kesalahan" };
@@ -253,7 +273,7 @@ export const getAllMissionsAdmin = async (): Promise<{
         const supabase = await createClient();
         const { data, error } = await supabase
             .from("missions")
-            .select(`*, reward:rewards(*)`)
+            .select(MISSION_WITH_REWARD_SELECT)
             .order("created_at", { ascending: false });
 
         if (error) {
@@ -264,28 +284,6 @@ export const getAllMissionsAdmin = async (): Promise<{
         return { success: true, data: data as IMission[] };
     } catch (error: any) {
         console.error("getAllMissionsAdmin catch error:", error);
-        return { success: false, message: error.message || "Terjadi kesalahan", data: [] };
-    }
-};
-
-export const getAllRewards = async (): Promise<{
-    success: boolean;
-    message?: string;
-    data: IReward[];
-}> => {
-    try {
-        const supabase = await createClient();
-        const { data, error } = await supabase
-            .from("rewards")
-            .select("*")
-            .order("created_at", { ascending: false });
-
-        if (error) {
-            return { success: false, message: error.message, data: [] };
-        }
-
-        return { success: true, data: data as IReward[] };
-    } catch (error: any) {
         return { success: false, message: error.message || "Terjadi kesalahan", data: [] };
     }
 };
@@ -393,6 +391,137 @@ export const deleteMission = async (id: string) => {
         return { success: true, message: "Mission berhasil dihapus", data: data as IMission };
     } catch (error: any) {
         console.error("deleteMission catch error:", error);
+        return { success: false, message: error.message || "Terjadi kesalahan", data: null };
+    }
+};
+
+// ============================================================================
+// ADMIN: CRUD reward (katalog reward, dipakai dropdown reward di form mission)
+// ============================================================================
+
+export const getAllRewards = async (): Promise<{
+    success: boolean;
+    message?: string;
+    data: IReward[];
+}> => {
+    try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from("rewards")
+            .select(REWARD_JOIN_SELECT)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            return { success: false, message: error.message, data: [] };
+        }
+
+        return { success: true, data: data as IReward[] };
+    } catch (error: any) {
+        return { success: false, message: error.message || "Terjadi kesalahan", data: [] };
+    }
+};
+
+const buildRewardPayload = (input: IRewardFormInput) => {
+    // Aturan: ITEM selalu 100% & wajib produk; VOUCHER wajib voucher_value & tidak boleh dikunci produk.
+    if (input.type === "ITEM" && !input.applicable_categories_id) {
+        throw new Error("Reward tipe ITEM wajib memilih produk yang akan digratiskan.");
+    }
+    if (input.type === "VOUCHER" && !input.voucher_value) {
+        throw new Error("Reward tipe VOUCHER wajib mengisi nilai voucher, mis. \"10%\".");
+    }
+
+    return {
+        type: input.type,
+        name: input.name,
+        description: input.description ?? null,
+        value: input.value ?? {},
+        voucher_value: input.type === "ITEM" ? "100%" : input.type === "VOUCHER" ? input.voucher_value : null,
+        applicable_categories_id: input.type === "ITEM" ? input.applicable_categories_id : null,
+        valid_days: input.valid_days ?? 30,
+    };
+};
+
+export const createReward = async (input: IRewardFormInput) => {
+    try {
+        const user = await getAuthenticatedUser();
+        if (!(await isAdmin(user.id))) {
+            return { success: false, message: "Akses ditolak. Hanya admin yang bisa membuat reward.", data: null };
+        }
+
+        const supabase = await createClient();
+        const payload = buildRewardPayload(input);
+
+        const { data, error } = await supabase
+            .from("rewards")
+            .insert([payload])
+            .select(REWARD_JOIN_SELECT)
+            .single();
+
+        if (error) {
+            console.error("createReward error:", error);
+            return { success: false, message: error.message, data: null };
+        }
+
+        return { success: true, message: "Reward berhasil dibuat", data: data as IReward };
+    } catch (error: any) {
+        console.error("createReward catch error:", error);
+        return { success: false, message: error.message || "Terjadi kesalahan", data: null };
+    }
+};
+
+export const updateReward = async (id: string, input: IRewardFormInput) => {
+    try {
+        const user = await getAuthenticatedUser();
+        if (!(await isAdmin(user.id))) {
+            return { success: false, message: "Akses ditolak. Hanya admin yang bisa mengupdate reward.", data: null };
+        }
+
+        const supabase = await createClient();
+        const payload = buildRewardPayload(input);
+
+        const { data, error } = await supabase
+            .from("rewards")
+            .update(payload)
+            .eq("id", id)
+            .select(REWARD_JOIN_SELECT)
+            .single();
+
+        if (error) {
+            console.error("updateReward error:", error);
+            return { success: false, message: error.message, data: null };
+        }
+
+        return { success: true, message: "Reward berhasil diupdate", data: data as IReward };
+    } catch (error: any) {
+        console.error("updateReward catch error:", error);
+        return { success: false, message: error.message || "Terjadi kesalahan", data: null };
+    }
+};
+
+export const deleteReward = async (id: string) => {
+    try {
+        const user = await getAuthenticatedUser();
+        if (!(await isAdmin(user.id))) {
+            return { success: false, message: "Akses ditolak. Hanya admin yang bisa menghapus reward.", data: null };
+        }
+
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from("rewards")
+            .delete()
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (error) {
+            // Kemungkinan besar reward masih dipakai oleh suatu mission (FK missions.reward_id).
+            console.error("deleteReward error:", error);
+            return { success: false, message: error.message, data: null };
+        }
+
+        return { success: true, message: "Reward berhasil dihapus", data: data as IReward };
+    } catch (error: any) {
+        console.error("deleteReward catch error:", error);
         return { success: false, message: error.message || "Terjadi kesalahan", data: null };
     }
 };

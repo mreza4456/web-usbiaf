@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Trash, Pencil, Plus, BarChart3, Users, CheckCircle2, Gift } from "lucide-react"
+import { Trash, Pencil, BarChart3, Users, CheckCircle2, Gift, Ticket } from "lucide-react"
 import { toast } from "sonner"
 import { SiteHeader } from "@/components/site-header"
 import {
@@ -33,28 +33,37 @@ import {
     IMissionFormInput,
     IMissionStats,
     IReward,
+    IRewardFormInput,
     MissionCategory,
     MissionType,
+    RewardType,
     MISSION_TYPE_CONFIG_FIELDS,
     MISSION_TYPE_EVENT_MAP,
     MISSION_TYPE_LABEL,
     REWARD_TYPE_LABEL,
 } from "@/interface"
+import { ICategory, IClass } from "@/interface"
 import {
     createMission,
+    createReward,
     deleteMission,
+    deleteReward,
     getAllMissionsAdmin,
     getAllRewards,
     getMissionDashboardSummary,
     getMissionStats,
     toggleMissionActive,
     updateMission,
+    updateReward,
 } from "@/action/mission"
+import { getAllCategories } from "@/action/categories" // categories = tabel produk
+import { getAllClasses } from "@/action/class"          // class = tabel kategori/grup jasa
 
 const MISSION_TYPES = Object.keys(MISSION_TYPE_LABEL) as MissionType[]
 const CATEGORY_OPTIONS: MissionCategory[] = ["DAILY", "WEEKLY", "LIMITED_TIME", "ACHIEVEMENT", "GENERAL"]
+const REWARD_TYPES = Object.keys(REWARD_TYPE_LABEL) as RewardType[]
 
-const emptyForm: IMissionFormInput = {
+const emptyMissionForm: IMissionFormInput = {
     title: "",
     description: "",
     mission_type: "LOGIN_COUNT",
@@ -68,6 +77,16 @@ const emptyForm: IMissionFormInput = {
     is_active: true,
 }
 
+const emptyRewardForm: IRewardFormInput = {
+    type: "POINTS",
+    name: "",
+    description: "",
+    value: {},
+    voucher_value: null,
+    applicable_categories_id: null,
+    valid_days: 30,
+}
+
 // input datetime-local butuh format "YYYY-MM-DDTHH:mm"
 const toDateTimeLocal = (iso?: string | null) => {
     if (!iso) return ""
@@ -79,6 +98,8 @@ const toDateTimeLocal = (iso?: string | null) => {
 export default function AdminMissionsPage() {
     const [missions, setMissions] = React.useState<IMission[]>([])
     const [rewards, setRewards] = React.useState<IReward[]>([])
+    const [products, setProducts] = React.useState<ICategory[]>([]) // dari tabel categories (produk)
+    const [classes, setClasses] = React.useState<IClass[]>([])      // dari tabel class (kategori)
     const [summary, setSummary] = React.useState({
         total_missions: 0,
         active_missions: 0,
@@ -87,10 +108,18 @@ export default function AdminMissionsPage() {
     })
     const [loading, setLoading] = React.useState(true)
 
+    // --- Mission form dialog ---
     const [openForm, setOpenForm] = React.useState(false)
     const [editingId, setEditingId] = React.useState<string | null>(null)
-    const [form, setForm] = React.useState<IMissionFormInput>(emptyForm)
+    const [form, setForm] = React.useState<IMissionFormInput>(emptyMissionForm)
     const [saving, setSaving] = React.useState(false)
+
+    // --- Reward management dialog ---
+    const [openRewardManager, setOpenRewardManager] = React.useState(false)
+    const [openRewardForm, setOpenRewardForm] = React.useState(false)
+    const [editingRewardId, setEditingRewardId] = React.useState<string | null>(null)
+    const [rewardForm, setRewardForm] = React.useState<IRewardFormInput>(emptyRewardForm)
+    const [savingReward, setSavingReward] = React.useState(false)
 
     const [openDelete, setOpenDelete] = React.useState(false)
     const [missionToDelete, setMissionToDelete] = React.useState<string | null>(null)
@@ -102,10 +131,12 @@ export default function AdminMissionsPage() {
     const fetchAll = React.useCallback(async () => {
         try {
             setLoading(true)
-            const [missionRes, rewardRes, summaryRes] = await Promise.all([
+            const [missionRes, rewardRes, summaryRes, productRes, classRes] = await Promise.all([
                 getAllMissionsAdmin(),
                 getAllRewards(),
                 getMissionDashboardSummary(),
+                getAllCategories(),
+                getAllClasses(),
             ])
 
             if (!missionRes.success) throw new Error(missionRes.message || "Gagal mengambil mission")
@@ -113,6 +144,8 @@ export default function AdminMissionsPage() {
 
             if (rewardRes.success) setRewards(rewardRes.data)
             if (summaryRes.success && summaryRes.data) setSummary(summaryRes.data)
+            if (productRes.success) setProducts(productRes.data as ICategory[])
+            if (classRes.success) setClasses(classRes.data as IClass[])
         } catch (error: any) {
             toast.error(error.message || "Terjadi kesalahan")
         } finally {
@@ -124,9 +157,12 @@ export default function AdminMissionsPage() {
         fetchAll()
     }, [fetchAll])
 
+    // ------------------------------------------------------------------
+    // Mission form handlers
+    // ------------------------------------------------------------------
     const openCreateDialog = () => {
         setEditingId(null)
-        setForm(emptyForm)
+        setForm(emptyMissionForm)
         setOpenForm(true)
     }
 
@@ -170,6 +206,14 @@ export default function AdminMissionsPage() {
         if (!form.target || form.target < 1) {
             toast.error("Target harus lebih dari 0")
             return
+        }
+
+        const fieldsNeeded = MISSION_TYPE_CONFIG_FIELDS[form.mission_type] ?? []
+        for (const f of fieldsNeeded) {
+            if (!(form.config as any)?.[f]) {
+                toast.error(`Field "${String(f)}" wajib diisi untuk mission type ini`)
+                return
+            }
         }
 
         try {
@@ -241,12 +285,86 @@ export default function AdminMissionsPage() {
         }
     }
 
+    // ------------------------------------------------------------------
+    // Reward management handlers
+    // ------------------------------------------------------------------
+    const openCreateReward = () => {
+        setEditingRewardId(null)
+        setRewardForm(emptyRewardForm)
+        setOpenRewardForm(true)
+    }
+
+    const openEditReward = (reward: IReward) => {
+        setEditingRewardId(reward.id)
+        setRewardForm({
+            type: reward.type,
+            name: reward.name,
+            description: reward.description ?? "",
+            value: reward.value ?? {},
+            voucher_value: reward.voucher_value ?? null,
+            applicable_categories_id: reward.applicable_categories_id ?? null,
+            valid_days: reward.valid_days ?? 30,
+        })
+        setOpenRewardForm(true)
+    }
+
+    const handleSubmitReward = async () => {
+        if (!rewardForm.name.trim()) {
+            toast.error("Nama reward wajib diisi")
+            return
+        }
+        if (rewardForm.type === "ITEM" && !rewardForm.applicable_categories_id) {
+            toast.error("Pilih produk yang akan digratiskan untuk reward tipe ITEM")
+            return
+        }
+        if (rewardForm.type === "VOUCHER" && !rewardForm.voucher_value) {
+            toast.error('Isi nilai voucher, mis. "10%" atau "50000"')
+            return
+        }
+
+        try {
+            setSavingReward(true)
+            const response = editingRewardId
+                ? await updateReward(editingRewardId, rewardForm)
+                : await createReward(rewardForm)
+
+            if (!response.success) throw new Error(response.message)
+
+            toast.success(editingRewardId ? "Reward berhasil diupdate" : "Reward berhasil dibuat")
+            setOpenRewardForm(false)
+            fetchAll()
+        } catch (error: any) {
+            toast.error(error.message || "Terjadi kesalahan")
+        } finally {
+            setSavingReward(false)
+        }
+    }
+
+    const handleDeleteReward = async (id: string) => {
+        try {
+            const response = await deleteReward(id)
+            if (!response.success) throw new Error(response.message)
+            toast.success("Reward berhasil dihapus")
+            fetchAll()
+        } catch (error: any) {
+            toast.error(error.message || "Reward mungkin masih dipakai oleh sebuah mission")
+        }
+    }
+
     const formatPeriod = (start?: string | null, end?: string | null) => {
         if (!start && !end) return "Tidak terbatas"
         const fmt = (d: string) => new Date(d).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
         if (start && end) return `${fmt(start)} - ${fmt(end)}`
         if (start) return `Mulai ${fmt(start)}`
         return `Sampai ${fmt(end!)}`
+    }
+
+    const rewardDisplay = (reward?: IReward | null) => {
+        if (!reward) return "-"
+        if (reward.type === "ITEM") return `Free: ${reward.product?.name ?? "Produk"} (100%)`
+        if (reward.type === "VOUCHER") return `Voucher ${reward.voucher_value ?? ""}`
+        if (reward.value?.amount) return `${REWARD_TYPE_LABEL[reward.type]} +${reward.value.amount}`
+        return REWARD_TYPE_LABEL[reward.type]
     }
 
     const columns: ColumnDef<IMission>[] = [
@@ -279,16 +397,7 @@ export default function AdminMissionsPage() {
         {
             accessorKey: "reward",
             header: "Reward",
-            cell: ({ row }) => {
-                const reward = row.original.reward
-                if (!reward) return <span className="text-gray-400">-</span>
-                return (
-                    <span className="text-sm">
-                        {REWARD_TYPE_LABEL[reward.type]}
-                        {reward.value?.amount ? ` (${reward.value.amount})` : ""}
-                    </span>
-                )
-            },
+            cell: ({ row }) => <p className="text-sm max-w-sm text-wrap">{rewardDisplay(row.original.reward)}</p>,
         },
         {
             id: "period",
@@ -340,9 +449,15 @@ export default function AdminMissionsPage() {
         <div className="w-full">
             <SiteHeader title="Missions" />
             <div className="w-full px-7 mx-auto pb-10">
-                <div className="my-7">
-                    <h1 className="text-3xl font-bold mb-2">Mission Management</h1>
-                    <p className="text-gray-500">Kelola mission, event, dan reward untuk semua user</p>
+                <div className="my-7 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold mb-2">Mission Management</h1>
+                        <p className="text-gray-500">Kelola mission, event, dan reward untuk semua user</p>
+                    </div>
+                    <Button variant="outline" onClick={() => setOpenRewardManager(true)}>
+                        <Ticket className="h-4 w-4 mr-2" />
+                        Kelola Reward
+                    </Button>
                 </div>
 
                 {/* Summary cards */}
@@ -370,7 +485,7 @@ export default function AdminMissionsPage() {
                 )}
             </div>
 
-            {/* Create / Edit dialog */}
+            {/* Create / Edit mission dialog */}
             <Dialog open={openForm} onOpenChange={setOpenForm}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
                     <DialogHeader>
@@ -428,19 +543,56 @@ export default function AdminMissionsPage() {
                         </div>
 
                         {/* Dynamic config fields sesuai mission_type — inilah bagian yang membuat
-                            sistem generik: admin tinggal isi field, tidak perlu logic baru per mission. */}
+                            sistem generik: admin tinggal isi field, tidak perlu logic baru per mission.
+                            product_id diambil dari tabel categories (produk), category_id dari tabel class. */}
                         {activeConfigFields.length > 0 && (
-                            <div className="grid grid-cols-2 gap-4 border rounded-lg p-3 bg-gray-50">
-                                {activeConfigFields.map((field) => (
-                                    <div key={field}>
-                                        <Label className="mb-1 block capitalize">{String(field).replace("_", " ")}</Label>
+                            <div className="grid grid-cols-1 gap-4 border rounded-lg p-3 bg-gray-50">
+                                {activeConfigFields.includes("product_id") && (
+                                    <div>
+                                        <Label className="mb-1 block">Produk</Label>
+                                        <Select
+                                            value={(form.config as any)?.product_id ?? ""}
+                                            onValueChange={(v) => handleConfigFieldChange("product_id", v)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih produk" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {products.map((p) => (
+                                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+                                {activeConfigFields.includes("category_id") && (
+                                    <div>
+                                        <Label className="mb-1 block">Kategori</Label>
+                                        <Select
+                                            value={(form.config as any)?.category_id ?? ""}
+                                            onValueChange={(v) => handleConfigFieldChange("category_id", v)}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Pilih kategori" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {classes.map((c: any) => (
+                                                    <SelectItem key={c.id} value={String(c.id)}>{c.class_name}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )}
+                                {activeConfigFields.includes("page") && (
+                                    <div>
+                                        <Label className="mb-1 block">Path Halaman</Label>
                                         <Input
-                                            value={(form.config as any)?.[field] ?? ""}
-                                            onChange={(e) => handleConfigFieldChange(String(field), e.target.value)}
-                                            placeholder={`Masukkan ${String(field)}`}
+                                            value={(form.config as any)?.page ?? ""}
+                                            onChange={(e) => handleConfigFieldChange("page", e.target.value)}
+                                            placeholder="mis. /promo"
                                         />
                                     </div>
-                                ))}
+                                )}
                             </div>
                         )}
 
@@ -472,11 +624,14 @@ export default function AdminMissionsPage() {
                                         <SelectItem value="none">Tanpa reward</SelectItem>
                                         {rewards.map((r) => (
                                             <SelectItem key={r.id} value={r.id}>
-                                                {r.name} ({REWARD_TYPE_LABEL[r.type]})
+                                                {r.name} — {rewardDisplay(r)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <p className="text-xs text-gray-400 mt-1">
+                                    Belum ada reward yang cocok? Klik "Kelola Reward" di halaman utama.
+                                </p>
                             </div>
                         </div>
 
@@ -511,6 +666,158 @@ export default function AdminMissionsPage() {
                         </Button>
                         <Button onClick={handleSubmit} disabled={saving}>
                             {saving ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Buat Mission"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Reward manager: daftar reward + tombol tambah/edit/hapus */}
+            <Dialog open={openRewardManager} onOpenChange={setOpenRewardManager}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center justify-between">
+                            <span>Kelola Reward</span>
+                            <Button size="sm" onClick={openCreateReward}>Tambah Reward</Button>
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    <div className="grid gap-2 py-2">
+                        {rewards.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-6">Belum ada reward. Klik "Tambah Reward".</p>
+                        )}
+                        {rewards.map((r) => (
+                            <div key={r.id} className="flex items-center justify-between border rounded-lg p-3">
+                                <div>
+                                    <div className="font-medium">{r.name}</div>
+                                    <div className="text-xs text-gray-500">{rewardDisplay(r)}</div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" size="icon" onClick={() => openEditReward(r)}>
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="outline" size="icon" className="text-red-500" onClick={() => handleDeleteReward(r.id)}>
+                                        <Trash className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Reward create/edit form */}
+            <Dialog open={openRewardForm} onOpenChange={setOpenRewardForm}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>{editingRewardId ? "Edit Reward" : "Tambah Reward"}</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-2">
+                        <div>
+                            <Label className="mb-1 block">Tipe Reward</Label>
+                            <Select value={rewardForm.type} onValueChange={(v) => setRewardForm({ ...rewardForm, type: v as RewardType })}>
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {REWARD_TYPES.map((t) => (
+                                        <SelectItem key={t} value={t}>{REWARD_TYPE_LABEL[t]}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div>
+                            <Label className="mb-1 block">Nama Reward</Label>
+                            <Input
+                                value={rewardForm.name}
+                                onChange={(e) => setRewardForm({ ...rewardForm, name: e.target.value })}
+                                placeholder="mis. Voucher Diskon 10%"
+                            />
+                        </div>
+
+                        <div>
+                            <Label className="mb-1 block">Deskripsi (opsional)</Label>
+                            <Textarea
+                                value={rewardForm.description ?? ""}
+                                onChange={(e) => setRewardForm({ ...rewardForm, description: e.target.value })}
+                            />
+                        </div>
+
+                        {/* POINTS / XP */}
+                        {(rewardForm.type === "POINTS" || rewardForm.type === "XP") && (
+                            <div>
+                                <Label className="mb-1 block">Jumlah {REWARD_TYPE_LABEL[rewardForm.type]}</Label>
+                                <Input
+                                    type="number"
+                                    value={rewardForm.value?.amount ?? ""}
+                                    onChange={(e) => setRewardForm({ ...rewardForm, value: { amount: Number(e.target.value) } })}
+                                />
+                            </div>
+                        )}
+
+                        {/* VOUCHER: nilai voucher umum + masa berlaku, masuk ke tabel vouchers saat diklaim */}
+                        {rewardForm.type === "VOUCHER" && (
+                            <>
+                                <div>
+                                    <Label className="mb-1 block">Nilai Voucher</Label>
+                                    <Input
+                                        value={rewardForm.voucher_value ?? ""}
+                                        onChange={(e) => setRewardForm({ ...rewardForm, voucher_value: e.target.value })}
+                                        placeholder='mis. "10%" atau "50000"'
+                                    />
+                                </div>
+                                <div>
+                                    <Label className="mb-1 block">Masa Berlaku (hari)</Label>
+                                    <Input
+                                        type="number"
+                                        value={rewardForm.valid_days ?? 30}
+                                        onChange={(e) => setRewardForm({ ...rewardForm, valid_days: Number(e.target.value) })}
+                                    />
+                                </div>
+                            </>
+                        )}
+
+                        {/* ITEM: pilih produk yang jadi gratis (voucher 100% dikunci ke produk tsb) */}
+                        {rewardForm.type === "ITEM" && (
+                            <>
+                                <div>
+                                    <Label className="mb-1 block">Produk yang Digratiskan</Label>
+                                    <Select
+                                        value={rewardForm.applicable_categories_id ?? ""}
+                                        onValueChange={(v) => setRewardForm({ ...rewardForm, applicable_categories_id: v })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Pilih produk" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {products.map((p) => (
+                                                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        User akan mendapat voucher 100% yang hanya berlaku untuk produk ini.
+                                    </p>
+                                </div>
+                                <div>
+                                    <Label className="mb-1 block">Masa Berlaku (hari)</Label>
+                                    <Input
+                                        type="number"
+                                        value={rewardForm.valid_days ?? 30}
+                                        onChange={(e) => setRewardForm({ ...rewardForm, valid_days: Number(e.target.value) })}
+                                    />
+                                </div>
+                            </>
+                        )}
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenRewardForm(false)} disabled={savingReward}>
+                            Batal
+                        </Button>
+                        <Button onClick={handleSubmitReward} disabled={savingReward}>
+                            {savingReward ? "Menyimpan..." : editingRewardId ? "Simpan Perubahan" : "Buat Reward"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

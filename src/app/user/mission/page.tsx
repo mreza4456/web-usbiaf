@@ -69,18 +69,24 @@ export default function MissionsPage() {
     };
 
     const formatCountdown = (endDate?: string | null) => {
-        if (!endDate) return "Tidak terbatas";
+        if (!endDate) return "Unlimited";
         const diff = new Date(endDate).getTime() - Date.now();
-        if (diff <= 0) return "Berakhir";
+        if (diff <= 0) return "Expired";
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        if (days > 0) return `${days} hari ${hours} jam lagi`;
-        return `${hours} jam lagi`;
+        if (days > 0) return `${days} days ${hours} hours left`;
+        return `${hours} hours left`;
     };
 
     const formatReward = (mission: IMissionWithProgress) => {
         const reward = mission.reward;
         if (!reward) return "-";
+        if (reward.type === "ITEM") {
+            return `${reward.name ?? "Item"}`;
+        }
+        if (reward.type === "VOUCHER") {
+            return `Voucher ${reward.voucher_value ?? ""}`;
+        }
         const amount = reward.value?.amount;
         return `+${amount ?? ""} ${REWARD_TYPE_LABEL[reward.type]}`.trim();
     };
@@ -91,7 +97,14 @@ export default function MissionsPage() {
             setClaimingId(mission.id);
             const response = await claimMissionReward(mission.user_mission.id);
             if (!response.success) throw new Error(response.message);
-            toast.success("Reward berhasil diklaim!");
+
+            // Kalau reward-nya VOUCHER/ITEM, backend mengembalikan voucher_code baru
+            // yang sudah otomatis masuk ke tabel vouchers user ini.
+            if (response.data?.voucher_code) {
+                toast.success(`Reward diklaim! Kode voucher: ${response.data.voucher_code}`);
+            } else {
+                toast.success("Reward berhasil diklaim!");
+            }
             fetchMissions();
         } catch (error: any) {
             toast.error(error.message || "Gagal klaim reward");
@@ -114,11 +127,11 @@ export default function MissionsPage() {
     };
 
     const statusLabel: Record<string, string> = {
-        NOT_STARTED: "Belum Dimulai",
+        NOT_STARTED: "Not Started",
         IN_PROGRESS: "In Progress",
-        COMPLETED: "Selesai",
-        CLAIMED: "Diklaim",
-        EXPIRED: "Berakhir",
+        COMPLETED: "Completed",
+        CLAIMED: "Claimed",
+        EXPIRED: "Expired",
     };
 
     const renderMissionCard = (mission: IMissionWithProgress) => {
@@ -172,14 +185,14 @@ export default function MissionsPage() {
                         className="rounded-full bg-primary text-white font-bold w-full"
                     >
                         <Sparkles className="w-4 h-4 mr-2" />
-                        {claimingId === mission.id ? "Mengklaim..." : "Claim Reward"}
+                        {claimingId === mission.id ? "Claiming..." : "Claim Reward"}
                     </Button>
                 )}
 
                 {mission.status === "CLAIMED" && (
                     <div className="flex items-center justify-center gap-2 text-green-600 text-sm font-medium py-2">
                         <CheckCircle2 className="w-4 h-4" />
-                        Reward sudah diklaim
+                        Reward Already Claimed
                     </div>
                 )}
             </div>
