@@ -136,8 +136,6 @@ function BadgeData() {
     </section>
   );
 }
-
-
 function TestimonialsSection() {
   return (
     <section className="bg-gradient-to-b from-white to-transparent">

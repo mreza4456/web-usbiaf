@@ -123,7 +123,7 @@ const router = useRouter();
                     </div>
 
                     {/* Grid kategori (max 3) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {categories.map((category) => {
                             const primaryImage = category.images?.[0]?.image_url || "";
                             //  const className = classMap.get(String((category as any).badge_id));

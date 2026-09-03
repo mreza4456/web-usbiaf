@@ -16,7 +16,7 @@ type LoginFormValues = {
   remember: boolean;
 };
 
-// X (Twitter) doesn't have an official lucide-react icon anymore since the rebrand,
+// X (x) doesn't have an official lucide-react icon anymore since the rebrand,
 // so we use a small inline SVG that matches the current X logo.
 function XIcon({ className }: { className?: string }): React.ReactElement {
   return (
@@ -63,12 +63,6 @@ export default function Login(): React.ReactElement {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Check if user needs to complete social media setup (no longer needed)
-  const checkSocialMediaStatus = async (userId: string): Promise<boolean> => {
-    // This function is no longer used
-    return false;
-  };
-
   const handleLogin = async (): Promise<void> => {
     const values = loginForm.getValues();
     const emailError = !values.email
@@ -100,27 +94,29 @@ export default function Login(): React.ReactElement {
       if (authError) throw authError;
 
       if (data?.user) {
-        setSuccess("Login successful! Redirecting...");
+  setSuccess("Login successful! Redirecting...");
 
-        // Catat event login ke mission engine (fire-and-forget, tidak blokir redirect).
-        // Harus dipanggil SETELAH session terbentuk supaya auth.uid() di RPC tersedia.
-        recordLoginEvent().catch(console.error);
+  // Await supaya request tidak terpotong oleh navigasi.
+  // Kegagalan mencatat event TIDAK menggagalkan login.
+  try {
+    await recordLoginEvent();
+  } catch (err) {
+    console.error('recordLoginEvent failed:', err);
+  }
 
-        // Always redirect to home, let home page handle the social media modal
-        setTimeout(() => {
-          router.push('/');
-        }, 1000);
-      }
+  router.push('/');
+}
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to sign in");
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  // "twitter" is Supabase's provider key for X login (the provider was renamed
-  // in the dashboard/UI, but the API key is still "twitter").
+  // "x" is Supabase's provider key for X login (the provider was renamed
+  // in the dashboard/UI, but the API key is still "x").
   const handleOAuthLogin = async (
-    provider: "twitch" | "google" | "twitter" | "x"
+    provider: "twitch" | "google" | "x"
   ): Promise<void> => {
     setError("");
     try {
@@ -220,14 +216,14 @@ export default function Login(): React.ReactElement {
                     </button>
                   </div>
                 </div>
-       
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors font-medium my-3"
-                  >
-                    Forgot Password ?
-                  </Link>
-        
+
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors font-medium my-3"
+                >
+                  Forgot Password ?
+                </Link>
+
 
                 <Button
                   onClick={() => void handleLogin()}

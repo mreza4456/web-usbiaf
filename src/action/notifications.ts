@@ -145,9 +145,9 @@ export async function getNotifications(): Promise<{
         notifications.push({
           id: `campaign-${c.id}`,
           type: "CAMPAIGN",
-          title: `🎉 ${c.title ?? "New Campaign"}`,
+          title: `${c.title ?? "New Campaign"}`,
           body: c.description ?? `Special campaign for ${c.categories ?? "all"}`,
-          href: "/service",
+          href: "/user/campaign",
           timestamp: c.date ?? now.toISOString(),
           isNew,
           meta: { categories: c.categories, expired: c.expired },
@@ -170,10 +170,10 @@ export async function getNotifications(): Promise<{
           id: `mission-${um.id}`,
           type: isCompleted ? "MISSION_COMPLETED" : "MISSION_PROGRESS",
           title: isCompleted
-            ? `✅ Mission Selesai!`
-            : `🎯 Mission Progress`,
+            ? `Mission Completed!`
+            : `Mission Progress`,
           body: isCompleted
-            ? `"${m.title}" sudah selesai — klaim reward kamu!`
+            ? `"${m.title}" has been completed — claim your reward!`
             : `"${m.title}" — ${um.progress}/${m.target} (${pct}%)`,
           href: "/user/missions",
           timestamp: um.updated_at ?? now.toISOString(),
@@ -193,10 +193,10 @@ export async function getNotifications(): Promise<{
     // ── 3. Order status ───────────────────────────────────────────────────────
     if (orderRes.status === "fulfilled" && orderRes.value.data) {
       const statusLabel: Record<string, string> = {
-        pending: "⏳ Menunggu konfirmasi",
-        processing: "🔧 Sedang diproses",
-        completed: "✅ Selesai",
-        cancelled: "❌ Dibatalkan",
+        pending: "Order In Progress",
+        processing: "Payment Received",
+        completed: "Order Completed",
+        cancelled: "Order has been cancelled",
       };
       for (const o of orderRes.value.data) {
         const isNew = o.updated_at
@@ -205,13 +205,14 @@ export async function getNotifications(): Promise<{
         notifications.push({
           id: `order-${o.id}`,
           type: "ORDER_STATUS",
-          title: `Order ${o.code_order ?? o.id.slice(0, 8)}`,
-          body: statusLabel[o.status] ?? `Status: ${o.status}`,
+          title: statusLabel[o.status] ?? `Status: ${o.status}`,
+          body:  `Order has been marked as ${o.code_order ?? o.id.slice(0, 8)} Work in Progress
+is ready to making for work `,
           href: `/user/user-order`,
           timestamp: o.updated_at ?? o.created_at ?? now.toISOString(),
           isNew,
           meta: { order_id: o.id, status: o.status, total: o.total },
-        });
+        }); 
       }
     }
 
@@ -224,8 +225,8 @@ export async function getNotifications(): Promise<{
         notifications.push({
           id: `service-${svc.id}`,
           type: "NEW_SERVICE",
-          title: `✨ Layanan Baru`,
-          body: `"${svc.name}" kini tersedia!`,
+          title: `New Service !`,
+          body: `"${svc.name}" Is Ready`,
           href: "/service",
           timestamp: svc.created_at ?? now.toISOString(),
           isNew,

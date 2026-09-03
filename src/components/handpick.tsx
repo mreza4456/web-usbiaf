@@ -99,7 +99,7 @@ export default function HandpickDisplay() {
         <div className="max-w-7xl ">
 
 
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {categories.map((category) => {
                     const primaryImage = category.images?.[0]?.image_url || "";
                     const badgeName = badgeMap.get(String((category as any).badge_id)); // BARU
