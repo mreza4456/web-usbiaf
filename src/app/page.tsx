@@ -57,6 +57,7 @@ function HeroSection() {
               className="relative w-full  h-[1000px]"
             >
               <div className="h-1/2 bottom-0 absolute left-0 bg-gradient-to-t from-white to-transparent w-full" />
+    
               <Live2DWidget modelPath="/Rigging_Karater_Nemuneko_RIG/Nemuneko_RIG.model3.json" />
             </div>
           )}

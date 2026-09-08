@@ -1,0 +1,508 @@
+{
+	"Version": 3,
+	"Parameters": [
+		{
+			"Id": "Param21",
+			"GroupId": "ParamGroup7",
+			"Name": "R1 X"
+		},
+		{
+			"Id": "Param22",
+			"GroupId": "ParamGroup7",
+			"Name": "R2 X"
+		},
+		{
+			"Id": "Param23",
+			"GroupId": "ParamGroup7",
+			"Name": "R3 X"
+		},
+		{
+			"Id": "Param24",
+			"GroupId": "ParamGroup7",
+			"Name": "R1 Y"
+		},
+		{
+			"Id": "Param25",
+			"GroupId": "ParamGroup7",
+			"Name": "R2 Y"
+		},
+		{
+			"Id": "Param26",
+			"GroupId": "ParamGroup7",
+			"Name": "R3 Y"
+		},
+		{
+			"Id": "Param27",
+			"GroupId": "ParamGroup7",
+			"Name": "==="
+		},
+		{
+			"Id": "Param28",
+			"GroupId": "ParamGroup8",
+			"Name": "Telinga X1"
+		},
+		{
+			"Id": "Param29",
+			"GroupId": "ParamGroup8",
+			"Name": "Telinga X2"
+		},
+		{
+			"Id": "Param30",
+			"GroupId": "ParamGroup8",
+			"Name": "Telinga X3"
+		},
+		{
+			"Id": "Param31",
+			"GroupId": "ParamGroup8",
+			"Name": "Telinga Y1"
+		},
+		{
+			"Id": "Param32",
+			"GroupId": "ParamGroup8",
+			"Name": "Telinga Y2"
+		},
+		{
+			"Id": "Param33",
+			"GroupId": "ParamGroup8",
+			"Name": "Telinga Y3"
+		},
+		{
+			"Id": "Param34",
+			"GroupId": "ParamGroup8",
+			"Name": "==="
+		},
+		{
+			"Id": "Param35",
+			"GroupId": "ParamGroup8",
+			"Name": "Pita X1"
+		},
+		{
+			"Id": "Param36",
+			"GroupId": "ParamGroup8",
+			"Name": "Pita  X2"
+		},
+		{
+			"Id": "Param37",
+			"GroupId": "ParamGroup8",
+			"Name": "Pita X3"
+		},
+		{
+			"Id": "Param38",
+			"GroupId": "ParamGroup8",
+			"Name": "Pita Y1"
+		},
+		{
+			"Id": "Param40",
+			"GroupId": "ParamGroup8",
+			"Name": "Pita Y2"
+		},
+		{
+			"Id": "Param39",
+			"GroupId": "ParamGroup8",
+			"Name": "Pita Y3"
+		},
+		{
+			"Id": "ParamEyeROpen",
+			"GroupId": "ParamGroup",
+			"Name": "EyeR Open"
+		},
+		{
+			"Id": "ParamEyeLOpen",
+			"GroupId": "ParamGroup",
+			"Name": "EyeL Open"
+		},
+		{
+			"Id": "ParamEyeBallX",
+			"GroupId": "ParamGroup",
+			"Name": "Eyeball X"
+		},
+		{
+			"Id": "ParamEyeBallY",
+			"GroupId": "ParamGroup",
+			"Name": "Eyeball Y"
+		},
+		{
+			"Id": "Param",
+			"GroupId": "ParamGroup",
+			"Name": "==="
+		},
+		{
+			"Id": "Param2",
+			"GroupId": "ParamGroup",
+			"Name": "BULMAT R1"
+		},
+		{
+			"Id": "Param3",
+			"GroupId": "ParamGroup",
+			"Name": "BULMAT R2"
+		},
+		{
+			"Id": "Param5",
+			"GroupId": "ParamGroup",
+			"Name": "BULMAT L1"
+		},
+		{
+			"Id": "Param6",
+			"GroupId": "ParamGroup",
+			"Name": "BULMAT L2"
+		},
+		{
+			"Id": "Param4",
+			"GroupId": "ParamGroup",
+			"Name": "==="
+		},
+		{
+			"Id": "Param7",
+			"GroupId": "ParamGroup",
+			"Name": "HG R1"
+		},
+		{
+			"Id": "Param8",
+			"GroupId": "ParamGroup",
+			"Name": "HG R2"
+		},
+		{
+			"Id": "Param9",
+			"GroupId": "ParamGroup",
+			"Name": "HG L1"
+		},
+		{
+			"Id": "Param10",
+			"GroupId": "ParamGroup",
+			"Name": "HG L2"
+		},
+		{
+			"Id": "Param11",
+			"GroupId": "ParamGroup",
+			"Name": "==="
+		},
+		{
+			"Id": "Param12",
+			"GroupId": "ParamGroup",
+			"Name": "SCLORA R1"
+		},
+		{
+			"Id": "Param13",
+			"GroupId": "ParamGroup",
+			"Name": "SCLORA R2"
+		},
+		{
+			"Id": "Param14",
+			"GroupId": "ParamGroup",
+			"Name": "SCLORA L1"
+		},
+		{
+			"Id": "Param15",
+			"GroupId": "ParamGroup",
+			"Name": "SCLORA L2"
+		},
+		{
+			"Id": "Param16",
+			"GroupId": "ParamGroup",
+			"Name": "==="
+		},
+		{
+			"Id": "ParamAngleX",
+			"GroupId": "ParamGroup2",
+			"Name": "Angle X"
+		},
+		{
+			"Id": "ParamAngleY",
+			"GroupId": "ParamGroup2",
+			"Name": "Angle Y"
+		},
+		{
+			"Id": "ParamAngleZ",
+			"GroupId": "ParamGroup2",
+			"Name": "Angle Z"
+		},
+		{
+			"Id": "Param17",
+			"GroupId": "ParamGroup2",
+			"Name": "==="
+		},
+		{
+			"Id": "ParamBrowLAngle",
+			"GroupId": "ParamGroup3",
+			"Name": "BrowL Angle"
+		},
+		{
+			"Id": "ParamBrowRAngle",
+			"GroupId": "ParamGroup3",
+			"Name": "BrowR Angle"
+		},
+		{
+			"Id": "ParamBrowLForm",
+			"GroupId": "ParamGroup3",
+			"Name": "BrowL Form"
+		},
+		{
+			"Id": "ParamBrowRForm",
+			"GroupId": "ParamGroup3",
+			"Name": "BrowR Form"
+		},
+		{
+			"Id": "Param18",
+			"GroupId": "ParamGroup3",
+			"Name": "==="
+		},
+		{
+			"Id": "ParamMouthForm",
+			"GroupId": "ParamGroup4",
+			"Name": "Mouth Form"
+		},
+		{
+			"Id": "ParamMouthOpenY",
+			"GroupId": "ParamGroup4",
+			"Name": "Mouth Open"
+		},
+		{
+			"Id": "Param19",
+			"GroupId": "ParamGroup4",
+			"Name": "==="
+		},
+		{
+			"Id": "ParamBodyAngleX",
+			"GroupId": "ParamGroup5",
+			"Name": "Body X"
+		},
+		{
+			"Id": "ParamBodyAngleY",
+			"GroupId": "ParamGroup5",
+			"Name": "Body Y"
+		},
+		{
+			"Id": "ParamBodyAngleZ",
+			"GroupId": "ParamGroup5",
+			"Name": "Body Z"
+		},
+		{
+			"Id": "Param20",
+			"GroupId": "ParamGroup5",
+			"Name": "==="
+		},
+		{
+			"Id": "Param41",
+			"GroupId": "ParamGroup9",
+			"Name": "Pita Bdn 1X"
+		},
+		{
+			"Id": "Param42",
+			"GroupId": "ParamGroup9",
+			"Name": "Pita Bdn 2X"
+		},
+		{
+			"Id": "Param43",
+			"GroupId": "ParamGroup9",
+			"Name": "Pita Bdn 3X"
+		},
+		{
+			"Id": "Param44",
+			"GroupId": "ParamGroup9",
+			"Name": "Pita Bdn 1Y"
+		},
+		{
+			"Id": "Param45",
+			"GroupId": "ParamGroup9",
+			"Name": "Pita Bdn 2Y"
+		},
+		{
+			"Id": "Param46",
+			"GroupId": "ParamGroup9",
+			"Name": "Pita Bdn 3Y"
+		},
+		{
+			"Id": "Param47",
+			"GroupId": "ParamGroup9",
+			"Name": "==="
+		},
+		{
+			"Id": "Param48",
+			"GroupId": "ParamGroup9",
+			"Name": "Baju 1X"
+		},
+		{
+			"Id": "Param49",
+			"GroupId": "ParamGroup9",
+			"Name": "Baju 2X"
+		},
+		{
+			"Id": "Param50",
+			"GroupId": "ParamGroup9",
+			"Name": "Baju 1Y"
+		},
+		{
+			"Id": "Param51",
+			"GroupId": "ParamGroup9",
+			"Name": "Baju 2Y"
+		},
+		{
+			"Id": "Param52",
+			"GroupId": "ParamGroup9",
+			"Name": "==="
+		},
+		{
+			"Id": "Param53",
+			"GroupId": "ParamGroup10",
+			"Name": "Tangan X1"
+		},
+		{
+			"Id": "Param54",
+			"GroupId": "ParamGroup10",
+			"Name": "Tangan X2"
+		},
+		{
+			"Id": "Param55",
+			"GroupId": "ParamGroup10",
+			"Name": "Tangan Y1"
+		},
+		{
+			"Id": "Param56",
+			"GroupId": "ParamGroup10",
+			"Name": "Tangan Y2"
+		},
+		{
+			"Id": "Param57",
+			"GroupId": "ParamGroup11",
+			"Name": "Rok X1"
+		},
+		{
+			"Id": "Param58",
+			"GroupId": "ParamGroup11",
+			"Name": "Rok X2"
+		},
+		{
+			"Id": "Param59",
+			"GroupId": "ParamGroup11",
+			"Name": "Rok X3"
+		},
+		{
+			"Id": "Param60",
+			"GroupId": "ParamGroup11",
+			"Name": "Rok Y1"
+		},
+		{
+			"Id": "Param61",
+			"GroupId": "ParamGroup11",
+			"Name": "Rok Y2"
+		},
+		{
+			"Id": "Param62",
+			"GroupId": "ParamGroup11",
+			"Name": "Rok Y3"
+		},
+		{
+			"Id": "Param63",
+			"GroupId": "ParamGroup11",
+			"Name": "==="
+		},
+		{
+			"Id": "ParamCheek",
+			"GroupId": "",
+			"Name": "Cheek"
+		},
+		{
+			"Id": "ParamBreath",
+			"GroupId": "",
+			"Name": "Breath"
+		}
+	],
+	"ParameterGroups": [
+		{
+			"Id": "ParamGroup7",
+			"GroupId": "",
+			"Name": "R"
+		},
+		{
+			"Id": "ParamGroup8",
+			"GroupId": "",
+			"Name": "TELINGA"
+		},
+		{
+			"Id": "ParamGroup",
+			"GroupId": "",
+			"Name": "MATA"
+		},
+		{
+			"Id": "ParamGroup2",
+			"GroupId": "",
+			"Name": "ANGLE X Y Z\\"
+		},
+		{
+			"Id": "ParamGroup3",
+			"GroupId": "",
+			"Name": "BROW"
+		},
+		{
+			"Id": "ParamGroup4",
+			"GroupId": "",
+			"Name": "MULUT"
+		},
+		{
+			"Id": "ParamGroup5",
+			"GroupId": "",
+			"Name": "BODY"
+		},
+		{
+			"Id": "ParamGroup9",
+			"GroupId": "",
+			"Name": "PITA"
+		},
+		{
+			"Id": "ParamGroup10",
+			"GroupId": "",
+			"Name": "TANGAN"
+		},
+		{
+			"Id": "ParamGroup11",
+			"GroupId": "",
+			"Name": "ROK"
+		}
+	],
+	"Parts": [
+		{
+			"Id": "Part",
+			"Name": "R"
+		},
+		{
+			"Id": "Part2",
+			"Name": "TLG"
+		},
+		{
+			"Id": "Part3",
+			"Name": "PITA R"
+		},
+		{
+			"Id": "Part4",
+			"Name": "R"
+		},
+		{
+			"Id": "Part5",
+			"Name": "MATA"
+		},
+		{
+			"Id": "Part6",
+			"Name": "HDNG"
+		},
+		{
+			"Id": "Part7",
+			"Name": "BLAS, SHADING, HG MUKA"
+		},
+		{
+			"Id": "Part8",
+			"Name": "MULUT"
+		},
+		{
+			"Id": "Part9",
+			"Name": "KPL"
+		},
+		{
+			"Id": "Part10",
+			"Name": "TELINGA"
+		},
+		{
+			"Id": "Part11",
+			"Name": "Baju"
+		}
+	]
+}

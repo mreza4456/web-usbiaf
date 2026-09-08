@@ -294,7 +294,7 @@ export default function ChatPage() {
                       <div  className="space-y-1.5">
                         <div className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
                           <div
-                            className={`max-w-[75%] sm:max-w-[65%] rounded-2xl px-4 py-3 space-y-2 ${isOwn ? "bg-primary/10 text-primary" : "bg-gray-100 text-gray-700"
+                            className={`max-w-[75%] sm:max-w-[65%] rounded-2xl px-4 py-3 space-y-2 ${isOwn ? "bg-muted/50 text-primary" : "bg-gray-100 text-gray-700"
                               }`}
                           >
                             {hasImage && (
@@ -437,23 +437,23 @@ export default function ChatPage() {
                   href = { href }
                   target = "_blank"
                   rel = "noopener noreferrer"
-                  className = "w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors"
+                  className = "w-10 h-10 rounded-full bg-muted/50 text-primary flex items-center justify-center hover:bg-primary/20 transition-colors"
                 >
                 <Icon className="w-4 h-4" />
                 </a>
               ))}
           </div>
 
-          <div className="w-full mt-6 rounded-2xl bg-primary/10 p-5">
-            <p className="text-sm text-primary/80 leading-relaxed">
-              Kami biasanya membalas dalam beberapa jam. Ceritakan kebutuhan order kamu di sini ya!
+          <div className="w-full mt-6 rounded-2xl bg-muted/50 p-5">
+            <p className="text-sm text-primary leading-relaxed">
+              We usually respond within a few hours. Please tell us about your order here!
             </p>
           </div>
       </div>
 
       <div className="mt-8">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-primary">Attachments</h3>
+          <h3 className="font-bold text-primary text-fredoka font-semibold">Attachments</h3>
           <button className="text-muted-foreground hover:text-primary transition-colors" aria-label="Opsi lainnya">
             <MoreVertical className="w-4 h-4" />
           </button>
@@ -468,7 +468,7 @@ export default function ChatPage() {
                 className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-primary/5 transition-colors text-left"
               >
                 <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center shrink-0`}>
-                  <Icon className={`w-4 h-4 ${item.iconColor}`} />
+                  <img src="/icon/SVG/fileicon.svg" className="w-6 h-6" alt="" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-primary">{item.label}</p>
@@ -484,13 +484,13 @@ export default function ChatPage() {
       </div>
 
       <div className="mt-auto">
-        <div className="rounded-2xl bg-primary/10 p-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0">
-            <MessagesSquare className="w-4 h-4 text-primary" />
+        <div className="rounded-2xl bg-muted/50 p-4 flex items-center gap-3">
+          <div className="w-10 h-10  flex items-center justify-center shrink-0">
+          <img src="/icon/SVG/quoteicon.svg" className="w-7 h-7" alt="" />
           </div>
           <div className="text-sm">
             <p className="font-semibold text-primary leading-tight">Still Need Help?</p>
-            <a href="/ticket" className="text-primary underline font-bold">
+            <a href="/contact" className="text-primary underline font-bold">
               OPEN A TICKET HERE
             </a>
           </div>

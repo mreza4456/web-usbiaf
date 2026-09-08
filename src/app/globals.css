@@ -702,6 +702,7 @@ h1 {
 
 .animate-fade-up {
   animation: fade-up 0.8s ease-out 0.3s both;
+   animation-delay: 1.5s; 
 }
 @keyframes fade-right {
   from {
@@ -717,4 +718,15 @@ h1 {
 
 .animate-fade-right {
   animation: fade-right 1s ease-out 0.3s both;
+}
+
+.shadow-login{
+  box-shadow: 0px 4px 0px var(--primary);
+}
+.shadow-setting{
+    box-shadow: 5px 5px 0px var(--primary);
+   
+}
+.shadow-deleted{
+ box-shadow: 5px 5px 0px #EF4444;
 }

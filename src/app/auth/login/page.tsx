@@ -8,7 +8,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2, Chrome, Twitch } from "lucide-react";
 import { supabase } from '@/config/supabase';
-import { recordLoginEvent } from '@/action/mission';
+
+import Live2DWidget from "@/components/live2d-widget";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import Image from "next/image";
+import { CardAuth, CardSecondary } from "@/components/card-dashed";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type LoginFormValues = {
   email: string;
@@ -94,18 +99,11 @@ export default function Login(): React.ReactElement {
       if (authError) throw authError;
 
       if (data?.user) {
-  setSuccess("Login successful! Redirecting...");
+        setSuccess("Login successful! Redirecting...");
 
-  // Await supaya request tidak terpotong oleh navigasi.
-  // Kegagalan mencatat event TIDAK menggagalkan login.
-  try {
-    await recordLoginEvent();
-  } catch (err) {
-    console.error('recordLoginEvent failed:', err);
-  }
 
-  router.push('/');
-}
+        router.push('/');
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to sign in");
     } finally {
@@ -140,156 +138,160 @@ export default function Login(): React.ReactElement {
       void handleLogin();
     }
   };
-
+  const isDesktop = useMediaQuery("(min-width: 640px)")
   return (
     <div className="min-h-screen bg-radial from-transparent to-white text-primary flex items-center justify-center p-4">
       <div className="relative z-10 w-full max-w-4xl  mx-auto">
-        <Card className="bg-white shadow-none sm:border-primary/30 grid sm:grid-cols-2 sm:shadow-lg rounded-4xl">
-          <div className="relative overflow-hidden ">
-            <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
-            <img
-              src="/images/airi.webp"
-              alt="Login Illustration"
-              className="w-full hidden sm:block absolute left-1/2 max-w-sm -translate-x-1/2"
-            />
-          </div>
-          <div className="py-5 sm:px-5 ">
-            <CardHeader className="space-y-1 pb-4">
-              <CardTitle className="text-2xl text-primary">Sign In</CardTitle>
-              <CardDescription className="text-gray-500">
-                Enter your credentials to access your account
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {error && (
-                <Alert className="bg-red-500/10 border-red-500/50 text-red-400">
-                  <AlertCircle className="w-4 h-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+        <img src="/images/logonav.webp" alt="Logo" className="md:w-1/2 w-3/4 mx-auto mb-5" width={200} height={100} />
+        <CardAuth variant="signin" className="mx-4">
+          <Card className="bg-white shadow-none sm:border-primary/30 grid sm:grid-cols-2 sm:shadow-lg rounded-4xl">
+            {isDesktop && (
+              <div className="relative  overflow-hidden -mt-15">
 
-              {success && (
-                <Alert className="bg-green-500/10 border-green-500/50 text-green-400">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <AlertDescription>{success}</AlertDescription>
-                </Alert>
-              )}
+                <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-500 flex items-center">
-                    <Mail className="w-4 h-4 mr-2" />
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="Enter Email"
-                    onKeyDown={handleKeyPress}
-                    {...loginForm.register("email")}
-                    className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm text-gray-500 flex items-center">
-                    <Lock className="w-4 h-4 mr-2" />
-                    Password
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Enter Password"
-                      onKeyDown={handleKeyPress}
-                      {...loginForm.register("password")}
-                      className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                      ) : (
-                        <Eye className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors font-medium my-3"
-                >
-                  Forgot Password ?
-                </Link>
-
-
-                <Button
-                  onClick={() => void handleLogin()}
-                  disabled={isSubmitting}
-                  className="w-full bg-primary text-white py-6 my-8"
-                >
-                  {isSubmitting ? "Signing in..." : "Sign In"}
-                </Button>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-[#9B5DE0]/30"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-gray-500">
-                      Or continue with
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 my-3">
-                  <Button
-                    type="button"
-                    onClick={() => void handleOAuthLogin("google")}
-                    className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors w-full py-5"
-                    aria-label="Sign in with Google"
-                  >
-                    <Chrome className="w-5 h-5" />
-                  </Button>
-
-                  <Button
-                    type="button"
-                    onClick={() => void handleOAuthLogin("twitch")}
-                    className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors w-full py-5"
-                    aria-label="Sign in with Twitch"
-                  >
-                    <Twitch className="w-5 h-5" />
-                  </Button>
-
-                  <Button
-                    type="button"
-                    onClick={() => void handleOAuthLogin("x")}
-                    className="bg-white/5 border border-primary border-2 text-primary hover:text-white cursor-pointer transition-colors w-full py-5"
-                    aria-label="Sign in with X"
-                  >
-                    <XIcon className="w-5 h-5" />
-                  </Button>
-                </div>
+                <Live2DWidget modelPath="/NemunekoChibiRIG/Nemuneko Live 2D.model3.json" />
               </div>
-            </CardContent>
+            )}
+            <div className="py-6 sm:pr-5 ">
 
-          </div >
-        </Card>
-        <div className="mt-6 text-center text-sm text-gray-400">
-          <p>
-            Don't have an account?{" "}
-            <Link
-              href="/auth/register"
-              className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors font-medium"
-            >
-              Sign Up
-            </Link>
-          </p>
-        </div>
+              <CardContent className="space-y-4">
+                {error && (
+                  <Alert className="bg-red-500/10 border-red-500/50 text-red-400">
+                    <AlertCircle className="w-4 h-4" />
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
 
-        <div className="mt-4 text-center">
+                {success && (
+                  <Alert className="bg-green-500/10 border-green-500/50 text-green-400">
+                    <CheckCircle2 className="w-4 h-4" />
+                    <AlertDescription>{success}</AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-xl text-primary text-lilita flex items-center gap-2">
+                      <img src="/icon/SVG/inboxicon.svg" className="w-6 h-6" alt="" />
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="Enter Email"
+                      onKeyDown={handleKeyPress}
+                      {...loginForm.register("email")}
+                      className="w-full px-5 py-2.5 bg-muted/50 text-fredoka p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60 transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xl text-primary text-lilita flex items-center gap-2">
+                      <img src="/icon/SVG/lockicon.svg" className="w-6 h-6" alt="" />
+                      Password
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Enter Password"
+                        onKeyDown={handleKeyPress}
+                        {...loginForm.register("password")}
+                        className="w-full px-5 py-2.5 bg-muted/50 text-fredoka p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60 transition-all pr-12"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-5 h-5 text-primary" />
+                        ) : (
+                          <Eye className="w-5 h-5 text-primary" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <div className="flex gap-2 items-center text-primary text-fredoka font-semibold">
+                      <Checkbox className="text-primary border-2  border-primary rounded-sm" /> Remember Me
+                    </div>
+                    <Link
+                      href="/auth/forgot-password"
+                      className="text-primary text-sm hover:text-[#FDCFFA] underline transition-colors font-medium my-3"
+                    >
+                      Forgot <b>Password</b> ?
+                    </Link>
+
+                  </div>
+
+
+                  <Button
+                    onClick={() => void handleLogin()}
+                    disabled={isSubmitting}
+                    className="w-full bg-primary text-white py-6 text-lg rounded-full"
+                  >
+                    {isSubmitting ? "Signing in..." : "Sign In"}
+                  </Button>
+
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-[#9B5DE0]/30"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-4 bg-white text-primary text-fredoka ">
+                        Or continue with
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-3 my-3">
+                    <Button
+                      type="button"
+                      onClick={() => void handleOAuthLogin("google")}
+                      className="bg-white/5 border border-primary border-2 text-primary hover:bg-muted rounded-lg shadow-login cursor-pointer transition-colors w-full py-5"
+                      aria-label="Sign in with Google"
+                    >
+                      <Chrome className="w-5 h-5" />
+                    </Button>
+
+                    <Button
+                      type="button"
+                      onClick={() => void handleOAuthLogin("twitch")}
+                      className="bg-white/5 border border-primary border-2 text-primary hover:bg-muted rounded-lg shadow-login cursor-pointer transition-colors w-full py-5"
+                      aria-label="Sign in with Twitch"
+                    >
+                      <Twitch className="w-5 h-5" />
+                    </Button>
+
+                    <Button
+                      type="button"
+                      onClick={() => void handleOAuthLogin("x")}
+                      className="bg-white/5 border border-primary border-2 text-primary hover:bg-muted rounded-lg shadow-login cursor-pointer transition-colors w-full py-5"
+                      aria-label="Sign in with X"
+                    >
+                      <XIcon className="w-5 h-5" />
+                    </Button>
+                  </div>
+                  <div className="mt-7 bg-primary rounded-full py-2 text-white text-center text-sm text-gray-400">
+                    <p>
+                      Don't have an account?{" "}
+                      <Link
+                        href="/auth/register"
+                        className="text-muted underline  hover:text-[#FDCFFA] transition-colors font-medium"
+                      >
+                        Sign Up
+                      </Link>
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+
+            </div >
+          </Card>
+        </CardAuth>
+
+
+        <div className="mt-10 text-center">
           <Link
             href="/"
             className="text-sm text-gray-400 hover:text-[#D78FEE] transition-colors inline-flex items-center"

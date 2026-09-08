@@ -29,7 +29,12 @@ export async function getCartItems(userId: string): Promise<ICartResponse> {
     categories (
       id,
       name,
-      start_price
+      start_price,
+      images:image_categories (
+        id,
+        image_url,
+        sort_order
+      )
     ),
     categories_package (
       id,
@@ -53,25 +58,35 @@ export async function getCartItems(userId: string): Promise<ICartResponse> {
       return { success: false, message: error.message, data: [] };
     }
 
-    // Transform data untuk kemudahan akses
     const rows = data || [];
-    const cartItems: ICartItemDetail[] = rows.map((item: any) => ({
-      id: item.id,
-      user_id: userId,
-      categories_id: item.categories_id,
-      package_id: item.package_id, // FK -> categories_package.id
-      quantity: item.quantity,
-      created_at: item.created_at,
-      updated_at: item.updated_at,
-      category_name: item.categories?.name,
-      category_start_price: item.categories?.start_price,
-      package_title: item.categories_package?.name,                // e.g. "Paket A"
-      package_name_id: item.categories_package?.package_name?.id,  // FK -> package_name.id
-      package_name: item.categories_package?.package_name,         // { id: number, name: "Basic" | "Standard" | "Premium" }
-      package_price: item.categories_package?.price,
-      package_description: item.categories_package?.description,
-      item_total: (item.categories_package?.price || 0) * item.quantity
-    }));
+    const cartItems: ICartItemDetail[] = rows.map((item: any) => {
+      // urutkan gambar berdasarkan sort_order (karena order foreignTable
+      // untuk nested-nested relation kadang tidak reliable di postgrest,
+      // jadi lebih aman disortir manual di sini)
+      const sortedImages = (item.categories?.images || []).sort(
+        (a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
+      );
+
+      return {
+        id: item.id,
+        user_id: userId,
+        categories_id: item.categories_id,
+        package_id: item.package_id,
+        quantity: item.quantity,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        category_name: item.categories?.name,
+        category_start_price: item.categories?.start_price,
+        // ⬇️ gambar pertama (sort_order terkecil) dari kategori
+        category_image: sortedImages[0]?.image_url ?? null,
+        package_title: item.categories_package?.name,
+        package_name_id: item.categories_package?.package_name?.id,
+        package_name: item.categories_package?.package_name,
+        package_price: item.categories_package?.price,
+        package_description: item.categories_package?.description,
+        item_total: (item.categories_package?.price || 0) * item.quantity
+      };
+    });
 
     return { success: true, data: cartItems };
   } catch (error: any) {

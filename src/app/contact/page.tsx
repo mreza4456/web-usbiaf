@@ -48,9 +48,9 @@ export default function CreateTicketPage() {
     email: '',
     subject: subject[0]?.value ?? "",
     socialmedia: socialmedia[0]?.value ?? "",
+    username: '',
     message: ''
   });
-
   const [isPending, startTransition] = useTransition();
   const [result, setResult] = useState<{ success: boolean; message: string; ticketNumber?: string } | null>(null);
   // controls modal visibility separately so closing the dialog (e.g. via backdrop/esc)
@@ -61,44 +61,47 @@ export default function CreateTicketPage() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+const handleSubmit = () => {
+  setResult(null);
 
-  const handleSubmit = () => {
-    setResult(null);
+  if (!formData.name || !formData.email || !formData.subject || !formData.message || !formData.username) {
+    setResult({ success: false, message: "Please fill in all required fields." });
+    return;
+  }
 
-    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      setResult({ success: false, message: "Please fill in all required fields." });
-      return;
+  const cleanUsername = formData.username.trim().replace(/^@/, '');
+  const combinedSocial = `${formData.socialmedia} - @${cleanUsername}`;
+
+  const fd = new FormData();
+  fd.append('name', formData.name);
+  fd.append('email', formData.email);
+  fd.append('subject', formData.subject);
+  fd.append('socialmedia', combinedSocial); // <-- ini yang masuk ke kolom socialmedia
+  fd.append('message', formData.message);
+
+  startTransition(async () => {
+    const res = await createTicket(fd);
+
+    if (res.success && res.data) {
+      setResult({
+        success: true,
+        message: "Ticket created! Save your ticket number to track the status.",
+        ticketNumber: res.data.ticket_number,
+      });
+      setShowSuccessModal(true);
+      setFormData({
+        name: '',
+        email: '',
+        subject: subject[0]?.value ?? "",
+        socialmedia: socialmedia[0]?.value ?? "",
+        username: '',
+        message: ''
+      });
+    } else {
+      setResult({ success: false, message: res.message || "Something went wrong, please try again." });
     }
-
-    const fd = new FormData();
-    fd.append('name', formData.name);
-    fd.append('email', formData.email);
-    fd.append('subject', formData.subject);
-    fd.append('socialmedia', formData.socialmedia);
-    fd.append('message', formData.message);
-
-    startTransition(async () => {
-      const res = await createTicket(fd);
-
-      if (res.success && res.data) {
-        setResult({
-          success: true,
-          message: "Ticket created! Save your ticket number to track the status.",
-          ticketNumber: res.data.ticket_number,
-        });
-        setShowSuccessModal(true);
-        setFormData({
-          name: '',
-          email: '',
-          subject: subject[0]?.value ?? "",
-          socialmedia: socialmedia[0]?.value ?? "",
-          message: ''
-        });
-      } else {
-        setResult({ success: false, message: res.message || "Something went wrong, please try again." });
-      }
-    });
-  };
+  });
+};
 
   const handleCreateAnother = () => {
     setShowSuccessModal(false);
@@ -128,7 +131,7 @@ export default function CreateTicketPage() {
                       value={formData.email}
                       onChange={handleInputChange}
                       disabled={isPending}
-                      className="w-full bg-muted/50 p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60"
+                      className="w-full bg-muted/50 text-fredoka p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60"
                     />
                   </div>
 
@@ -140,7 +143,7 @@ export default function CreateTicketPage() {
                       value={formData.name}
                       onChange={handleInputChange}
                       disabled={isPending}
-                      className="w-full bg-muted/50 p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60"
+                      className="w-full bg-muted/50 text-fredoka p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60"
                     />
 
                     <div className="grid sm:grid-cols-2 gap-4 mt-2">
@@ -151,7 +154,7 @@ export default function CreateTicketPage() {
                           onValueChange={(value) => setFormData(prev => ({ ...prev, socialmedia: value }))}
                           disabled={isPending}
                         >
-                          <SelectTrigger className='bg-muted/50 py-5 px-4 border-primary border-2 text-primary rounded-full w-full'>
+                          <SelectTrigger className='bg-muted/50 text-fredoka py-5 px-4 border-primary border-2 text-primary rounded-full w-full'>
                             <SelectValue placeholder="Social Media" />
                           </SelectTrigger>
                           <SelectContent>
@@ -164,30 +167,42 @@ export default function CreateTicketPage() {
                           </SelectContent>
                         </Select>
                       </div>
-
                       <div className="space-y-2">
-                        <Label className="text-sm text-primary font-medium">SUBJECT</Label>
-                        <Select
-                          value={formData.subject}
-                          onValueChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}
+                        <label className="text-sm text-primary font-medium">USERNAME</label>
+                        <input
+                          type="text"
+                          name="username"
+                        
+                          value={formData.username}
+                          onChange={handleInputChange}
                           disabled={isPending}
-                        >
-                          <SelectTrigger className='bg-muted/50 py-5 px-4 border-primary border-2 text-primary rounded-full w-full'>
-                            <SelectValue placeholder="Subject" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              <SelectLabel>Subject</SelectLabel>
-                              {subject.map((cat) => (
-                                <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
+                          className="w-full bg-muted/50 text-fredoka p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60"
+                        />
                       </div>
+
+
                     </div>
                   </div>
-
+                  <div className="space-y-2">
+                    <Label className="text-sm text-primary font-medium">SUBJECT</Label>
+                    <Select
+                      value={formData.subject}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, subject: value }))}
+                      disabled={isPending}
+                    >
+                      <SelectTrigger className='bg-muted/50 text-fredoka py-5 px-4 border-primary border-2 text-primary rounded-full w-full'>
+                        <SelectValue placeholder="Subject" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Subject</SelectLabel>
+                          {subject.map((cat) => (
+                            <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="space-y-2">
                     <label className="text-sm text-primary font-medium">MESSAGE</label>
                     <textarea
@@ -196,7 +211,7 @@ export default function CreateTicketPage() {
                       onChange={handleInputChange}
                       rows={6}
                       disabled={isPending}
-                      className="w-full bg-muted/50 p-2 px-4 rounded-2xl border-2 border-primary resize-none disabled:opacity-60"
+                      className="w-full bg-muted/50 text-fredoka p-2 px-4 rounded-2xl border-2 border-primary resize-none disabled:opacity-60"
                     />
                   </div>
 

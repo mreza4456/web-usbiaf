@@ -1,3 +1,5 @@
+import { Instagram } from "lucide-react";
+
 export interface IProduct {
   id: string;
   categories_id: string;
@@ -44,6 +46,13 @@ export interface IUser {
   full_name: string;
   avatar_url: string;
   role: string;
+  instagram:string;
+  discord:string;
+  twitch:string;
+  country:string;
+  x:string;
+  kick:string;
+  youtube:string
   created_at: string;
 }
 // interface/order.ts
@@ -56,6 +65,7 @@ export interface IOrderItem {
   package_id: string;       // FK -> categories_package.id
   package_name_id: number;  // FK -> package_name.id
   category_name: string;
+    category_image?: string | null;
   package_title: string;         // nama paket, e.g. "Paket A" (dari categories_package.name)
   package_name?: IPackageName;   // relasi tier, e.g. { id, name: "Basic" | "Standard" | "Premium" }
   quantity: number;

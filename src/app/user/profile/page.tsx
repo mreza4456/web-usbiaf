@@ -27,6 +27,7 @@ import { ProfilePageSkeleton } from '@/components/skeleton-card';
 import { CardDashedThird } from '@/components/card-dashed';
 import Image from 'next/image';
 import { stat } from 'fs';
+import CheckinButton from '@/components/checkinbutton';
 
 export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
@@ -206,7 +207,7 @@ export default function ProfilePage() {
                   </div>
                 ) : (
                   <Button onClick={() => setIsEditing(true)} variant="outline" className='bg-muted text-primary border-2 border-primary rounded-full' size="sm">
-                   <p className='text-lilita'>Edit Profile</p>
+                    <p className='text-lilita'>Edit Profile</p>
                   </Button>
                 )}
               </div>
@@ -254,6 +255,9 @@ export default function ProfilePage() {
         </div>
 
         
+          <CheckinButton />
+  
+
       </div>
     </div>
   );

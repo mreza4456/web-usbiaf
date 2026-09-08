@@ -35,16 +35,30 @@ export default function Live2DWidget({
       }
 
       const PIXI = await import("pixi.js")
+
+      // PENTING: window.PIXI harus di-set SEBELUM Live2DModel di-import,
+      // karena plugin registration (ticker, resize, dsb) terjadi saat
+      // module di-evaluate, bukan saat dipakai.
+      ;(window as any).PIXI = PIXI
+
       const { Live2DModel } = await import(
         "pixi-live2d-display-lipsyncpatch/cubism4"
       )
-      ;(window as any).PIXI = PIXI
 
       if (destroyed || !containerRef.current) return
 
+      const width = containerRef.current.clientWidth
+      const height = containerRef.current.clientHeight
+
+      // Hindari canvas 0x0 yang bisa bikin renderer gagal di-detect
+      if (width === 0 || height === 0) {
+        console.warn("Live2DWidget: container has zero size, skipping init")
+        return
+      }
+
       const app = new PIXI.Application({
-        width: containerRef.current.clientWidth,
-        height: containerRef.current.clientHeight,
+        width,
+        height,
         backgroundAlpha: 0,
         antialias: true,
         resolution: window.devicePixelRatio || 1,
@@ -55,7 +69,10 @@ export default function Live2DWidget({
 
       const model = await Live2DModel.from(modelPath)
       if (destroyed) {
-        model.destroy()
+        // Guard tambahan jika cancelResize belum terpasang
+        if (typeof (model as any).cancelResize === "function") {
+          model.destroy()
+        }
         app.destroy(true, { children: true })
         return
       }
@@ -63,19 +80,15 @@ export default function Live2DWidget({
       app.stage.addChild(model)
       model.anchor.set(0.5, 0.5)
 
-      // fit model ke dalam container (contain, bukan fixed width)
       const fitModel = () => {
         const screenW = app.screen.width
         const screenH = app.screen.height
 
-        // model.width/height asli (sebelum di-scale) — ambil dari internalModel
         const originalWidth = model.internalModel.originalWidth
         const originalHeight = model.internalModel.originalHeight
 
-        const scale = Math.min(
-          screenW / originalWidth,
-          screenH / originalHeight
-        ) * 1.1 // 0.9 = kasih sedikit margin biar tidak mepet tepi
+        const scale =
+          Math.min(screenW / originalWidth, screenH / originalHeight) * 1.1
 
         model.scale.set(scale)
         model.x = screenW / 2

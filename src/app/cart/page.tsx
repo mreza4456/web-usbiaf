@@ -3,25 +3,23 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import Image from 'next/image';
 import {
   ShoppingCart,
   Plus,
   Minus,
   Trash2,
   ArrowRight,
-  ArrowLeft,
   Package,
   Tag,
   AlertCircle,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  X,
-  LogIn
+  ImageIcon,
+  Check,
 } from 'lucide-react';
 import {
   getCartItems,
@@ -34,14 +32,13 @@ import type { ICartItemDetail, IVoucher } from '@/interface';
 import { useAuthStore } from '@/store/auth';
 import Link from 'next/link';
 import { SkeletonCarts } from '@/components/skeleton-card';
+import { CardCart, CardOutline, CardSecondary } from '@/components/card-dashed';
 
 function isVoucherApplicable(
   voucher: IVoucher,
   cartItems: ICartItemDetail[]
 ): boolean {
-  // Voucher tanpa kategori = berlaku untuk semua produk
   if (!voucher.applicable_categories_id) return true;
-
   return cartItems.some(
     (item) => item.categories_id === voucher.applicable_categories_id
   );
@@ -67,6 +64,17 @@ function calculateVoucherDiscount(
   return isNaN(nominalValue) ? 0 : Math.min(nominalValue, eligibleSubtotal);
 }
 
+// Sesuaikan ini kalau field gambar kategori kamu namanya beda
+function getItemImage(item: any): string {
+  return (
+    item.category_image ||
+    item.image_url ||
+    item.category_images?.[0]?.image_url ||
+    item.images?.[0]?.image_url ||
+    ''
+  );
+}
+
 export default function CartPage() {
   const router = useRouter();
   const user = useAuthStore((s) => s.user);
@@ -83,20 +91,29 @@ export default function CartPage() {
   const [loadingVouchers, setLoadingVouchers] = useState(false);
   const [isVoucherOpen, setIsVoucherOpen] = useState(false);
 
-
+  // ── Select item states ──
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchCartData();
     loadVouchers();
   }, [user]);
 
+  // Saat cart pertama kali dimuat, default: semua item terpilih
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      setSelectedIds((prev) => {
+        if (prev.size > 0) return prev; // jangan reset kalau user sudah pilih2
+        return new Set(cartItems.map((i) => i.id!));
+      });
+    }
+  }, [cartItems]);
+
   const fetchCartData = async () => {
     if (!user?.id) return;
-
     try {
       setLoading(true);
       const result = await getCartItems(user.id);
-
       if (result.success && result.data) {
         setCartItems(result.data);
       } else {
@@ -111,7 +128,6 @@ export default function CartPage() {
 
   const loadVouchers = async () => {
     if (!user?.id) return;
-
     setLoadingVouchers(true);
     try {
       const result = await getUserVouchers(user.id);
@@ -119,7 +135,6 @@ export default function CartPage() {
         const validVouchers = result.data.filter(v =>
           !v.is_used && new Date(v.expired_at) > new Date()
         );
-        // vouchers akan di-filter ulang tiap cartItems berubah (lihat useEffect di bawah)
         setVouchers(validVouchers);
       }
     } catch (err) {
@@ -131,11 +146,9 @@ export default function CartPage() {
 
   const handleUpdateQuantity = async (cartId: string, newQuantity: number) => {
     if (!user?.id || newQuantity < 1) return;
-
     setUpdatingItems(prev => new Set(prev).add(cartId));
     try {
       const result = await updateCartQuantity(cartId, newQuantity, user.id);
-
       if (result.success) {
         setCartItems(prevItems =>
           prevItems.map(item =>
@@ -160,15 +173,17 @@ export default function CartPage() {
 
   const handleRemoveItem = async (cartId: string) => {
     if (!user?.id) return;
-
     if (!confirm('Remove this item from cart?')) return;
-
     setUpdatingItems(prev => new Set(prev).add(cartId));
     try {
       const result = await removeFromCart(cartId, user.id);
-
       if (result.success) {
         setCartItems(prevItems => prevItems.filter(item => item.id !== cartId));
+        setSelectedIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(cartId);
+          return newSet;
+        });
       } else {
         setError(result.message || 'Failed to remove item');
       }
@@ -185,16 +200,14 @@ export default function CartPage() {
 
   const handleClearCart = async () => {
     if (!user?.id) return;
-
     if (!confirm('Clear all items from cart?')) return;
-
     setLoading(true);
     try {
       const result = await clearCart(user.id);
-
       if (result.success) {
         setCartItems([]);
         setSelectedVoucher(null);
+        setSelectedIds(new Set());
       } else {
         setError(result.message || 'Failed to clear cart');
       }
@@ -207,10 +220,7 @@ export default function CartPage() {
 
   const handleVoucherSelect = (voucher: IVoucher) => {
     const applicable = isVoucherApplicable(voucher, cartItems);
-
-    if (!applicable) {
-      return;
-    }
+    if (!applicable) return;
 
     if (selectedVoucher?.id === voucher.id) {
       setSelectedVoucher(null);
@@ -218,12 +228,34 @@ export default function CartPage() {
     } else {
       setSelectedVoucher(voucher);
       setVoucherCode(voucher.code);
-
       setTimeout(() => {
         setIsVoucherOpen(false);
       }, 300);
     }
   };
+
+  // ── Select item helpers ──
+  const toggleSelectItem = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) newSet.delete(id);
+      else newSet.add(id);
+      return newSet;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === cartItems.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(cartItems.map(i => i.id!)));
+    }
+  };
+
+  const selectedItems = useMemo(
+    () => cartItems.filter(i => selectedIds.has(i.id!)),
+    [cartItems, selectedIds]
+  );
 
   const formatCurrency = (amount: number | string): string => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -235,15 +267,14 @@ export default function CartPage() {
     }).format(numAmount);
   };
 
+  // ── Semua kalkulasi sekarang berbasis item yang dipilih (selectedItems) ──
   const calculateSubtotal = () => {
-    return cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0);
+    return selectedItems.reduce((sum, item) => sum + (item.item_total || 0), 0);
   };
-
-
 
   const calculateDiscount = () => {
     if (!selectedVoucher) return 0;
-    return calculateVoucherDiscount(selectedVoucher, cartItems);
+    return calculateVoucherDiscount(selectedVoucher, selectedItems);
   };
 
   const calculateTotal = () => {
@@ -251,17 +282,15 @@ export default function CartPage() {
   };
 
   const getTotalItems = () => {
-    return cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    return selectedItems.reduce((sum, item) => sum + item.quantity, 0);
   };
 
   const handleCheckout = () => {
     if (!user?.id) {
-      const currentPath = window.location.pathname;
       router.push(`/auth/login`);
       return;
     }
-
-    if (cartItems.length === 0) return;
+    if (selectedItems.length === 0) return;
 
     const queryParams = new URLSearchParams();
     if (selectedVoucher) {
@@ -269,11 +298,13 @@ export default function CartPage() {
       queryParams.set('voucher_code', selectedVoucher.code);
       queryParams.set('voucher_value', selectedVoucher.value);
     }
+    queryParams.set('cart_ids', selectedItems.map(i => i.id).join(','));
 
     const urlParams = queryParams.toString();
     const checkoutUrl = `/order${urlParams ? `?${urlParams}` : ''}`;
     router.push(checkoutUrl);
   };
+
   useEffect(() => {
     if (!user?.id) {
       router.push('/auth/login');
@@ -281,8 +312,8 @@ export default function CartPage() {
   }, [user, router]);
 
   const usableVouchers = useMemo(
-    () => vouchers.filter((voucher) => isVoucherApplicable(voucher, cartItems)),
-    [vouchers, cartItems]
+    () => vouchers.filter((voucher) => isVoucherApplicable(voucher, selectedItems)),
+    [vouchers, selectedItems]
   );
 
   useEffect(() => {
@@ -291,27 +322,13 @@ export default function CartPage() {
       setVoucherCode('');
     }
   }, [usableVouchers, selectedVoucher]);
+
   return (
     <div className="min-h-screen  py-6 sm:py-12 px-4 mt-16 sm:mt-20">
       <div className="max-w-7xl w-full mx-auto">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
           <div className='w-full'>
-            <h1 className="text-2xl sm:text-4xl font-bold text-primary text-borsok ">Order Summary</h1>
-            <div className="flex justify-between items-start sm:items-center gap-2 sm:gap-0">
-              <p className="text-gray-600 text-sm sm:text-base">{getTotalItems()} items in your cart</p>
-              {cartItems.length > 0 && (
-                <Button
-                  onClick={handleClearCart}
-                  variant="ghost"
-                  className="text-red-600 hover:text-red-700 cursor-pointer p-0 sm:p-2 h-auto"
-                  size="sm"
-                >
-                  <X className="w-4 h-4 mr-1 sm:mr-2" />
-                  <span className="text-sm">Clear All</span>
-                </Button>
-              )}
-            </div>
-            <div className='w-full h-1 bg-primary mt-2'></div>
+            <h1 className="text-4xl sm:text-5xl text-primary">ORDER <span className='bg-title text-5xl sm:text-6xl'> CHECKOUT</span></h1>
           </div>
         </div>
 
@@ -345,139 +362,229 @@ export default function CartPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
             <div className="lg:col-span-2 space-y-3 sm:space-y-4">
-
               <div>
+                {/* ── Header tabel (desktop): kolom disamakan persis dengan grid-cols-5 pada tiap card item ── */}
+                <div className="hidden sm:flex items-center gap-5 my-6">
+                  <div className="flex-1 grid grid-cols-5 items-center gap-4 px-3 sm:px-6">
+                    <h3 className="col-span-2 text-primary text-fredoka font-bold text-lg">
+                      Services Listing
+                    </h3>
+                    <h3 className="text-center text-primary text-fredoka font-bold text-lg">
+                      Quantity
+                    </h3>
+                    <h3 className="text-center text-primary text-fredoka font-bold text-lg">
+                      Total Price
+                    </h3>
+                    <h3 className="text-center text-primary text-fredoka font-bold text-lg">
+                    
+                    </h3>
+                  </div>
+                  {/* Placeholder ini melebar sama seperti tombol checkbox di tiap baris item, supaya kolom tetap sejajar */}
+                  <button
+                    onClick={toggleSelectAll}
+                    className="w-8 flex-shrink-0 flex items-center justify-center text-xs text-primary font-semibold"
+                    title="Select all"
+                  >
+                    {selectedIds.size}/{cartItems.length}
+                  </button>
+                </div>
+
+                {/* ── Header ringkas (mobile) ── */}
+                <div className="sm:hidden flex items-center justify-between my-6">
+                  <h3 className="text-primary text-fredoka font-bold text-lg">Services Listing</h3>
+                  <button
+                    onClick={toggleSelectAll}
+                    className="flex items-center gap-2 text-sm text-primary font-semibold"
+                  >
+                    {selectedIds.size}/{cartItems.length}
+                  </button>
+                </div>
+
+                <div className='w-full h-1 bg-primary mb-6'></div>
+
                 {cartItems.map((item) => {
                   const isUpdating = updatingItems.has(item.id!);
+                  const isSelected = selectedIds.has(item.id!);
+                  const imageUrl = getItemImage(item);
 
                   return (
-                    <Card key={item.id} className={`${isUpdating ? 'opacity-50' : ''} transition-opacity  relative mb-5`}>
-                      <CardContent className="p-3 sm:p-6">
-                        <div className="block sm:hidden">
-                          <div className="flex items-start gap-3 mb-3">
-                            <div className="w-16 h-16 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-50">
-                              <Package className="w-8 h-8 text-secondary" />
+                    <div key={item.id} className='flex gap-5'>
+                      <CardCart  className={`${isUpdating ? 'opacity-50' : ''} transition-opacity flex-1 relative mb-5`}>
+                        <CardContent className="p-3 sm:p-6">
+                          <div className="block sm:hidden">
+                            <div className="flex items-start gap-3 mb-3">
+                              <div className="relative w-16 h-16 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 bg-purple-50">
+                                {imageUrl ? (
+                                  <Image
+                                    src={imageUrl}
+                                    alt={item.category_name}
+                                    fill
+                                    className="object-cover"
+                                    sizes="64px"
+                                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder-image.svg'; }}
+                                  />
+                                ) : (
+                                  <Package className="w-8 h-8 text-secondary" />
+                                )}
+                              </div>
+                              <div className="flex min-w-0">
+                                <h3 className="text-base font-bold text-gray-900 mb-1 truncate text-arial">
+                                  {item.category_name}
+                                </h3>
+                                <Badge className="bg-purple-100 text-purple-700 text-xs mb-1">
+                                  {item.package_name.name}
+                                </Badge>
+                                <p className="text-xs text-primary truncate">{item.package_title}</p>
+                              </div>
+                              <Button
+                                onClick={() => handleRemoveItem(item.id!)}
+                                disabled={isUpdating}
+                                variant="ghost"
+                                size="icon"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-base font-bold text-gray-900 mb-1 truncate text-arial">
-                                {item.category_name}
-                              </h3>
-                              <Badge className="bg-purple-100 text-purple-700 text-xs mb-1">
-                                {item.package_name.name}
-                              </Badge>
-                              <p className="text-xs text-primary truncate">{item.package_title}</p>
+                            <div className="flex items-center justify-between pt-3 border-t">
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  onClick={() => handleUpdateQuantity(item.id!, item.quantity - 1)}
+                                  disabled={item.quantity <= 1 || isUpdating}
+                                  size="icon"
+                                  className="h-8 w-8 bg-primary text-white"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <span className="w-8 text-center font-semibold">
+                                  {item.quantity}
+                                </span>
+                                <Button
+                                  onClick={() => handleUpdateQuantity(item.id!, item.quantity + 1)}
+                                  disabled={isUpdating}
+                                  size="icon"
+                                  className="h-8 w-8 bg-primary rounded-full text-white"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-xl font-bold text-primary text-fredoka ">
+                                  ${item.item_total?.toLocaleString()}
+                                </div>
+                                <button onClick={() => toggleSelectItem(item.id!)}>
+                                  {isSelected ? (
+                                    <CheckCircle2 className="w-6 h-6 text-white bg-primary " />
+                                  ) : (
+                                    <div className="w-6 h-6 rounded-full border-2 border-gray-300" />
+                                  )}
+                                </button>
+                              </div>
                             </div>
-                            <Button
-                              onClick={() => handleRemoveItem(item.id!)}
-                              disabled={isUpdating}
-                              variant="ghost"
-                              size="icon"
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
                           </div>
-                          <div className="flex items-center justify-between pt-3 border-t">
-                            <div className="flex items-center gap-2">
+
+                          <div className="hidden sm:grid grid-cols-5 items-center gap-4">
+                            <div className="flex col-span-2 gap-5 items-center">
+                              <div className="relative w-20 lg:w-24 h-20 lg:h-24 rounded-lg overflow-hidden flex items-center justify-center flex-shrink-0 bg-purple-50">
+                                {imageUrl ? (
+                                  <Image
+                                    src={imageUrl}
+                                    alt={item.category_name}
+                                    fill
+                                    className="object-cover"
+                                    sizes="96px"
+                                    onError={(e) => { (e.currentTarget as HTMLImageElement).src = '/placeholder-image.svg'; }}
+                                  />
+                                ) : (
+                                  <Package className="w-10 lg:w-12 h-10 lg:h-12 text-secondary" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <span className="text-sm text-primary truncate text-fredoka">{item.package_title}</span>
+                                <h3 className="text-lg lg:text-xl fredoka-bold text-primary mb-1 truncate">
+                                  {item.category_name}
+                                </h3>
+                                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                  <Badge className="bg-purple-100 text-fredoka text-purple-700 text-xs">
+                                    {item.package_name.name}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 justify-center">
                               <Button
                                 onClick={() => handleUpdateQuantity(item.id!, item.quantity - 1)}
                                 disabled={item.quantity <= 1 || isUpdating}
                                 size="icon"
-                                className="h-8 w-8 bg-primary text-white"
+                                className="h-6 lg:h-7 w-6 lg:w-7 bg-primary rounded-lg text-white"
                               >
-                                <Minus className="w-3 h-3" />
+                                <Minus className="w-4 h-4" />
                               </Button>
-                              <span className="w-8 text-center font-semibold">
+                              <span className="w-10 lg:w-12 text-center text-fredoka font-semibold text-base lg:text-lg">
                                 {item.quantity}
                               </span>
                               <Button
                                 onClick={() => handleUpdateQuantity(item.id!, item.quantity + 1)}
                                 disabled={isUpdating}
                                 size="icon"
-                                className="h-8 w-8 bg-primary text-white"
+                                className="h-6 lg:h-7 w-6 lg:w-7 bg-primary rounded-lg text-white font-bold"
                               >
-                                <Plus className="w-3 h-3" />
+                                <Plus className="w-4 h-4" />
                               </Button>
                             </div>
-                            <div className="text-xl font-bold text-gray-900">
-                              ${item.item_total?.toLocaleString()}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="hidden sm:grid grid-cols-4 items-center gap-4">
-                          <div className="flex col-span-2 gap-5 items-center">
-                            <div className="w-20 lg:w-24 h-20 lg:h-24 rounded-lg flex items-center justify-center flex-shrink-0 bg-purple-50">
-                              <Package className="w-10 lg:w-12 h-10 lg:h-12 text-secondary" />
-                            </div>
-                            <div className="min-w-0">
-                              <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-1 truncate">
-                                {item.category_name}
-                              </h3>
-                              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                                <Badge className="bg-purple-100 text-purple-700 text-xs">
-                                  {item.package_name.name}
-                                </Badge>
-                                <span className="text-sm text-primary truncate">- {item.package_title}</span>
+                            <div className="text-center">
+                              <div className="text-xl lg:text-2xl font-bold text-primary text-fredoka">
+                                {formatCurrency(item.item_total?.toLocaleString())}
                               </div>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-2 justify-center">
+                            <div className="flex items-center justify-end">
+
                             <Button
-                              onClick={() => handleUpdateQuantity(item.id!, item.quantity - 1)}
-                              disabled={item.quantity <= 1 || isUpdating}
-                              size="icon"
-                              className="h-8 lg:h-9 w-8 lg:w-9 bg-primary text-white"
-                            >
-                              <Minus className="w-4 h-4" />
-                            </Button>
-                            <span className="w-10 lg:w-12 text-center font-semibold text-base lg:text-lg">
-                              {item.quantity}
-                            </span>
-                            <Button
-                              onClick={() => handleUpdateQuantity(item.id!, item.quantity + 1)}
+                              onClick={() => handleRemoveItem(item.id!)}
                               disabled={isUpdating}
+                              variant="ghost"
                               size="icon"
-                              className="h-8 lg:h-9 w-8 lg:w-9 bg-primary text-white"
+                              className=""
                             >
-                              <Plus className="w-4 h-4" />
+                              <img src="/icon/SVG/trashicon.svg" className='w-5 h-5' alt="" />
                             </Button>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-xl lg:text-2xl font-bold text-gray-900">
-                              {formatCurrency(item.item_total?.toLocaleString())}
                             </div>
                           </div>
-                          <Button
-                            onClick={() => handleRemoveItem(item.id!)}
-                            disabled={isUpdating}
-                            variant="ghost"
-                            size="icon"
-                            className="absolute top-2 right-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </CardCart>
+                      <button
+                        onClick={() => toggleSelectItem(item.id!)}
+                        className="w-8 flex-shrink-0 flex items-center justify-center self-start mt-6"
+                      >
+                        {isSelected ? (
+                          <div className="bg-primary rounded-full">
+                          <Check className="w-5 h-5 p-1.5 text-white" />
+                          </div>
+                        ) : (
+                          <div className="w-5 h-5 rounded-full border-2 border-primary" />
+                        )}
+                      </button>
+                    </div>
                   );
-                })
-                }
+                })}
               </div>
 
               <Link href="/service" className="text-sm float-end text-secondary">Add More</Link>
             </div>
 
             <div className="lg:sticky lg:top-24 lg:self-start">
-              <Card className="card-primary">
+              <Card className="border-3 rounded-4xl shadow-setting bg-white border-primary relative">
+                <Image src={"/images/receiptbadge@3x.webp"} alt='' width={180} height={80} className='absolute -top-8 right-10'/>
                 <CardContent className="space-y-4 ">
-                  <Card className=''>
+                  {/* ── Coupons ── */}
+                  <h3 className="text-fredoka font-semibold text-2xl text-primary">Coupons</h3>
+                  <CardOutline className={` p-2 pt-4`}>
                     <CardHeader
-                      className="cursor-pointer transition-colors "
+                      className="cursor-pointer transition-colors  "
                       onClick={() => setIsVoucherOpen(!isVoucherOpen)}
                     >
                       <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2 arial text-base sm:text-lg">
+                        <CardTitle className="flex items-center gap-2 text-fredoka text-primary text-base sm:text-lg">
                           <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
                           <span>Apply Voucher</span>
                           {selectedVoucher && (
@@ -485,7 +592,6 @@ export default function CartPage() {
                               Applied
                             </Badge>
                           )}
-
                         </CardTitle>
                         {isVoucherOpen ? (
                           <ChevronUp className="w-5 h-5 text-gray-500" />
@@ -498,15 +604,10 @@ export default function CartPage() {
                           {selectedVoucher.code} - {selectedVoucher.value} discount
                         </CardDescription>
                       )}
-                      {/* {selectedVoucher?.applicable_categories_id && (
-                            <p className="text-xs text-amber-600 mt-1">
-                            This voucher is only valid for certain products in your cart.
-                            </p>
-                          )} */}
                     </CardHeader>
 
                     {isVoucherOpen && (
-                      <CardContent className="p-4 sm:p-6 pt-0">
+                      <CardContent className="p-5">
                         {loadingVouchers ? (
                           <div className="text-sm text-gray-500">Loading vouchers...</div>
                         ) : vouchers.length === 0 ? (
@@ -518,7 +619,7 @@ export default function CartPage() {
                         ) : (
                           <div className="space-y-3">
                             {vouchers.map((voucher) => {
-                              const isApplicable = isVoucherApplicable(voucher, cartItems);
+                              const isApplicable = isVoucherApplicable(voucher, selectedItems);
                               const isSelected = selectedVoucher?.id === voucher.id;
 
                               return (
@@ -546,29 +647,23 @@ export default function CartPage() {
                                       >
                                         <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                                       </div>
-
                                       <div className="min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
                                           <div className="font-semibold text-gray-900 text-sm sm:text-base truncate">
                                             {voucher.code}
                                           </div>
-
-                                         
                                           {isApplicable && isSelected && (
                                             <Badge className="bg-green-100 text-green-700 text-[10px] sm:text-xs">
                                               Applied
                                             </Badge>
                                           )}
                                         </div>
-
                                         <div className="text-xs sm:text-sm text-gray-600">
                                           Discount: {voucher.value}
                                         </div>
-
                                         <div className="text-xs text-gray-500">
                                           Expires: {new Date(voucher.expired_at).toLocaleDateString()}
                                         </div>
-
                                         {!isApplicable && voucher.applicable_categories_id && (
                                           <div className="flex items-start gap-1.5 mt-1.5 text-xs text-red-600">
                                             <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
@@ -579,7 +674,6 @@ export default function CartPage() {
                                         )}
                                       </div>
                                     </div>
-
                                     {isSelected && isApplicable && (
                                       <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600 flex-shrink-0" />
                                     )}
@@ -591,37 +685,64 @@ export default function CartPage() {
                         )}
                       </CardContent>
                     )}
-                  </Card>
+                  </CardOutline>
 
-                  <div className="flex justify-between text-gray-700 mt-4 sm:mt-8 text-sm sm:text-base">
-                    <span>Subtotal ({getTotalItems()} items)</span>
-                    <span className="font-semibold">{formatCurrency(calculateSubtotal().toLocaleString())}</span>
-                  </div>
-
-                  {selectedVoucher && (
-                    <div className="flex justify-between text-green-600 text-sm sm:text-base">
-                      <span className="flex items-center gap-2">
-                        <Tag className="w-4 h-4" />
-                        <span className="truncate">Discount ({selectedVoucher.value})</span>
-                      </span>
-                      <span className="font-semibold flex-shrink-0 ml-2">
-                        -${calculateDiscount().toLocaleString()}
-                      </span>
+                  {/* ── Price Details (receipt) ── */}
+                  <div className="mt-4 sm:mt-8">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-2xl font-semibold text-fredoka text-primary">Price Details</h3>
+                      <Badge className="bg-primary text-white text-xs text-fredoka text-white">
+                        {selectedItems.length} {selectedItems.length === 1 ? 'Items' : 'Items'}
+                      </Badge>
                     </div>
-                  )}
+
+                    {selectedItems.length === 0 ? (
+                      <p className="text-sm text-gray-500 italic">No items selected yet.</p>
+                    ) : (
+                      <div className="space-y-2 mb-4">
+                        {selectedItems.map((item) => (
+                          <div key={item.id} className="flex justify-between text-fredoka text-sm text-primary">
+                            <span className="truncate pr-2">
+                              {item.quantity}x {item.category_name}
+                            </span>
+                            <span className="font-semibold flex-shrink-0">
+                              {formatCurrency(item.item_total || 0)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                  
+                     
+
+                      {selectedVoucher && (
+                        <div className="flex justify-between text-green-600 text-sm sm:text-base">
+                          <span className="flex items-center gap-2">
+                            <Tag className="w-4 h-4" />
+                            <span className="truncate">Discount ({selectedVoucher.value})</span>
+                          </span>
+                          <span className="font-semibold flex-shrink-0 ml-2">
+                            -{formatCurrency(calculateDiscount())}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+            
 
                   <div className="border-t border-primary pt-4">
-                    <div className="flex justify-between items-center mb-4 sm:mb-6">
-                      <span className="text-lg sm:text-xl font-bold text-gray-900">Total</span>
-                      <span className="text-2xl sm:text-3xl font-bold text-secondary">
-                        {formatCurrency(calculateTotal().toLocaleString())}
+                    <div className="flex justify-between text-fredoka items-center mb-4 sm:mb-6">
+                      <span className="text-lg sm:text-xl font-bold text-primary">Total</span>
+                      <span className="text-xl sm:text-xl font-bold text-primary">
+                        {formatCurrency(calculateTotal())}
                       </span>
                     </div>
 
                     <Button
                       onClick={handleCheckout}
                       size="lg"
-                      className="w-full bg-primary text-white py-4 cursor-pointer sm:py-6 font-semibold text-sm sm:text-base"
+                      disabled={selectedItems.length === 0}
+                      className="w-full bg-primary text-white py-4 cursor-pointer sm:py-6 font-semibold text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Proceed to Checkout
                       <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 ml-2" />

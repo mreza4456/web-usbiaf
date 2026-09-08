@@ -76,6 +76,7 @@ const MISSION_WITH_REWARD_SELECT = `*, reward:rewards(${REWARD_JOIN_SELECT})`;
  * ORDER_COMPLETED (isi dengan order id) supaya event tidak diproses dua kali
  * kalau function ini terpanggil ulang (retry, double click, dsb).
  */
+
 export const recordMissionEvent = async (
     eventType: MissionEventType,
     metadata: Record<string, any> = {},
@@ -105,9 +106,60 @@ export const recordMissionEvent = async (
 
 // Helper spesifik per event supaya pemanggilan dari kode lain lebih jelas & type-safe.
 
-export const recordLoginEvent = async () =>
-    recordMissionEvent("USER_LOGIN", {});
 
+export const getCheckinStatus = async (missionId: string) => {
+    try {
+        const user = await getAuthenticatedUser();
+        const supabase = await createClient();
+
+        const { data: mission, error: missionError } = await supabase
+            .from("missions")
+            .select("*")
+            .eq("id", missionId)
+            .single();
+
+        if (missionError || !mission) {
+            return { success: false, message: missionError?.message ?? "Mission tidak ditemukan" };
+        }
+
+        const { data: userMission } = await supabase
+            .from("user_missions")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("mission_id", missionId)
+            .maybeSingle();
+
+        const resetHour: number = mission.config?.reset_hour ?? 0;
+        const now = new Date();
+        const periodStart = new Date(now);
+        periodStart.setUTCHours(resetHour, 0, 0, 0);
+        if (periodStart > now) periodStart.setUTCDate(periodStart.getUTCDate() - 1);
+
+        const lastCheckin = userMission?.progress_meta?.last_checkin_at
+            ? new Date(userMission.progress_meta.last_checkin_at)
+            : null;
+
+        const status = userMission?.status ?? "IN_PROGRESS";
+        const canCheckin =
+            status === "IN_PROGRESS" && (!lastCheckin || lastCheckin < periodStart);
+
+        const nextResetAt = new Date(periodStart);
+        nextResetAt.setUTCDate(nextResetAt.getUTCDate() + 1);
+
+        return {
+            success: true,
+            data: {
+                progress: userMission?.progress ?? 0,
+                target: mission.target,
+                status,
+                canCheckin,
+                nextResetAt: nextResetAt.toISOString(),
+            },
+        };
+    } catch (error: any) {
+        return { success: false, message: error.message || "Terjadi kesalahan" };
+    }
+};
 /**
  * Panggil ini di dalam/​setelah processCheckout (action/checkout) untuk setiap
  * ITEM di order yang baru saja completed, supaya mission PRODUCT_PURCHASE_COUNT /
@@ -133,6 +185,130 @@ export const recordOrderCompletedEvent = async (params: {
         params.orderId
     );
 
+    export const getDailyCheckinMission = async (): Promise<{
+    success: boolean;
+    message?: string;
+    data: { missionId: string; title: string; target: number } | null;
+}> => {
+    try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from("missions")
+            .select("id, title, target")
+            .eq("mission_type", "LOGIN_COUNT")
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error || !data) {
+            return { success: false, message: error?.message ?? "Mission check-in belum ada", data: null };
+        }
+
+        return {
+            success: true,
+            data: { missionId: data.id, title: data.title, target: data.target },
+        };
+    } catch (error: any) {
+        return { success: false, message: error.message || "Terjadi kesalahan", data: null };
+    }
+};
+
+export const checkinMission = async (missionId: string) => {
+    try {
+        await getAuthenticatedUser();
+        const supabase = await createClient();
+
+        const { data, error } = await supabase.rpc("fn_checkin_mission", {
+            p_mission_id: missionId,
+        });
+
+        if (error) {
+            console.error("checkinMission RPC error:", error);
+            return { success: false, message: error.message };
+        }
+
+        const result = Array.isArray(data) ? data[0] : data;
+        return {
+            success: result?.success ?? false,
+            message: result?.message,
+            progress: result?.new_progress,
+            nextResetAt: result?.next_reset_at,
+        };
+    } catch (error: any) {
+        console.error("checkinMission error:", error);
+        return { success: false, message: error.message || "Terjadi kesalahan" };
+    }
+};
+
+export const getCheckinCalendar = async (missionId: string) => {
+    try {
+        const user = await getAuthenticatedUser();
+        const supabase = await createClient();
+
+        const { data: mission, error: missionError } = await supabase
+            .from("missions")
+            .select("*")
+            .eq("id", missionId)
+            .single();
+
+        if (missionError || !mission) {
+            return { success: false, message: missionError?.message ?? "Mission tidak ditemukan" };
+        }
+
+        const { data: userMission } = await supabase
+            .from("user_missions")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("mission_id", missionId)
+            .maybeSingle();
+
+        const resetHour: number = mission.config?.reset_hour ?? 0;
+        const now = new Date();
+
+        const periodStart = new Date(Date.UTC(
+            now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), resetHour, 0, 0
+        ));
+        if (periodStart.getTime() > now.getTime()) {
+            periodStart.setUTCDate(periodStart.getUTCDate() - 1);
+        }
+
+        const checkedDays: string[] = userMission?.progress_meta?.days ?? [];
+
+        const days = Array.from({ length: 7 }).map((_, i) => {
+            const d = new Date(periodStart);
+            d.setUTCDate(d.getUTCDate() - (6 - i));
+            const key = d.toISOString().slice(0, 10);
+            return {
+                date: key,
+                label: d.getUTCDate(),
+                checked: checkedDays.includes(key),
+                isToday: i === 6,
+            };
+        });
+
+        const status = userMission?.status ?? "IN_PROGRESS";
+        const todayChecked = checkedDays.includes(periodStart.toISOString().slice(0, 10));
+        const canCheckin = status === "IN_PROGRESS" && !todayChecked;
+
+        const nextResetAt = new Date(periodStart);
+        nextResetAt.setUTCDate(nextResetAt.getUTCDate() + 1);
+
+        return {
+            success: true,
+            data: {
+                progress: userMission?.progress ?? 0,
+                target: mission.target,
+                status,
+                canCheckin,
+                nextResetAt: nextResetAt.toISOString(),
+                days,
+            },
+        };
+    } catch (error: any) {
+        return { success: false, message: error.message || "Terjadi kesalahan" };
+    }
+};
 export const recordProfileCompletedEvent = async () =>
     recordMissionEvent("PROFILE_COMPLETED", {});
 

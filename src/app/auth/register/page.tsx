@@ -9,6 +9,10 @@ import { createClient } from '@supabase/supabase-js';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { CardAuth } from '@/components/card-dashed';
+import Live2DWidget from '@/components/live2d-widget';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -332,189 +336,182 @@ export default function Register(): React.ReactElement {
             </div>
         );
     }
-
+    const isDesktop = useMediaQuery("(min-width: 640px)")
     return (
         <div className="min-h-screen bg-radial from-transparent to-white text-primary flex items-center justify-center p-4">
             <div className="relative z-10 w-full max-w-4xl  mx-auto">
-                <Card className="bg-white border-0 shadow-none sm:border-primary/30 grid sm:grid-cols-2 sm:shadow-lg rounded-4xl">
-                    <div className="relative overflow-hidden ">
-                        <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute inset-0 z-1"></div>
-                        <img
-                            src="/images/airi.webp"
-                            alt="Login Illustration"
-                            className="w-full hidden sm:block absolute left-1/2 max-w-sm -translate-x-1/2"
-                        />
-                    </div>
-                    <div className='pY-5 sm:px-5'>
-                        <CardHeader className="space-y-1 pb-4">
-                            <CardTitle className="text-2xl text-primary">
-                                Create New Account
-                            </CardTitle>
-                            <CardDescription className="text-gray-500">
-                                Fill in the information below to get started
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {error && (
-                                <Alert className="mb-4 bg-red-500/10 border-red-500/50 text-red-400">
-                                    <AlertCircle className="w-4 h-4" />
-                                    <AlertDescription>{error}</AlertDescription>
-                                </Alert>
-                            )}
+                <img src="/images/logonav.webp" alt="Logo" className="md:w-1/2 w-3/4 mx-auto mb-5" width={200} height={100} />
+                <CardAuth variant='signup' className="mx-4">
+                     <div className="flex flex-col justify-center px-15 absolute top-15  w-full">
+                            <h1 className="text-4xl sm:text-6xl  w-full text-primary leading-10 " >JOIN!</h1>
+                            <h1 className="text-5xl sm:text-7xl  w-full text-primary" > <span className='bg-title'>BESTIEE</span></h1>
+                        </div>
+                    <div className='sm:border-primary/30 grid sm:grid-cols-2 sm:shadow-lg md:py-10 '>
 
-                            {success && (
-                                <Alert className="mb-4 bg-green-500/10 border-green-500/50 text-green-400">
-                                    <CheckCircle2 className="w-4 h-4" />
-                                    <AlertDescription>{success}</AlertDescription>
-                                </Alert>
-                            )}
+                       
+                        {isDesktop && (
+                            <div className="relative mt-15  overflow-hidden ">
 
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm text-gray-500 flex items-center">
-                                        <User className="w-4 h-4 mr-2" />
-                                        Username
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Enter Username"
-                                        {...registerForm.register('full_name', {
-                                            required: 'Username is required',
-                                            minLength: { value: 3, message: 'Name must be at least 3 characters' }
-                                        })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
-                                    />
-                                    {registerForm.formState.errors.full_name && (
-                                        <p className="text-sm text-red-400 flex items-center mt-1">
-                                            <AlertCircle className="w-3 h-3 mr-1" />
-                                            {registerForm.formState.errors.full_name.message}
-                                        </p>
-                                    )}
-                                </div>
+                                <div className="bg-gradient-to-t from-white via-transparent to-transparent absolute z-1 h-1/2 bottom-0 w-full left-0"></div>
 
-                                <div className="space-y-2">
-                                    <label className="text-sm text-gray-500 flex items-center">
-                                        <Mail className="w-4 h-4 mr-2" />
-                                        Email
-                                    </label>
-                                    <input
-                                        type="email"
-                                        placeholder="Enter Email"
-                                        {...registerForm.register('email', {
-                                            required: 'Email is required',
-                                            pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' }
-                                        })}
-                                        className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all"
-                                    />
-                                    {registerForm.formState.errors.email && (
-                                        <p className="text-sm text-red-400 flex items-center mt-1">
-                                            <AlertCircle className="w-3 h-3 mr-1" />
-                                            {registerForm.formState.errors.email.message}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm text-gray-500 flex items-center">
-                                        <Lock className="w-4 h-4 mr-2" />
-                                        Password
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            type={showPassword ? 'text' : 'password'}
-                                            placeholder="Enter Password"
-                                            {...registerForm.register('password', {
-                                                required: 'Password is required',
-                                                minLength: { value: 8, message: 'Password must be at least 8 characters' },
-                                                pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Password must contain uppercase, lowercase and number' }
-                                            })}
-                                            className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPassword(!showPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
-                                        >
-                                            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                        </button>
-                                    </div>
-                                    {registerForm.formState.errors.password && (
-                                        <p className="text-sm text-red-400 flex items-center mt-1">
-                                            <AlertCircle className="w-3 h-3 mr-1" />
-                                            {registerForm.formState.errors.password.message}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm text-gray-500 flex items-center">
-                                        <Lock className="w-4 h-4 mr-2" />
-                                        Confirm Password
-                                    </label>
-                                    <div className="relative">
-                                        <input
-                                            type={showConfirmPassword ? 'text' : 'password'}
-                                            placeholder="Enter Confirm Password"
-                                            {...registerForm.register('confirmPassword', { required: 'Please confirm your password' })}
-                                            className="w-full px-4 py-3 bg-white/5 border border-[#9B5DE0]/30 rounded-lg text-primary placeholder-gray-500 focus:outline-none focus:border-[#D78FEE]/50 transition-all pr-12"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
-                                        >
-                                            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                        </button>
-                                    </div>
-                                    {registerForm.formState.errors.confirmPassword && (
-                                        <p className="text-sm text-red-400 flex items-center mt-1">
-                                            <AlertCircle className="w-3 h-3 mr-1" />
-                                            {registerForm.formState.errors.confirmPassword.message}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <label className="flex items-start space-x-2 cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        {...registerForm.register('agreeTerms', { required: 'You must agree to the terms' })}
-                                        className="w-4 h-4 mt-0.5 rounded border-[#9B5DE0]/30 bg-white/5 text-[#D78FEE] focus:ring-[#D78FEE] focus:ring-offset-0"
-                                    />
-                                    <span className="text-sm text-gray-500">
-                                        I agree to the{' '}
-                                        <a href="#" className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors">Terms of Service</a>{' '}
-                                        and{' '}
-                                        <a href="#" className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors">Privacy Policy</a>
-                                    </span>
-                                </label>
-
-                                <Button
-                                    onClick={() => void registerForm.handleSubmit(handleRegister)()}
-                                    disabled={isSubmitting}
-                                    className="w-full bg-primary hover:from-[#8B4DD0] hover:to-[#C77FDE] text-white py-6"
-                                >
-                                    {isSubmitting ? 'Creating account...' : 'Create Account'}
-                                </Button>
+                                <Live2DWidget className='' modelPath="/NemunekoChibiRIG/Nemuneko Live 2D.model3.json" />
                             </div>
-                        </CardContent>
-                    </div>
-                </Card>
+                        )}
 
-                <div className="mt-6 text-center text-sm text-gray-400">
-                    <p>
-                        Already have an account?{' '}
-                        <Link href="/auth/login"
-                            className="text-[#D78FEE] hover:text-[#FDCFFA] transition-colors font-medium"
-                        >
-                            Sign In
-                        </Link>
-                    </p>
-                </div>
+                        <div className='py-5 sm:px-5  flex flex-col justify-center'>
+
+                            <CardContent className="space-y-4">
+                                {error && (
+                                    <Alert className="mb-4 bg-red-500/10 border-red-500/50 text-red-400">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <AlertDescription>{error}</AlertDescription>
+                                    </Alert>
+                                )}
+
+                                {success && (
+                                    <Alert className="mb-4 bg-green-500/10 border-green-500/50 text-green-400">
+                                        <CheckCircle2 className="w-4 h-4" />
+                                        <AlertDescription>{success}</AlertDescription>
+                                    </Alert>
+                                )}
+
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xl text-lilita text-primary flex items-center gap-2">
+                                               <img src="/icon/SVG/usericon.svg" className="w-6 h-6" alt="" />
+                                            Username
+                                        </label>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter Username"
+                                            {...registerForm.register('full_name', {
+                                                required: 'Username is required',
+                                                minLength: { value: 3, message: 'Name must be at least 3 characters' }
+                                            })}
+                                            className="w-full px-5 py-2.5 bg-muted/50 text-fredoka p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60 transition-all"
+                                        />
+                                        {registerForm.formState.errors.full_name && (
+                                            <p className="text-sm text-red-400 flex items-center mt-1">
+                                                <AlertCircle className="w-3 h-3 mr-1" />
+                                                {registerForm.formState.errors.full_name.message}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                            <label className="text-xl text-lilita text-primary flex items-center gap-2">
+                                               <img src="/icon/SVG/inboxicon.svg" className="w-6 h-6" alt="" />
+                                            Email
+                                        </label>
+                                        <input
+                                            type="email"
+                                            placeholder="Enter Email"
+                                            {...registerForm.register('email', {
+                                                required: 'Email is required',
+                                                pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: 'Invalid email address' }
+                                            })}
+                                            className="w-full px-5 py-2.5 bg-muted/50 text-fredoka p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60 transition-all"
+                                        />
+                                        {registerForm.formState.errors.email && (
+                                            <p className="text-sm text-red-400 flex items-center mt-1">
+                                                <AlertCircle className="w-3 h-3 mr-1" />
+                                                {registerForm.formState.errors.email.message}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xl text-lilita text-primary flex items-center gap-2">
+                                              <img src="/icon/SVG/lockicon.svg" className="w-6 h-6" alt="" />
+                                            Password
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                placeholder="Enter Password"
+                                                {...registerForm.register('password', {
+                                                    required: 'Password is required',
+                                                    minLength: { value: 8, message: 'Password must be at least 8 characters' },
+                                                    pattern: { value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, message: 'Password must contain uppercase, lowercase and number' }
+                                                })}
+                                                className="w-full px-5 py-2.5 bg-muted/50 text-fredoka p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60 transition-all pr-12"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                                            >
+                                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                            </button>
+                                        </div>
+                                        {registerForm.formState.errors.password && (
+                                            <p className="text-sm text-red-400 flex items-center mt-1">
+                                                <AlertCircle className="w-3 h-3 mr-1" />
+                                                {registerForm.formState.errors.password.message}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xl text-lilita text-primary flex items-center gap-2">
+                                           <img src="/icon/SVG/lockicon.svg" className="w-6 h-6" alt="" />
+                                            Confirm Password
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type={showConfirmPassword ? 'text' : 'password'}
+                                                placeholder="Enter Confirm Password"
+                                                {...registerForm.register('confirmPassword', { required: 'Please confirm your password' })}
+                                                className="w-full px-5 py-2.5 bg-muted/50 text-fredoka p-2 px-4 text-primary rounded-full border-2 border-primary disabled:opacity-60 transition-all pr-12"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
+                                            >
+                                                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                            </button>
+                                        </div>
+                                        {registerForm.formState.errors.confirmPassword && (
+                                            <p className="text-sm text-red-400 flex items-center mt-1">
+                                                <AlertCircle className="w-3 h-3 mr-1" />
+                                                {registerForm.formState.errors.confirmPassword.message}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <label className="flex items-center space-x-2 cursor-pointer">
+                                        <Checkbox
+
+                                            {...registerForm.register('agreeTerms', { required: 'You must agree to the terms' })}
+                                            className="text-primary border-2  border-primary rounded-sm"
+                                        />
+                                        <span className="text-sm text-fredoka  font-semibold text-primary">
+                                            I agree to the{' '}
+                                            <a href="#" className="text-[#B29BF9] hover:text-[#FDCFFA] transition-colors">Terms of Service</a>{' '}
+                                            and{' '}
+                                            <a href="#" className="text-[#B29BF9] hover:text-[#FDCFFA] transition-colors">Privacy Policy</a>
+                                        </span>
+                                    </label>
+
+                                    <Button
+                                        onClick={() => void registerForm.handleSubmit(handleRegister)()}
+                                        disabled={isSubmitting}
+                                        className="w-full bg-primary rounded-full cursor-pointer mt-10 hover:from-[#8B4DD0] hover:to-[#C77FDE] text-white py-2"
+                                    >
+                                        {isSubmitting ? 'Creating account...' : 'Let’s go! hang out with NemunekoStudio'}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </div>
+                    </div>
+                </CardAuth>
+
 
                 <div className="mt-4 text-center">
                     <a
                         href="/"
-                        className="text-sm text-gray-400 hover:text-[#D78FEE] transition-colors inline-flex items-center"
+                        className="text-sm mt-10 text-gray-400 hover:text-[#D78FEE] transition-colors inline-flex items-center"
                     >
                         ← Back to Home
                     </a>

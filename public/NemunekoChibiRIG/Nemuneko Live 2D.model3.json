@@ -1,0 +1,26 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "Nemuneko Live 2D.moc3",
+		"Textures": [
+			"Nemuneko Live 2D.8192/texture_00.webp"
+		],
+		"Physics": "Nemuneko Live 2D.physics3.json",
+		"DisplayInfo": "Nemuneko Live 2D.cdi3.json"
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": [
+				"ParamEyeROpen",
+				"ParamEyeLOpen"
+			]
+		},
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		}
+	]
+}
