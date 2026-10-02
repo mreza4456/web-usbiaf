@@ -8,7 +8,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import {
     Package,
-    Edit,
     Clock,
     CheckCircle2,
     XCircle,
@@ -25,11 +24,12 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { IOrderWithItems } from '@/interface';
+
 import { updateOrderStatus, getUserOrders } from '@/action/order';
 import { createComment } from '@/action/comment';
 import { useAuthStore } from '@/store/auth';
 import { useRouter } from 'next/navigation';
+import { IOrderWithItems } from '@/interface';
 
 type StatusFilter = 'all' | 'pending' | 'processing' | 'completed' | 'cancelled';
 type ViewMode = 'board' | 'status';
@@ -50,7 +50,6 @@ export default function UserOrdersPage() {
     const [orders, setOrders] = useState<IOrderWithItems[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedOrder, setSelectedOrder] = useState<IOrderWithItems | null>(null);
-    const [detailOpen, setDetailOpen] = useState(false);
     const [commentOpen, setCommentOpen] = useState(false);
     const [submittingComment, setSubmittingComment] = useState(false);
     const [activeTab, setActiveTab] = useState<StatusFilter>('all');
@@ -121,7 +120,7 @@ export default function UserOrdersPage() {
                 (o) => o.status === 'processing' && !(o as any).revision_requested
             ),
             inRevisions: filteredOrders.filter(
-                (o) => (o as any).revision_requested === true
+                (o) => (o.status === 'revision')
             ),
             completed: filteredOrders.filter((o) => o.status === 'completed'),
         };
@@ -270,9 +269,9 @@ export default function UserOrdersPage() {
         }
     };
 
+    // Sekarang navigasi ke halaman detail, bukan buka dialog
     const viewOrderDetails = (order: IOrderWithItems) => {
-        setSelectedOrder(order);
-        setDetailOpen(true);
+        router.push(`/user/user-order/${order.id}`);
     };
 
     const renderStars = (isInteractive: boolean = true) => {
@@ -570,162 +569,12 @@ export default function UserOrdersPage() {
                 </DialogContent>
             </Dialog>
 
-            {/* Order Detail Dialog */}
-            <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle>Additional Order Information</DialogTitle>
-                        <DialogDescription>
-                            Order #{selectedOrder?.code_order}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    {selectedOrder && (
-                        <div className="space-y-3">
-                            {(selectedOrder.discord || selectedOrder.project_overview || selectedOrder.references_link ||
-                                selectedOrder.platform?.length > 0 || selectedOrder.purpose || selectedOrder.usage_type ||
-                                selectedOrder.additional_notes) && (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        {selectedOrder.discord && (
-                                            <div className="p-2 rounded">
-                                                <span className="text-xs text-gray-600 font-medium">Discord:</span>
-                                                <p className="text-sm text-gray-900 truncate">{selectedOrder.discord}</p>
-                                            </div>
-                                        )}
-
-                                        {selectedOrder.purpose && (
-                                            <div className="p-2 rounded">
-                                                <span className="text-xs text-gray-600 font-medium">Purpose:</span>
-                                                <p className="text-sm text-gray-900 capitalize truncate">
-                                                    {selectedOrder.purpose.replace(/_/g, ' ').replace(/-/g, ' ')}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {selectedOrder.usage_type && (
-                                            <div className="p-2 rounded">
-                                                <span className="text-xs text-gray-600 font-medium">Usage Type:</span>
-                                                <p className="text-sm text-gray-900 capitalize truncate">
-                                                    {selectedOrder.usage_type.replace(/_/g, ' ')}
-                                                </p>
-                                            </div>
-                                        )}
-
-                                        {selectedOrder.platform && selectedOrder.platform.length > 0 && (
-                                            <div className="p-2 rounded">
-                                                <span className="text-xs text-gray-600 font-medium block mb-1">Platform(s):</span>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {selectedOrder.platform.map((plat, idx) => (
-                                                        <Badge key={idx} variant="secondary" className="text-xs py-0 px-2">
-                                                            {plat}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {selectedOrder.references_link && (
-                                            <div className="p-4 rounded-lg">
-                                                <span className="text-sm text-gray-600 font-medium block mb-1">Reference Links:</span>
-                                                <a
-                                                    href={selectedOrder.references_link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 hover:underline break-all"
-                                                >
-                                                    {selectedOrder.references_link}
-                                                </a>
-                                            </div>
-                                        )}
-
-                                        {selectedOrder.project_overview && (
-                                            <div className="p-2 rounded col-span-full">
-                                                <span className="text-xs text-gray-600 font-medium block mb-1">Project Overview:</span>
-                                                <p className="text-sm text-gray-900 line-clamp-3">{selectedOrder.project_overview}</p>
-                                            </div>
-                                        )}
-
-                                        {selectedOrder.additional_notes && (
-                                            <div className="p-2 rounded col-span-full">
-                                                <span className="text-xs text-gray-600 font-medium block mb-1">Additional Notes:</span>
-                                                <p className="text-sm text-gray-900 line-clamp-3">{selectedOrder.additional_notes}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                            <div className="border-t pt-3">
-                                <h3 className="font-semibold text-base text-gray-900 mb-2">Order Items</h3>
-                                <div className="space-y-1.5">
-                                    {selectedOrder.order_items?.map((item) => (
-                                        <div key={item.id} className="flex justify-between items-start p-2 bg-gray-50 rounded">
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-sm text-gray-900 truncate">
-                                                    {item.category_name
-                                                        ?.split(" ")
-                                                        .slice(0, 4)
-                                                        .join(" ")}
-                                                </p>
-                                                <p className="text-xs text-gray-600 truncate">
-                                                    {item.package_title}{item.package_name?.name ? ` • ${item.package_name.name}` : ''} • Qty: {item.quantity}
-                                                </p>
-                                            </div>
-                                            <div className="text-right ml-2 flex-shrink-0">
-                                                <p className="text-xs text-gray-600">
-                                                    {formatCurrency(item.price)} × {item.quantity}
-                                                </p>
-                                                <p className="font-semibold text-sm text-gray-900">
-                                                    {formatCurrency(item.total)}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="flex justify-between items-center pt-2 border-t mt-2 font-semibold">
-                                    <span className="text-sm">Total:</span>
-                                    <span className="text-primary">{formatCurrency(selectedOrder.total)}</span>
-                                </div>
-                            </div>
-
-                            {(selectedOrder.status === 'pending' || selectedOrder.status === 'processing') && (
-                                <div className="flex justify-end gap-2 pt-3 border-t">
-                                    <Button
-                                        size="sm"
-                                        onClick={() => {
-                                            setDetailOpen(false);
-                                            router.push(`/user/user-order/edit/${selectedOrder.id}`);
-                                        }}
-                                        className="bg-primary text-white border-primary hover:bg-primary/90"
-                                    >
-                                        <Edit className="w-3.5 h-3.5 mr-1" />
-                                        Edit
-                                    </Button>
-                                    {selectedOrder.status === 'pending' && (
-                                        <Button
-                                            size="sm"
-                                            onClick={() => {
-                                                setDetailOpen(false);
-                                                setOpen(true);
-                                            }}
-                                            className="bg-red-100 text-red-600 border-red-600 hover:bg-red-100"
-                                        >
-                                            <XCircle className="w-3.5 h-3.5 mr-1" />
-                                            Cancel
-                                        </Button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
-
             {/* Header, sesuai mockup: judul + search + toggle Board/Status */}
             <div className="mb-8 space-y-6 ">
-           
-                    <h1 className="text-4xl sm:text-6xl  w-full text-primary leading-5 mb-10" >ORDER <span className='text-5xl sm:text-7xl bg-title'>TRACKING</span></h1>
-             
-             
+
+                <h1 className="text-4xl sm:text-6xl  w-full text-primary leading-5 mb-10" >ORDER <span className='text-5xl sm:text-7xl bg-title'>TRACKING</span></h1>
+
+
 
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
                     <div className="relative w-full sm:max-w-md">

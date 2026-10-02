@@ -65,7 +65,7 @@ export interface IOrderItem {
   package_id: string;       // FK -> categories_package.id
   package_name_id: number;  // FK -> package_name.id
   category_name: string;
-    category_image?: string | null;
+  category_image?: string | null;
   package_title: string;         // nama paket, e.g. "Paket A" (dari categories_package.name)
   package_name?: IPackageName;   // relasi tier, e.g. { id, name: "Basic" | "Standard" | "Premium" }
   quantity: number;
@@ -74,7 +74,17 @@ export interface IOrderItem {
   created_at: string;
   updated_at: string;
 
-  categories: ICategory;
+  categories?: ICategory;
+
+  // ── Brief fields (pindah dari orders ke order_items) ──────────────
+  discord?: string | null;
+  purpose?: string | null;
+  project_overview?: string | null;
+  has_references?: 'yes' | 'no' | null;
+  references_link?: string | null;
+  platform?: string[] | null;
+  usage_type?: string | null;
+  additional_notes?: string | null;
 }
 
 export interface IOrder {
@@ -89,7 +99,7 @@ export interface IOrder {
   usage_type: string;
   additional_notes: string;
   total: number;
-  status: 'pending' | 'processing' | 'completed' | 'cancelled';
+  status: 'pending' | 'processing' | 'completed' | 'cancelled'| 'revision';
   created_at: string;
   updated_at: string;
 }
@@ -102,6 +112,43 @@ export interface IOrderWithItems extends IOrder {
   };
 }
 
+export interface IOrderBrief {
+  discord: string;
+  purpose: string;
+  project_overview: string;
+  has_references: 'yes' | 'no';
+  references_link: string | null;
+  platform: string[];
+  usage_type: string;
+  additional_notes: string | null;
+}
+
+// ── Cart ────────────────────────────────────────────────────────────
+export interface IAddToCartRequest extends IOrderBrief {
+  user_id: string;
+  categories_id: string;
+  package_id: string;
+  quantity: number;
+}
+
+export interface ICheckoutData {
+  user_id: string;
+  total: number;
+  voucher_id?: string;
+  cart_items: Array<{
+    cart_id: string;
+    categories_id: string;
+    package_id: string;
+    package_name_id: number;
+    quantity: number;
+    price: number;
+    total: number;
+    category_name: string;
+    package_title: string;
+  }>;
+}
+
+// ICheckoutFormData tetap dipakai, sekarang sebagai state form di dialog.
 export interface ICheckoutFormData {
   discord: string;
   purpose: string;
@@ -269,7 +316,14 @@ export interface ICartItemDetail extends ICart {
   package_name: IPackageName; // relasi ke tabel package_name -> tier (Basic/Standard/Premium)
   package_price: number;
   package_description?: string;
-
+  discord: string;
+  purpose: string;
+  project_overview: string;
+  has_references: 'yes' | 'no';
+  references_link: string | null;
+  platform: string[];
+  usage_type: string;
+  additional_notes: string | null;
   // Calculated
   item_total: number;
 }

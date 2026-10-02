@@ -1,41 +1,20 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+// components/order-form.tsx
+// Brief (discord, purpose, dst.) sudah diisi di modal service dan tersimpan di cart,
+// jadi halaman ini tinggal review + bayar. Tidak ada lagi step 1-3.
+
+import React, { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  ShoppingCart,
-  User,
-  MessageSquare,
-  CheckCircle2,
-  AlertCircle,
-  ArrowLeft,
-  ArrowRight,
-  Package,
-  CreditCard,
-  Tag,
-  X,
-  ChevronRight
-} from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, ArrowLeft, CheckCircle2, CreditCard, Package, Tag, User, X } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import type { ICartItemDetail } from '@/interface';
+import { BriefDetails, hasBrief } from '@/components/cart-brief-dialog';
 
-import CustomPayPalDialog from '@/components/checkout-form'; // sesuaikan path
+import CustomPayPalDialog from '@/components/checkout-form';
 import { PayPalScriptProvider } from '@paypal/react-paypal-js';
 
 interface CheckoutPageProps {
@@ -48,120 +27,59 @@ interface CheckoutPageProps {
   }>;
 }
 
-export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout }: CheckoutPageProps) {
+const formatCurrency = (amount: number | string): string => {
+  const n = typeof amount === 'string' ? parseFloat(amount) : amount;
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }).format(n || 0);
+};
+
+export default function CheckoutPage({ cartItems: allCartItems = [], userId, onSubmitCheckout }: CheckoutPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [currentStep, setCurrentStep] = useState(1);
+  const user = useAuthStore((s) => s.user);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const user = useAuthStore((s) => s.user);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+
   const voucherId = searchParams.get('voucher_id');
   const voucherCode = searchParams.get('voucher_code');
   const voucherValue = searchParams.get('voucher_value');
+  const cartIdsParam = searchParams.get('cart_ids');
 
-  const getDisplayName = () => {
-    if (!user) return null;
-    if (user.full_name) return user.full_name;
-    return user.email?.split("@")[0];
-  };
+  // Hanya item yang dipilih di halaman cart (?cart_ids=a,b,c).
+  // Tanpa parameter itu, semua item cart ikut diproses.
+  const cartItems = useMemo(() => {
+    if (!cartIdsParam) return allCartItems;
+    const ids = new Set(cartIdsParam.split(',').filter(Boolean));
+    return allCartItems.filter((item) => ids.has(String(item.id)));
+  }, [allCartItems, cartIdsParam]);
 
-  const displayName = getDisplayName();
+  const displayName = user?.full_name || user?.email?.split('@')[0] || '';
 
-  const [formData, setFormData] = useState({
-    name: displayName ?? '',
-    email: user?.email ?? '',
-    discord: '',
-    purpose: '',
-    project_overview: '',
-    hasReferences: '',
-    references_link: '',
-    platforms: [] as string[],
-    usage_type: '',
-    additional_notes: ''
-  });
+  const subtotal = cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0);
 
-  const calculateDiscount = () => {
+  const discount = useMemo(() => {
     if (!voucherValue) return 0;
+    const pct = voucherValue.match(/(\d+)%/);
+    if (pct) return (subtotal * parseInt(pct[1])) / 100;
+    const nominal = parseFloat(voucherValue.replace(/[^\d.]/g, ''));
+    return isNaN(nominal) ? 0 : Math.min(nominal, subtotal);
+  }, [voucherValue, subtotal]);
 
-    const subtotal = Array.isArray(cartItems)
-      ? cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0)
-      : 0;
-
-    const percentageMatch = voucherValue.match(/(\d+)%/);
-
-    if (percentageMatch) {
-      // Jika ada %, hitung persentase discount
-      const percentage = parseInt(percentageMatch[1]);
-      return (subtotal * percentage) / 100;
-    } else {
-      // Jika tidak ada %, anggap sebagai nilai nominal langsung
-      const nominalValue = parseFloat(voucherValue.replace(/[^\d.]/g, ''));
-      return isNaN(nominalValue) ? 0 : nominalValue;
-    }
-  };
-
-  const subtotal = Array.isArray(cartItems)
-    ? cartItems.reduce((sum, item) => sum + (item.item_total || 0), 0)
-    : 0;
-  const discount = calculateDiscount();
   const total = subtotal - discount;
 
-  useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      name: displayName ?? '',
-      email: user?.email ?? ''
-    }));
-  }, [displayName, user]);
+  const incompleteItems = cartItems.filter((i) => !hasBrief(i));
+  const canPay = cartItems.length > 0 && incompleteItems.length === 0;
 
-  const validateStep = (step: number) => {
-    const newErrors: Record<string, string> = {};
-
-    if (step === 1) {
-      if (!formData.discord) newErrors.discord = 'Discord username is required';
-    } else if (step === 2) {
-      if (!formData.purpose) newErrors.purpose = 'Project purpose is required';
-      if (!formData.project_overview) newErrors.project_overview = 'Project description is required';
-      if (!formData.hasReferences) newErrors.hasReferences = 'Please select an option';
-      if (formData.hasReferences === 'yes' && !formData.references_link) {
-        newErrors.references_link = 'Please provide reference links';
-      }
-    } else if (step === 3) {
-      if (formData.platforms.length === 0) newErrors.platforms = 'Please select at least one platform';
-      if (!formData.usage_type) newErrors.usage_type = 'Usage type is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (validateStep(currentStep)) {
-      setError('');
-      setCurrentStep(prev => Math.min(prev + 1, 4));
-    } else {
-      setError('Please fill in all required fields');
-    }
-  };
-
-  const handleBack = () => {
-    setError('');
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-  };
-
-  // With PayPal, there's no separate "create client secret" step like Stripe.
-  // The PayPal order is created lazily (via the createPayPalOrder server
-  // action) inside CustomPayPalDialog when the buyer clicks the PayPal
-  // button, so here we just validate the form and open the payment dialog.
-  const handleSubmit = async () => {
-    if (!validateStep(3)) {
-      setError('Please complete all required fields');
+  const handleSubmit = () => {
+    if (!canPay) {
+      setError('Some items have no request details. Go back to the cart and re-add them.');
       return;
     }
-
     setError('');
+    // Order PayPal dibuat lazily di CustomPayPalDialog saat tombol PayPal diklik.
     setShowPaymentDialog(true);
   };
 
@@ -170,45 +88,32 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
     setError('');
 
     try {
+      // Brief TIDAK dikirim dari client: processCheckout membacanya dari tabel carts
+      // dan menyalinnya ke order_items.
       const orderData = {
         user_id: userId,
-        discord: formData.discord,
-        purpose: formData.purpose,
-        project_overview: formData.project_overview,
-        references_link: formData.references_link || '',
-        platform: formData.platforms,
-        usage_type: formData.usage_type,
-        additional_notes: formData.additional_notes || '',
-        total: total,
+        total,
         voucher_id: voucherId || undefined,
-        // Dikirim ke processCheckout untuk DIVERIFIKASI ULANG ke PayPal
-        // (lihat verifyPayPalOrder di actions/paypal.ts) sebelum order dibuat.
         paypal_order_id: paymentResult.paypalOrderId,
         payment_id: paymentResult.captureId || paymentResult.paypalOrderId,
-        cart_items: cartItems.map(item => ({
+        cart_items: cartItems.map((item) => ({
           cart_id: item.id,
           categories_id: item.categories_id,
-          package_id: item.package_id,           // FK -> categories_package.id
-          package_name_id: item.package_name_id, // FK -> package_name.id
+          package_id: item.package_id,
+          package_name_id: item.package_name_id,
           quantity: item.quantity,
           price: item.package_price,
           total: item.item_total,
           category_name: item.category_name,
-          package_title: item.package_title,     // e.g. "Paket A"
-        }))
+          package_title: item.package_title,
+        })),
       };
 
       const result = await onSubmitCheckout(orderData);
 
       if (result.success && result.order_id) {
-        // Order hanya ada di database kalau pembayaran sudah diverifikasi
-        // di processCheckout — jadi cukup redirect ke halaman success
-        // dengan order_id, dan halaman itu sendiri yang akan memverifikasi
-        // ulang kepemilikan order sebelum menampilkan apa pun.
         router.push(`/success?order_id=${result.order_id}`);
-        // Sengaja TIDAK setIsSubmitting(false) di sini — biarkan tombol
-        // tetap dalam state loading sampai navigasi selesai, supaya user
-        // tidak sempat klik ulang saat halaman masih berpindah.
+        // isSubmitting sengaja tidak di-reset sampai navigasi selesai.
       } else {
         setError(result.message || 'Failed to place order. Please try again.');
         setIsSubmitting(false);
@@ -218,56 +123,35 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
       setIsSubmitting(false);
     }
   };
-  const togglePlatform = (platform: string) => {
-    setFormData(prev => ({
-      ...prev,
-      platforms: prev.platforms.includes(platform)
-        ? prev.platforms.filter(p => p !== platform)
-        : [...prev.platforms, platform]
-    }));
-    setErrors(prev => ({ ...prev, platforms: '' }));
-  };
-
-  const handleRemoveVoucher = () => {
-    router.push('/cart');
-  };
-
-  const steps = [
-    { number: 1, title: 'Contact', icon: User },
-    { number: 2, title: 'Project', icon: Package },
-    { number: 3, title: 'Usage', icon: MessageSquare },
-    { number: 4, title: 'Review', icon: CreditCard }
-  ];
 
   return (
     <div className="min-h-screen py-8 sm:py-12 px-4 mt-15 sm:mt-15">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className='w-full mb-8 sm:mb-10 text-center'>
+        <div className="w-full mb-8 sm:mb-10 text-center">
           <h1 className="text-2xl sm:text-5xl font-bold text-primary text-borsok">Checkout</h1>
-          <p className="text-gray-600 text-sm sm:text-base arial">Complete Your Order Detail</p>
-
+          <p className="text-gray-600 text-sm sm:text-base arial">Review your order and pay</p>
         </div>
 
         {error && (
-          <Alert className="mb-6 bg-red-50 border-red-200 max-w-3xl mx-auto">
+          <Alert className="mb-6 bg-red-50 border-red-200">
             <AlertCircle className="w-4 h-4 text-red-600" />
             <AlertDescription className="text-red-600">{error}</AlertDescription>
           </Alert>
         )}
 
         {voucherCode && (
-          <Alert className="mb-6 bg-green-50 border-green-200 max-w-3xl mx-auto">
+          <Alert className="mb-6 bg-green-50 border-green-200">
             <Tag className="w-4 h-4 text-green-600" />
             <AlertDescription className="flex items-center justify-between text-green-700">
               <div>
                 <strong>Voucher Applied:</strong> {voucherCode} ({voucherValue} discount)
               </div>
               <Button
-                onClick={handleRemoveVoucher}
+                onClick={() => router.push('/cart')}
                 variant="ghost"
                 size="sm"
                 className="text-green-700 hover:text-green-800"
+                aria-label="Change voucher in cart"
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -275,376 +159,143 @@ export default function CheckoutPage({ cartItems = [], userId, onSubmitCheckout 
           </Alert>
         )}
 
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between">
-            {steps.map((step, index) => {
-              const StepIcon = step.icon;
-              const isActive = currentStep === step.number;
-              const isCompleted = currentStep > step.number;
+        {incompleteItems.length > 0 && (
+          <Alert className="mb-6 bg-amber-50 border-amber-200">
+            <AlertCircle className="w-4 h-4 text-amber-600" />
+            <AlertDescription className="text-amber-700">
+              {incompleteItems.length} {incompleteItems.length === 1 ? 'item has' : 'items have'} no request
+              details. Remove and re-add {incompleteItems.length === 1 ? 'it' : 'them'} from the service page.
+            </AlertDescription>
+          </Alert>
+        )}
 
-              return (
-                <React.Fragment key={step.number}>
-                  <div className="flex flex-col items-center flex-1">
-                    <div className={`
-                          w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center mb-2 transition-all
-                          ${isActive ? 'bg-primary text-white ring-4 ring-primary/20' : ''}
-                          ${isCompleted ? 'bg-green-500 text-white' : ''}
-                          ${!isActive && !isCompleted ? 'bg-gray-200 text-gray-400' : ''}
-                        `}>
-                      {isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
-                      ) : (
-                        <StepIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                      )}
-                    </div>
-                    <span className={`text-xs sm:text-sm font-medium ${isActive ? 'text-primary' : 'text-gray-500'}`}>
-                      {step.title}
-                    </span>
-                  </div>
-                  {index < steps.length - 1 && (
-                    <div className={`h-0.5 flex-1 mx-2 ${isCompleted ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </div>
-          <Card className='rounded rounded-2xl overflow-hidden border-2 shadow-lg mt-5 p-0'>
+        <div className="space-y-6 grid grid-cols-2 gap-5">
+          {/* Akun */}
 
-            {/* Step 1: Contact Information */}
-            {currentStep === 1 && (
-              <>
-                <CardHeader className='bg-secondary  pt-5 pb-3'>
-                  <CardTitle className="flex items-center text-xl text-white">
-                    <User className="w-6 h-6 mr-2" />
-                    Contact Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 p-6 sm:p-8">
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Name</Label>
-                    <Input value={formData.name} readOnly className="bg-gray-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Email</Label>
-                    <Input value={formData.email} readOnly className="bg-gray-50" />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Discord Username *</Label>
-                    <Input
-                      placeholder="username#0000"
-                      value={formData.discord}
-                      onChange={(e) => {
-                        setFormData(prev => ({ ...prev, discord: e.target.value }));
-                        setErrors(prev => ({ ...prev, discord: '' }));
-                      }}
-                      className={errors.discord ? 'border-red-500' : ''}
-                    />
-                    {errors.discord && <p className="text-sm text-red-500">{errors.discord}</p>}
-                    <p className="text-xs text-gray-500">Required for project communication</p>
-                  </div>
-                </CardContent>
-              </>
-            )}
-
-            {/* Step 2: Project Details */}
-            {currentStep === 2 && (
-              <>
-                <CardHeader className='bg-secondary  pt-5 pb-3'>
-                  <CardTitle className="flex items-center text-xl text-white">
-                    <Package className="w-6 h-6 mr-2" />
-                    Project Details
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 p-6 sm:p-8">
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Purpose of this project *</Label>
-                    <Select
-                      value={formData.purpose}
-                      onValueChange={(value) => {
-                        setFormData(prev => ({ ...prev, purpose: value }));
-                        setErrors(prev => ({ ...prev, purpose: '' }));
-                      }}
-                    >
-                      <SelectTrigger className={errors.purpose ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select purpose" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Project Purpose</SelectLabel>
-                          <SelectItem value="vtuber-debut">VTuber debut</SelectItem>
-                          <SelectItem value="rebrand">Rebrand / upgrade</SelectItem>
-                          <SelectItem value="event">Event / campaign</SelectItem>
-                          <SelectItem value="personal">Personal project</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    {errors.purpose && <p className="text-sm text-red-500">{errors.purpose}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Project Description *</Label>
-                    <Textarea
-                      placeholder="Describe your project, character, brand vibe, theme, or goal..."
-                      rows={5}
-                      value={formData.project_overview}
-                      onChange={(e) => {
-                        setFormData(prev => ({ ...prev, project_overview: e.target.value }));
-                        setErrors(prev => ({ ...prev, project_overview: '' }));
-                      }}
-                      className={errors.project_overview ? 'border-red-500' : ''}
-                    />
-                    {errors.project_overview && <p className="text-sm text-red-500">{errors.project_overview}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Do you have visual references? *</Label>
-                    <Select
-                      value={formData.hasReferences}
-                      onValueChange={(value) => {
-                        setFormData(prev => ({ ...prev, hasReferences: value }));
-                        setErrors(prev => ({ ...prev, hasReferences: '' }));
-                      }}
-                    >
-                      <SelectTrigger className={errors.hasReferences ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select an option" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="yes">Yes (I'll provide links)</SelectItem>
-                          <SelectItem value="no">No, I'd like help developing the concept</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    {errors.hasReferences && <p className="text-sm text-red-500">{errors.hasReferences}</p>}
-                  </div>
-
-                  {formData.hasReferences === 'yes' && (
-                    <div className="space-y-2">
-                      <Label className="text-sm font-medium">Reference Links *</Label>
-                      <Textarea
-                        placeholder="Paste links to your references (one per line)"
-                        rows={4}
-                        value={formData.references_link}
-                        onChange={(e) => {
-                          setFormData(prev => ({ ...prev, references_link: e.target.value }));
-                          setErrors(prev => ({ ...prev, references_link: '' }));
-                        }}
-                        className={errors.references_link ? 'border-red-500' : ''}
-                      />
-                      {errors.references_link && <p className="text-sm text-red-500">{errors.references_link}</p>}
-                    </div>
-                  )}
-                </CardContent>
-              </>
-            )}
-
-            {/* Step 3: Usage Information */}
-            {currentStep === 3 && (
-              <>
-                <CardHeader className='bg-secondary  pt-5 pb-3'>
-                  <CardTitle className="flex items-center text-xl text-white">
-                    <MessageSquare className="w-6 h-6 mr-2" />
-                    Usage Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6 p-6 sm:p-8">
-                  <div className="space-y-3">
-                    <Label className="text-sm font-medium">Where will this be used? * (Select all that apply)</Label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {['Twitch', 'YouTube', 'Kick', 'TikTok', 'Discord', 'Other'].map((platform) => (
-                        <div key={platform} className="flex items-center gap-2 p-3 rounded-lg border hover:bg-gray-50 transition-colors">
-                          <Checkbox
-                            id={platform}
-                            checked={formData.platforms.includes(platform.toLowerCase())}
-                            onCheckedChange={() => togglePlatform(platform.toLowerCase())}
-                          />
-                          <Label htmlFor={platform} className="cursor-pointer font-normal text-sm">
-                            {platform}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                    {errors.platforms && <p className="text-sm text-red-500">{errors.platforms}</p>}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Usage type *</Label>
-                    <Select
-                      value={formData.usage_type}
-                      onValueChange={(value) => {
-                        setFormData(prev => ({ ...prev, usage_type: value }));
-                        setErrors(prev => ({ ...prev, usage_type: '' }));
-                      }}
-                    >
-                      <SelectTrigger className={errors.usage_type ? 'border-red-500' : ''}>
-                        <SelectValue placeholder="Select usage type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>Usage Type</SelectLabel>
-                          <SelectItem value="personal">Personal use</SelectItem>
-                          <SelectItem value="commercial">Commercial use</SelectItem>
-                          <SelectItem value="brand">Brand / agency use</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                    {errors.usage_type && <p className="text-sm text-red-500">{errors.usage_type}</p>}
-                    <p className="text-xs text-gray-500">This affects pricing and licensing terms</p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">Additional Notes (optional)</Label>
-                    <Textarea
-                      placeholder="Any special requests or additional information..."
-                      rows={4}
-                      value={formData.additional_notes}
-                      onChange={(e) => setFormData(prev => ({ ...prev, additional_notes: e.target.value }))}
-                    />
-                  </div>
-                </CardContent>
-              </>
-            )}
-
-            {/* Step 4: Review & Submit */}
-            {currentStep === 4 && (
-              <>
-                <CardHeader className='bg-secondary  pt-5 pb-3'>
-                  <CardTitle className="flex items-center text-xl text-white">
-                    <CreditCard className="w-6 h-6 mr-2" />
-                    Order Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-6 sm:p-8 space-y-6">
-                  {/* Cart Items */}
-                  <div>
-                    <h3 className="font-semibold mb-3 text-gray-700">Order Items</h3>
-                    <div className="space-y-3">
-                      {cartItems.map((item) => (
-                        <div key={item.id} className="p-4 bg-gray-50 rounded-lg border">
-                          <div className="flex justify-between items-start gap-2">
-                            <div className="flex-1">
-                              <p className="font-semibold">{item.category_name}</p>
-                              <p className="text-sm text-gray-600">{item.package_name.name} - {item.package_title}</p>
-                              <p className="text-sm text-gray-500 mt-1">Qty: {item.quantity}</p>
-                            </div>
-                            <p className="font-semibold">${item.item_total.toLocaleString()}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Order Details Summary */}
-                  <div className="border-t pt-6">
-                    <h3 className="font-semibold mb-4 text-gray-700">Order Details</h3>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Discord:</span>
-                        <span className="font-medium">{formData.discord}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Purpose:</span>
-                        <span className="font-medium">{formData.purpose}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Platforms:</span>
-                        <span className="font-medium">{formData.platforms.join(', ')}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Usage Type:</span>
-                        <span className="font-medium">{formData.usage_type}</span>
+          {/* Item + brief masing-masing */}
+          <Card className="rounded-2xl overflow-hidden border-2 shadow-lg p-0">
+            <CardHeader className="bg-secondary pt-5 pb-3">
+              <CardTitle className="flex items-center text-xl text-white">
+                <Package className="w-6 h-6 mr-2" />
+                Order Items
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-4">
+              {cartItems.map((item) => (
+                <div key={item.id} className="rounded-xl border bg-gray-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-primary">{item.category_name}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
+                        {item.package_name?.name && (
+                          <Badge className="bg-purple-100 text-purple-700 text-xs">{item.package_name.name}</Badge>
+                        )}
+                        <span className="text-sm text-gray-600">{item.package_title}</span>
+                        <span className="text-sm text-gray-500">· Qty {item.quantity}</span>
                       </div>
                     </div>
+                    <p className="shrink-0 font-semibold">{formatCurrency(item.item_total || 0)}</p>
                   </div>
 
-                  {/* Price Summary */}
-                  <div className="border-t pt-6 space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Subtotal</span>
-                      <span className="font-semibold">${subtotal.toLocaleString()}</span>
-                    </div>
-
-                    {voucherCode && discount > 0 && (
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span className="flex items-center gap-1">
-                          <Tag className="w-3 h-3" />
-                          Discount ({voucherValue})
-                        </span>
-                        <span className="font-semibold">-${discount.toLocaleString()}</span>
-                      </div>
+                  <div className="mt-4 border-t pt-4">
+                    {hasBrief(item) ? (
+                      <BriefDetails item={item} />
+                    ) : (
+                      <p className="text-sm text-amber-700">Request details are missing for this item.</p>
                     )}
-
-                    <div className="flex justify-between text-xl font-bold pt-3 border-t">
-                      <span>Total</span>
-                      <span className="text-primary">${total.toLocaleString()}</span>
-                    </div>
                   </div>
-
-                  <p className="text-sm text-gray-500 text-center pt-4">
-                    By placing this order, you agree to our Terms of Service
-                  </p>
-                </CardContent>
-              </>
-            )}
-
-            {/* Navigation Buttons Inside Card */}
-            <div className={`flex gap-4 p-6 border-t justify-between  w-full ${currentStep === 1 ? "justify-end" : "justify-between"} `}>
-              {currentStep > 1 && (
-                <Button
-                  onClick={handleBack}
-                  variant="outline"
-                  className="bg-muted/50 "
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back
-                </Button>
-              )}
-
-              {currentStep < 4 ? (
-                <Button
-                  onClick={handleNext}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  Next
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              ) : (
-                <Button
-                  onClick={handleSubmit}
-                  disabled={isSubmitting}
-                  className=" bg-primary hover:bg-primary/90 py-6 text-base font-semibold"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-5 h-5 mr-2" />
-                      Place Order
-                    </>
-                  )}
-                </Button>
-              )}
-
-              {/* PayPal Payment Dialog */}
-              <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!, currency: "USD" }}>
-                <CustomPayPalDialog
-                  open={showPaymentDialog}
-                  setOpen={setShowPaymentDialog}
-                  amount={total}
-                  cartIds={cartItems.map(item => item.id)}
-                  voucherId={voucherId || undefined}
-                  onPaymentSuccess={handlePaymentSuccess}
-                />
-              </PayPalScriptProvider>
-            </div>
+                </div>
+              ))}
+            </CardContent>
           </Card>
+          <div className='space-y-5'>
+            <Card className="rounded-2xl overflow-hidden border-2 shadow-lg p-0">
+              <CardHeader className="bg-secondary pt-5 pb-3">
+                <CardTitle className="flex items-center text-xl text-white">
+                  <User className="w-6 h-6 mr-2" />
+                  Account
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 grid gap-1 text-sm sm:grid-cols-2">
+                <p><span className="text-gray-500">Name: </span><span className="font-medium">{displayName}</span></p>
+                <p><span className="text-gray-500">Email: </span><span className="font-medium">{user?.email}</span></p>
+              </CardContent>
+            </Card>
+
+
+
+            {/* Ringkasan harga */}
+            <Card className="rounded-2xl overflow-hidden border-2 shadow-lg p-0">
+              <CardHeader className="bg-secondary pt-5 pb-3">
+                <CardTitle className="flex items-center text-xl text-white">
+                  <CreditCard className="w-6 h-6 mr-2" />
+                  Order Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-semibold">{formatCurrency(subtotal)}</span>
+                </div>
+
+                {voucherCode && discount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span className="flex items-center gap-1">
+                      <Tag className="w-3 h-3" />
+                      Discount ({voucherValue})
+                    </span>
+                    <span className="font-semibold">-{formatCurrency(discount)}</span>
+                  </div>
+                )}
+
+                <div className="flex justify-between border-t pt-3 text-xl font-bold">
+                  <span>Total</span>
+                  <span className="text-primary">{formatCurrency(total)}</span>
+                </div>
+
+                <p className="pt-2 text-center text-sm text-gray-500">
+                  By placing this order, you agree to our Terms of Service
+                </p>
+
+                <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
+                  <Button onClick={() => router.push('/cart')} variant="outline" className="bg-muted/50">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to cart
+                  </Button>
+
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={isSubmitting || !canPay}
+                    className="bg-primary hover:bg-primary/90 py-6 text-base font-semibold disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="w-5 h-5 mr-2" />
+                        Place Order
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
+
+        <PayPalScriptProvider options={{ clientId: process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID!, currency: 'USD' }}>
+          <CustomPayPalDialog
+            open={showPaymentDialog}
+            setOpen={setShowPaymentDialog}
+            amount={total}
+            cartIds={cartItems.map((item) => item.id)}
+            voucherId={voucherId || undefined}
+            onPaymentSuccess={handlePaymentSuccess}
+          />
+        </PayPalScriptProvider>
       </div>
     </div>
   );

@@ -20,6 +20,7 @@ import {
   ChevronUp,
   ImageIcon,
   Check,
+  FileText,
 } from 'lucide-react';
 import {
   getCartItems,
@@ -33,6 +34,7 @@ import { useAuthStore } from '@/store/auth';
 import Link from 'next/link';
 import { SkeletonCarts } from '@/components/skeleton-card';
 import { CardCart, CardOutline, CardSecondary } from '@/components/card-dashed';
+import CartBriefDialog, { hasBrief } from '@/components/cart-brief-dialog';
 
 function isVoucherApplicable(
   voucher: IVoucher,
@@ -87,6 +89,7 @@ export default function CartPage() {
   // Voucher states
   const [vouchers, setVouchers] = useState<IVoucher[]>([]);
   const [selectedVoucher, setSelectedVoucher] = useState<IVoucher | null>(null);
+  const [briefItem, setBriefItem] = useState<ICartItemDetail | null>(null);
   const [voucherCode, setVoucherCode] = useState('');
   const [loadingVouchers, setLoadingVouchers] = useState(false);
   const [isVoucherOpen, setIsVoucherOpen] = useState(false);
@@ -256,6 +259,10 @@ export default function CartPage() {
     () => cartItems.filter(i => selectedIds.has(i.id!)),
     [cartItems, selectedIds]
   );
+  const incompleteSelected = useMemo(
+    () => selectedItems.filter((i) => !hasBrief(i)),
+    [selectedItems]
+  );
 
   const formatCurrency = (amount: number | string): string => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -291,7 +298,7 @@ export default function CartPage() {
       return;
     }
     if (selectedItems.length === 0) return;
-
+    if (incompleteSelected.length > 0) return;
     const queryParams = new URLSearchParams();
     if (selectedVoucher) {
       queryParams.set('voucher_id', selectedVoucher.id);
@@ -376,7 +383,7 @@ export default function CartPage() {
                       Total Price
                     </h3>
                     <h3 className="text-center text-primary text-fredoka font-bold text-lg">
-                    
+
                     </h3>
                   </div>
                   {/* Placeholder ini melebar sama seperti tombol checkbox di tiap baris item, supaya kolom tetap sejajar */}
@@ -409,7 +416,7 @@ export default function CartPage() {
 
                   return (
                     <div key={item.id} className='flex gap-5'>
-                      <CardCart  className={`${isUpdating ? 'opacity-50' : ''} transition-opacity flex-1 relative mb-5`}>
+                      <CardCart className={`${isUpdating ? 'opacity-50' : ''} transition-opacity flex-1 relative mb-5`}>
                         <CardContent className="p-3 sm:p-6">
                           <div className="block sm:hidden">
                             <div className="flex items-start gap-3 mb-3">
@@ -432,20 +439,42 @@ export default function CartPage() {
                                   {item.category_name}
                                 </h3>
                                 <Badge className="bg-purple-100 text-purple-700 text-xs mb-1">
-                                  {item.package_name.name}
+                                  {item.package_name?.name ?? 'Package'}
                                 </Badge>
                                 <p className="text-xs text-primary truncate">{item.package_title}</p>
                               </div>
-                              <Button
-                                onClick={() => handleRemoveItem(item.id!)}
-                                disabled={isUpdating}
-                                variant="ghost"
-                                size="icon"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              <div className="flex flex-col items-end gap-1">
+                                <Button
+                                  onClick={() => setBriefItem(item)}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 gap-1 px-2 text-xs text-primary text-fredoka"
+                                >
+                                  <FileText className="w-4 h-4" />
+                                  Detail
+                                  {!hasBrief(item) && <span className="h-2 w-2 rounded-full bg-amber-500" />}
+                                </Button>
+                                <Button
+                                  onClick={() => handleRemoveItem(item.id!)}
+                                  disabled={isUpdating}
+                                  variant="ghost"
+                                  size="icon"
+                                >
+                                  <img src="/icon/SVG/trashicon.svg" className="w-5 h-5" alt="" />
+                                </Button>
+                              </div>
                             </div>
+                            <button
+                              type="button"
+                              onClick={() => setBriefItem(item)}
+                              className="mb-3 flex items-center gap-1 text-xs font-semibold text-primary underline"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              View request details
+                              {!hasBrief(item) && (
+                                <Badge className="ml-1 bg-amber-100 text-amber-700 text-[10px]">Incomplete</Badge>
+                              )}
+                            </button>
                             <div className="flex items-center justify-between pt-3 border-t">
                               <div className="flex items-center gap-2">
                                 <Button
@@ -470,7 +499,7 @@ export default function CartPage() {
                               </div>
                               <div className="flex items-center gap-3">
                                 <div className="text-xl font-bold text-primary text-fredoka ">
-                                  ${item.item_total?.toLocaleString()}
+                                  {formatCurrency(item.item_total || 0)}
                                 </div>
                                 <button onClick={() => toggleSelectItem(item.id!)}>
                                   {isSelected ? (
@@ -537,17 +566,25 @@ export default function CartPage() {
                                 {formatCurrency(item.item_total?.toLocaleString())}
                               </div>
                             </div>
-                            <div className="flex items-center justify-end">
-
-                            <Button
-                              onClick={() => handleRemoveItem(item.id!)}
-                              disabled={isUpdating}
-                              variant="ghost"
-                              size="icon"
-                              className=""
-                            >
-                              <img src="/icon/SVG/trashicon.svg" className='w-5 h-5' alt="" />
-                            </Button>
+                            <div className="flex flex-col items-end gap-1">
+                              <Button
+                                onClick={() => setBriefItem(item)}
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 gap-1 px-2 text-xs text-primary text-fredoka"
+                              >
+                                <FileText className="w-4 h-4" />
+                                Detail
+                                {!hasBrief(item) && <span className="h-2 w-2 rounded-full bg-amber-500" />}
+                              </Button>
+                              <Button
+                                onClick={() => handleRemoveItem(item.id!)}
+                                disabled={isUpdating}
+                                variant="ghost"
+                                size="icon"
+                              >
+                                <img src="/icon/SVG/trashicon.svg" className="w-5 h-5" alt="" />
+                              </Button>
                             </div>
                           </div>
                         </CardContent>
@@ -558,7 +595,7 @@ export default function CartPage() {
                       >
                         {isSelected ? (
                           <div className="bg-primary rounded-full">
-                          <Check className="w-5 h-5 p-1.5 text-white" />
+                            <Check className="w-5 h-5 p-1.5 text-white" />
                           </div>
                         ) : (
                           <div className="w-5 h-5 rounded-full border-2 border-primary" />
@@ -574,7 +611,7 @@ export default function CartPage() {
 
             <div className="lg:sticky lg:top-24 lg:self-start">
               <Card className="border-3 rounded-4xl shadow-setting bg-white border-primary relative">
-                <Image src={"/images/receiptbadge@3x.webp"} alt='' width={180} height={80} className='absolute -top-8 right-10'/>
+                <Image src={"/images/receiptbadge@3x.webp"} alt='' width={180} height={80} className='absolute -top-8 right-10' />
                 <CardContent className="space-y-4 ">
                   {/* ── Coupons ── */}
                   <h3 className="text-fredoka font-semibold text-2xl text-primary">Coupons</h3>
@@ -585,8 +622,8 @@ export default function CartPage() {
                     >
                       <div className="flex items-center justify-between">
                         <CardTitle className="flex items-center gap-2 text-fredoka text-primary text-base sm:text-lg">
-                          <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
-                          <span>Apply Voucher</span>
+                          <img src="/icon/SVG/labelicon.svg" className='w-6 h6' alt="" />
+                          <span className='text-fredoka'>Apply Voucher</span>
                           {selectedVoucher && (
                             <Badge className="ml-2 bg-green-100 text-green-700 text-xs">
                               Applied
@@ -713,22 +750,23 @@ export default function CartPage() {
                       </div>
                     )}
 
-                  
-                     
 
-                      {selectedVoucher && (
-                        <div className="flex justify-between text-green-600 text-sm sm:text-base">
-                          <span className="flex items-center gap-2">
-                            <Tag className="w-4 h-4" />
-                            <span className="truncate">Discount ({selectedVoucher.value})</span>
-                          </span>
-                          <span className="font-semibold flex-shrink-0 ml-2">
-                            -{formatCurrency(calculateDiscount())}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-            
+
+
+                    {selectedVoucher && (
+                      <div className="flex justify-between text-green-600 text-sm sm:text-base">
+                        <span className="flex items-center gap-2">
+                          <Tag className="w-4 h-4" />
+                          <span className="truncate">Discount ({selectedVoucher.value})</span>
+                        </span>
+                        <span className="font-semibold flex-shrink-0 ml-2">
+                          -{formatCurrency(calculateDiscount())}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+
 
                   <div className="border-t border-primary pt-4">
                     <div className="flex justify-between text-fredoka items-center mb-4 sm:mb-6">
@@ -737,11 +775,17 @@ export default function CartPage() {
                         {formatCurrency(calculateTotal())}
                       </span>
                     </div>
-
+                    {incompleteSelected.length > 0 && (
+                      <p className="mb-3 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        {incompleteSelected.length} selected {incompleteSelected.length === 1 ? 'item has' : 'items have'} no
+                        request details. Remove and re-add {incompleteSelected.length === 1 ? 'it' : 'them'} from the service page.
+                      </p>
+                    )}
                     <Button
                       onClick={handleCheckout}
                       size="lg"
-                      disabled={selectedItems.length === 0}
+                      disabled={selectedItems.length === 0 || incompleteSelected.length > 0}
                       className="w-full bg-primary text-white py-4 cursor-pointer sm:py-6 font-semibold text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Proceed to Checkout
@@ -754,6 +798,7 @@ export default function CartPage() {
           </div>
         )}
       </div>
+        <CartBriefDialog item={briefItem} onClose={() => setBriefItem(null)} />
     </div>
   );
 }

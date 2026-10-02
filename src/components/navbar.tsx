@@ -236,7 +236,7 @@ export default function Navbar(): React.ReactElement {
   const closeMobileMenu = () => { setIsMenuOpen(false); setIsLoginOpen(false); setShowUserMenu(false) }
 
   return (
-    <nav className="fixed top-0 w-full border-b border-primary z-55 transition-all duration-300 bg-white">
+    <nav className="fixed top-0 w-full border-b border-primary z-50 transition-all duration-300 bg-white">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-20">
           <div className="flex items-center space-x-4 lg:space-x-8">

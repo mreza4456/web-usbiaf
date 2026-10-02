@@ -18,6 +18,9 @@ import { title } from 'process';
 import { getAllClasses as getAllClassOptions } from '@/action/class'; // beda dari getAllClasses di action/badge yang sudah ada
 import type { ICategory, IImageCategories, IPoster, IClass, IBadge, IClassService } from '@/interface';
 import { CTASection } from '../page';
+import ServiceDetailDialog from '@/components/service-detail';
+import Navbar from '@/components/navbar';
+
 
 function Pagination({
   currentPage, totalPages, onPageChange,
@@ -44,45 +47,51 @@ function Pagination({
   }, [currentPage, totalPages]);
 
   return (
-    <div className="flex items-center border-2 border-primary w-fit mx-auto rounded-full justify-center  mt-10 flex-wrap">
-      <button
-        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
-        disabled={currentPage === 1}
-        className="p-2  text-primary  disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/10 transition-colors"
-        aria-label="Previous page"
-      >
-        <ChevronLeft className="w-5 h-5" />
-      </button>
+   <div className="flex items-center border-2 border-primary w-fit mx-auto rounded-full justify-center mt-10 flex-wrap overflow-hidden">
+  <button
+    onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+    disabled={currentPage === 1}
+    className="p-2 text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/10 transition-colors "
+    aria-label="Previous page"
+  >
+    <ChevronLeft className="w-5 h-5" />
+  </button>
 
-      {pages.map((p, idx) =>
-        p === 'ellipsis' ? (
-          <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 select-none">
-            …
-          </span>
-        ) : (
-          <button
-            key={p}
-            onClick={() => onPageChange(p)}
-            className={`min-w-[2.5rem] h-10 px-3  border-l-2 border-primary text-sm font-medium transition-colors ${p === currentPage
-              ? 'bg-muted/80 text-primary'
-              : 'text-primary border-r-2 border-primary cursor-pointer'
-              }`}
-            aria-current={p === currentPage ? 'page' : undefined}
-          >
-            {p}
-          </button>
-        )
-      )}
-
-      <button
-        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
-        disabled={currentPage === totalPages}
-        className="p-2  text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/10 transition-colors"
-        aria-label="Next page"
+  {pages.map((p, idx) =>
+    p === 'ellipsis' ? (
+      <span
+        key={`ellipsis-${idx}`}
+        className={`px-2 text-gray-400 select-none ${
+          idx !== pages.length - 1 ? 'border-r-2 border-primary' : ''
+        }`}
       >
-        <ChevronRight className="w-5 h-5" />
+        …
+      </span>
+    ) : (
+      <button
+        key={p}
+        onClick={() => onPageChange(p)}
+        className={`min-w-[2.5rem] h-10 px-3 text-sm font-medium transition-colors ${
+          p === currentPage
+            ? 'bg-muted/80 text-primary'
+            : 'text-primary cursor-pointer hover:bg-primary/10'
+        } ${idx !== pages.length - 1 ? 'border-x-2 border-primary' : 'border-r-2 border-primary '}`}
+        aria-current={p === currentPage ? 'page' : undefined}
+      >
+        {p}
       </button>
-    </div>
+    )
+  )}
+
+  <button
+    onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+    disabled={currentPage === totalPages}
+    className="p-2 text-primary disabled:opacity-30 disabled:cursor-not-allowed hover:bg-primary/10 transition-colors"
+    aria-label="Next page"
+  >
+    <ChevronRight className="w-5 h-5" />
+  </button>
+</div>
   );
 }
 
@@ -266,105 +275,90 @@ function ServiceToolbar({
 
 interface ICategoryWithImages extends ICategory {
   images?: IImageCategories[];
-  classServices?: IClassService[]; // relasi many-to-many dari class_services
+  classServices?: IClassService[];
 }
 const ITEMS_PER_PAGE = 15;
 
-// ─── Inner Component (butuh useSearchParams, jadi harus di dalam Suspense) ─────
+interface IServicePageData {
+  categories: ICategoryWithImages[];
+  poster: IPoster[];
+  badges: IBadge[];
+  classOptions: IClass[];
+}
+
+// Cache in-memory selama sesi SPA. Balik ke /service setelah pindah halaman
+// tidak akan menampilkan skeleton lagi kalau data sudah pernah di-fetch.
+let servicePageCache: IServicePageData | null = null;
 
 function ServicesPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [categories, setCategories] = useState<ICategoryWithImages[]>([]);
-  const [poster, setPoster] = useState<IPoster[]>([]);
-  const [badges, setBadges] = useState<IBadge[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<ICategoryWithImages[]>(servicePageCache?.categories ?? []);
+  const [poster, setPoster] = useState<IPoster[]>(servicePageCache?.poster ?? []);
+  const [badges, setBadges] = useState<IBadge[]>(servicePageCache?.badges ?? []);
+  const [classOptions, setClassOptions] = useState<IClass[]>(servicePageCache?.classOptions ?? []);
+  const [loading, setLoading] = useState(!servicePageCache);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // ── Baca initial value dari query params (badge & classes) ──
   const [selectedBadgesId, setSelectedBadgesId] = useState<string | number | null>(
     searchParams.get('badge')
   );
   const [selectedFilter, setSelectedFilter] = useState<Filter>(null);
   const [sortBy, setSortBy] = useState<SortKey>('best_seller');
 
-  const [classOptions, setClassOptions] = useState<IClass[]>([]);
   const [selectedClassIds, setSelectedClassIds] = useState<(string | number)[]>(
     searchParams.get('classes')?.split(',').filter(Boolean) ?? []
   );
 
-  // Guard supaya efek sync-ke-URL nggak jalan sebelum initial read dari URL selesai
   const isFirstRender = useRef(true);
 
+  // Fetch semua data awal secara paralel, dengan cache in-memory.
   useEffect(() => {
-    const fetchCategories = async () => {
+    let cancelled = false;
+
+    const fetchAll = async () => {
       try {
-        const result = await getAllCategories();
-        if (result.success && Array.isArray(result.data)) {
-          setCategories(result.data);
-        } else {
-          setCategories([]);
-          setError(result.message || 'Failed to load categories');
+        const [categoriesRes, posterRes, badgesRes, classOptionsRes] = await Promise.all([
+          getAllCategories(),
+          getAllPosters(),
+          getAllClasses(),
+          getAllClassOptions(),
+        ]);
+
+        if (cancelled) return;
+
+        if (!categoriesRes.success) {
+          setError(categoriesRes.message || 'Failed to load categories');
         }
+
+        const nextData: IServicePageData = {
+          categories: categoriesRes.success && Array.isArray(categoriesRes.data) ? categoriesRes.data : [],
+          poster: posterRes.success && Array.isArray(posterRes.data) ? posterRes.data : [],
+          badges: badgesRes.success && Array.isArray(badgesRes.data) ? badgesRes.data : [],
+          classOptions: classOptionsRes.success && Array.isArray(classOptionsRes.data) ? classOptionsRes.data : [],
+        };
+
+        servicePageCache = nextData;
+
+        setCategories(nextData.categories);
+        setPoster(nextData.poster);
+        setBadges(nextData.badges);
+        setClassOptions(nextData.classOptions);
       } catch {
-        setCategories([]);
-        setError('Failed to load categories');
+        if (!cancelled) setError('Failed to load categories');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
-    const fetchPoster = async () => {
-      try {
-        const result = await getAllPosters();
-        if (result.success && Array.isArray(result.data)) {
-          setPoster(result.data);
-        } else {
-          console.error('Failed to fetch Poster:', result.message);
-          setPoster([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch Poster:', error);
-        setPoster([]);
-      }
-    };
+    if (!servicePageCache) setLoading(true);
+    fetchAll();
 
-    const fetchBadges = async () => {
-      try {
-        const result = await getAllClasses();
-        if (result.success && Array.isArray(result.data)) {
-          setBadges(result.data);
-        } else {
-          setBadges([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch Badges:', error);
-        setBadges([]);
-      }
-    };
-
-    const fetchClassOptions = async () => {
-      try {
-        const result = await getAllClassOptions();
-        if (result.success && Array.isArray(result.data)) {
-          setClassOptions(result.data);
-        } else {
-          setClassOptions([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch Class Options:', error);
-        setClassOptions([]);
-      }
-    };
-
-    fetchCategories();
-    fetchPoster();
-    fetchBadges();
-    fetchClassOptions();
+    return () => { cancelled = true; };
   }, []);
 
   // Debounce search input so filtering doesn't run on every keystroke
@@ -399,24 +393,31 @@ function ServicesPageInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBadgesId, selectedClassIds]);
 
-  const handleCategoryClick = (categoryId: string) => {
-    router.push(`/service/detail/${categoryId}`);
-  };
+const activeItemId = searchParams.get('item');
 
-  // toggle pilih/hapus class dari filter (multi-select)
+const setItemParam = (id: string | null) => {
+  const params = new URLSearchParams(searchParams.toString());
+  if (id) params.set('item', id);
+  else params.delete('item');
+  const qs = params.toString();
+  const url = qs ? `/service?${qs}` : '/service';
+  // push saat buka (tombol Back browser menutup modal), replace saat tutup
+  if (id) router.push(url, { scroll: false });
+  else router.replace(url, { scroll: false });
+};
+
+const handleCategoryClick = (categoryId: string) => setItemParam(categoryId);
+
   const toggleClassFilter = (classId: string | number) => {
     setSelectedClassIds((prev) => {
       const exists = prev.some((id) => String(id) === String(classId));
-      if (exists) {
-        return prev.filter((id) => String(id) !== String(classId));
-      }
+      if (exists) return prev.filter((id) => String(id) !== String(classId));
       return [...prev, classId];
     });
   };
 
   const clearClassFilter = () => setSelectedClassIds([]);
 
-  // ── Map badge_id -> class_name untuk ditampilkan di card ──
   const classMap = useMemo(() => {
     const map = new Map<string, string>();
     badges.forEach((c) => map.set(String(c.id), c.name));
@@ -440,7 +441,6 @@ function ServicesPageInner() {
             : !!(category as any).is_handpick
         : true;
 
-      // filter multi-class — category harus punya minimal 1 class yang match dengan selectedClassIds
       const matchesMultiClass =
         selectedClassIds.length === 0
           ? true
@@ -479,16 +479,12 @@ function ServicesPageInner() {
     return sorted;
   }, [categories, debouncedSearch, selectedBadgesId, selectedFilter, sortBy, selectedClassIds]);
 
-  // ── Pagination derived values (pakai filteredCategories) ──
   const totalPages = Math.max(1, Math.ceil(filteredCategories.length / ITEMS_PER_PAGE));
 
   useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
+    if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [totalPages, currentPage]);
 
-  // Reset ke halaman 1 setiap kali filter berubah
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, selectedBadgesId, selectedFilter, sortBy, selectedClassIds]);
@@ -504,12 +500,14 @@ function ServicesPageInner() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
   const formatSales = (value: number) => {
     if (value >= 1000) {
       return `${(value / 1000).toFixed(value % 1000 === 0 ? 0 : 1)}K`;
     }
-    return value
+    return value;
   };
+
   const formatCurrency = (amount: number | string): string => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
@@ -521,6 +519,9 @@ function ServicesPageInner() {
   };
 
   return (
+    <div>
+    
+   
     <div className="min-h-screen mt-30 sm:mt-10 max-w-7xl mx-auto">
 
       {/* ── Hero Section ── */}
@@ -693,10 +694,14 @@ function ServicesPageInner() {
           </div>
         </div>
       </section>
-
+<ServiceDetailDialog
+  categoryId={activeItemId}
+  onClose={() => setItemParam(null)}
+/>
       {/* ── CTA Section ── */}
       <CTASection />
     </div>
+     </div>
   );
 }
 
@@ -717,3 +722,4 @@ export default function ServicesPage() {
     </Suspense>
   );
 }
+

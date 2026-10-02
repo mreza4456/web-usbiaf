@@ -490,3 +490,61 @@ export function ProfilePageSkeleton() {
     </div>
   );
 }
+
+
+export function ServiceDetailSkeleton() {
+  return (
+    <div className="grid md:h-full md:min-h-0 md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      {/* Kolom kiri: galeri */}
+      <div className="p-5 pb-2 sm:p-6">
+        <div className="space-y-3">
+          <Skeleton className="aspect-square w-full rounded-2xl" />
+          <div className="grid grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-square rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Kolom kanan */}
+      <div className="flex flex-col md:min-h-0 mt-5">
+        {/* Header: judul, harga, rating, pilihan paket, nav tab */}
+        <div className="shrink-0 space-y-5 p-5 pb-0 sm:p-6 sm:pb-0 md:pl-2">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-3/4 rounded-lg" />
+            <Skeleton className="h-4 w-32 rounded" />
+            <Skeleton className="h-4 w-40 rounded" />
+          </div>
+
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-28 rounded" />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Skeleton className="h-14 rounded-xl" />
+              <Skeleton className="h-14 rounded-xl" />
+            </div>
+          </div>
+
+          <div className="flex gap-6 border-b border-primary/10 pb-2">
+            <Skeleton className="h-4 w-20 rounded" />
+            <Skeleton className="h-4 w-14 rounded" />
+            <Skeleton className="h-4 w-24 rounded" />
+          </div>
+        </div>
+
+        {/* Isi tab */}
+        <div className="flex-1 min-h-0 space-y-3 p-5 pt-4 sm:p-6 sm:pt-4 md:pl-2">
+          <Skeleton className="h-40 w-full rounded-2xl" />
+          <Skeleton className="h-4 w-full rounded" />
+          <Skeleton className="h-4 w-5/6 rounded" />
+          <Skeleton className="h-4 w-2/3 rounded" />
+        </div>
+
+        {/* Footer */}
+        <div className="shrink-0 p-4 sm:px-6">
+          <Skeleton className="h-12 w-full rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}

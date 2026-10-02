@@ -61,6 +61,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const isAdminLayout =
     pathname?.startsWith("/admin") && pathname !== ("/admin/")
 
+  const isServiceLayout =
+    pathname?.startsWith("/service?item=") && pathname !== ("/service?item=")
+
   const isUserLayout =
     pathname?.startsWith("/user") && pathname !== ("/user/") || pathname.startsWith("/chat")
 
@@ -248,14 +251,14 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             <AuthProvider>
               {sidebarOpen && (
                 <div
-                  className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+                  className="fixed inset-0 bg-black/40 z-55 lg:hidden"
                   onClick={() => setSidebarOpen(false)}
                 />
               )}
 
               <aside
                 className={`
-            fixed top-0 left-0 h-screen w-72 lg:w-60 xl:w-70 z-50
+            fixed top-0 left-0 h-screen w-72 lg:w-60 xl:w-70 z-0
             bg-white border-primary border-r-1
             transform transition-transform duration-300 ease-in-out
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}

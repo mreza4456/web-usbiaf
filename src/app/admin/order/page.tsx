@@ -34,15 +34,44 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import z from "zod"
 
 import { IOrderWithItems } from "@/interface"
-import { deleteOrder, updateOrder, getAllOrdersWithItems, updateOrderStatus } from "@/action/order"
+import { deleteOrder, getAllOrdersWithItems, updateOrderStatus } from "@/action/order"
 import { SiteHeader } from "@/components/site-header"
 import Example from "@/components/skeleton"
+import { BriefDetails, hasBrief } from "@/components/cart-brief-dialog"
 
 const orderSchema = z.object({
     status: z.string().min(1, "Status is required"),
 })
 
 type OrderForm = z.infer<typeof orderSchema>
+
+const formatCurrency = (amount: number | string): string => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(numAmount);
+};
+
+const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", className: string }> = {
+        pending: { variant: "outline", className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30" },
+        in_progress: { variant: "default", className: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
+        completed: { variant: "secondary", className: "bg-green-500/10 text-green-600 border-green-500/30" },
+        cancelled: { variant: "destructive", className: "bg-red-500/10 text-red-600 border-red-500/30" },
+        revision: { variant: "default", className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30" },
+    }
+
+    const config = statusConfig[status] || statusConfig.pending
+
+    return (
+        <Badge variant={config.variant} className={config.className}>
+            {status.replace('_', ' ').toUpperCase()}
+        </Badge>
+    )
+}
 
 export default function OrderAdminPage() {
     const [open, setOpen] = React.useState(false)
@@ -58,19 +87,12 @@ export default function OrderAdminPage() {
     const fetchOrders = React.useCallback(async () => {
         try {
             setLoading(true)
-            console.log('🔍 Fetching orders...')
-
-            // Import getAllOrdersWithItems from action/order
             const response = await getAllOrdersWithItems()
 
-            console.log('📦 Response:', response)
-
             if (!response?.success) {
-                console.error('❌ Error:', response?.message)
                 throw new Error(response?.message || 'Failed to fetch orders')
             }
 
-            console.log('✅ Orders data:', response.data)
             setOrders(response.data as IOrderWithItems[])
         } catch (error: any) {
             console.error('💥 Fetch error:', error)
@@ -143,33 +165,6 @@ export default function OrderAdminPage() {
         }
     }
 
-    const getStatusBadge = (status: string) => {
-        const statusConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline", className: string }> = {
-            pending: { variant: "outline", className: "bg-yellow-500/10 text-yellow-600 border-yellow-500/30" },
-            in_progress: { variant: "default", className: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
-            completed: { variant: "secondary", className: "bg-green-500/10 text-green-600 border-green-500/30" },
-            cancelled: { variant: "destructive", className: "bg-red-500/10 text-red-600 border-red-500/30" },
-        }
-
-        const config = statusConfig[status] || statusConfig.pending
-
-        return (
-            <Badge variant={config.variant} className={config.className}>
-                {status.replace('_', ' ').toUpperCase()}
-            </Badge>
-        )
-    }
-
-    const formatCurrency = (amount: number | string): string => {
-        const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        }).format(numAmount);
-    };
-
     const columns: ColumnDef<IOrderWithItems>[] = [
         {
             accessorKey: "code_order",
@@ -192,25 +187,40 @@ export default function OrderAdminPage() {
             accessorKey: "order_items",
             header: "Items",
             cell: ({ row }) => {
-                const itemCount = row.original.order_items?.length || 0
-                const categories = [...new Set(row.original.order_items?.map(item => item.category_name))]
+                const items = row.original.order_items || []
+                const itemCount = items.length
+                const firstItem = items[0]
 
                 return (
                     <div className="space-y-1">
                         <div className="text-sm font-medium">{itemCount} item(s)</div>
-                     
+                        {firstItem && (
+                            <div className="text-xs text-gray-500 truncate max-w-[180px]">
+                                {firstItem.category_name}
+                                {itemCount > 1 ? ` +${itemCount - 1} more` : ''}
+                            </div>
+                        )}
                     </div>
                 )
             }
         },
         {
-            accessorKey: "purpose",
+            id: "purpose",
             header: "Purpose",
-            cell: ({ row }) => (
-                <span className="capitalize text-sm">
-                    {row.original.purpose.replace(/_/g, ' ').replace(/-/g, ' ')}
-                </span>
-            )
+            // Purpose sekarang per order item, bukan per order (satu order bisa
+            // berisi beberapa item dengan brief berbeda). Tampilkan milik item
+            // pertama sebagai ringkasan; detail lengkap ada di dialog "View".
+            cell: ({ row }) => {
+                const items = row.original.order_items || []
+                const purpose = items.find((i) => i.purpose)?.purpose
+                if (!purpose) return <span className="text-sm text-gray-400">-</span>
+                return (
+                    <span className="capitalize text-sm">
+                        {purpose.replace(/_/g, ' ').replace(/-/g, ' ')}
+                        {items.length > 1 ? ' …' : ''}
+                    </span>
+                )
+            }
         },
         {
             accessorKey: "total",
@@ -332,6 +342,7 @@ export default function OrderAdminPage() {
                                                     <SelectContent>
                                                         <SelectItem value="pending">Pending</SelectItem>
                                                         <SelectItem value="in_progress">In Progress</SelectItem>
+                                                        <SelectItem value="revision">In Revision</SelectItem>
                                                         <SelectItem value="completed">Completed</SelectItem>
                                                         <SelectItem value="cancelled">Cancelled</SelectItem>
                                                     </SelectContent>
@@ -384,10 +395,6 @@ export default function OrderAdminPage() {
                                             <p className="font-medium">{selectedOrder.users?.email}</p>
                                         </div>
                                         <div>
-                                            <span className="text-gray-500">Discord:</span>
-                                            <p className="font-medium">{selectedOrder.discord}</p>
-                                        </div>
-                                        <div>
                                             <span className="text-gray-500">Order Date:</span>
                                             <p className="font-medium">
                                                 {new Date(selectedOrder.created_at).toLocaleDateString('id-ID', {
@@ -400,75 +407,44 @@ export default function OrderAdminPage() {
                                     </div>
                                 </div>
 
-                                {/* Project Details */}
-                                <div className="space-y-3 border-t pt-4">
-                                    <h3 className="font-semibold text-lg">Project Details</h3>
-                                    <div className="space-y-3 text-sm">
-                                        <div>
-                                            <span className="text-gray-500">Purpose:</span>
-                                            <p className="font-medium capitalize">
-                                                {selectedOrder.purpose.replace(/_/g, ' ').replace(/-/g, ' ')}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Project Overview:</span>
-                                            <p className="mt-1 text-gray-700">{selectedOrder.project_overview}</p>
-                                        </div>
-                                        {selectedOrder.references_link && (
-                                            <div>
-                                                <span className="text-gray-500">References:</span>
-                                                <a
-                                                    href={selectedOrder.references_link}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 hover:underline block mt-1"
-                                                >
-                                                    {selectedOrder.references_link}
-                                                </a>
-                                            </div>
-                                        )}
-                                        <div>
-                                            <span className="text-gray-500">Platform:</span>
-                                            <p className="mt-1">{selectedOrder.platform.join(", ")}</p>
-                                        </div>
-                                        <div>
-                                            <span className="text-gray-500">Usage Type:</span>
-                                            <p className="mt-1 capitalize">{selectedOrder.usage_type.replace(/_/g, ' ')}</p>
-                                        </div>
-                                        {selectedOrder.additional_notes && (
-                                            <div>
-                                                <span className="text-gray-500">Additional Notes:</span>
-                                                <p className="mt-1 text-gray-700">{selectedOrder.additional_notes}</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Order Items */}
+                                {/* Order Items — brief (discord, purpose, dst.) sekarang melekat per item */}
                                 <div className="space-y-3 border-t pt-4">
                                     <h3 className="font-semibold text-lg">Order Items</h3>
-                                    <div className="space-y-2">
-                                        {selectedOrder.order_items?.map((item, idx) => (
-                                            <div key={item.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
-                                                <div className="space-y-1">
-                                                    <p className="font-medium">{item.category_name}</p>
-                                                    <p className="text-sm text-gray-600">
-                                                        {item.package_title} ({item.package_name?.name})
-                                                    </p>
-                                                    <p className="text-sm text-gray-500">
-                                                        Quantity: {item.quantity}
-                                                    </p>
+                                    <div className="space-y-3">
+                                        {selectedOrder.order_items?.map((item) => {
+                                            // Order lama (sebelum brief dipindah ke order_items) masih
+                                            // menyimpan brief di level order — pakai itu sebagai fallback.
+                                            const brief = hasBrief(item) ? item : hasBrief(selectedOrder) ? selectedOrder : null
+
+                                            return (
+                                                <div key={item.id} className="rounded-lg border bg-gray-50 p-3 space-y-3">
+                                                    <div className="flex justify-between items-start gap-2">
+                                                        <div className="space-y-1">
+                                                            <p className="font-medium">{item.category_name}</p>
+                                                            <p className="text-sm text-gray-600">
+                                                                {item.package_title}
+                                                                {item.package_name?.name ? ` (${item.package_name.name})` : ''}
+                                                            </p>
+                                                            <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                                                        </div>
+                                                        <div className="text-right space-y-1 shrink-0">
+                                                            <p className="text-sm text-gray-600">
+                                                                {formatCurrency(item.price)} × {item.quantity}
+                                                            </p>
+                                                            <p className="font-semibold">{formatCurrency(item.total)}</p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="border-t pt-3">
+                                                        {brief ? (
+                                                            <BriefDetails item={brief} />
+                                                        ) : (
+                                                            <p className="text-sm text-gray-500">No request details saved for this item.</p>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div className="text-right space-y-1">
-                                                    <p className="text-sm text-gray-600">
-                                                        {formatCurrency(item.price)} × {item.quantity}
-                                                    </p>
-                                                    <p className="font-semibold">
-                                                        {formatCurrency(item.total)}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            )
+                                        })}
                                     </div>
                                     <div className="flex justify-between items-center pt-3 border-t font-semibold text-lg">
                                         <span>Total:</span>

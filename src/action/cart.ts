@@ -13,7 +13,7 @@ import type {
 } from '@/interface';
 
 // ============================================
-// GET CART ITEMS dengan detail lengkap
+// GET CART ITEMS dengan detail lengkap (+ brief)
 // ============================================
 export async function getCartItems(userId: string): Promise<ICartResponse> {
   try {
@@ -26,6 +26,14 @@ export async function getCartItems(userId: string): Promise<ICartResponse> {
     updated_at,
     categories_id,
     package_id,
+    discord,
+    purpose,
+    project_overview,
+    has_references,
+    references_link,
+    platform,
+    usage_type,
+    additional_notes,
     categories (
       id,
       name,
@@ -60,9 +68,6 @@ export async function getCartItems(userId: string): Promise<ICartResponse> {
 
     const rows = data || [];
     const cartItems: ICartItemDetail[] = rows.map((item: any) => {
-      // urutkan gambar berdasarkan sort_order (karena order foreignTable
-      // untuk nested-nested relation kadang tidak reliable di postgrest,
-      // jadi lebih aman disortir manual di sini)
       const sortedImages = (item.categories?.images || []).sort(
         (a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0)
       );
@@ -77,14 +82,22 @@ export async function getCartItems(userId: string): Promise<ICartResponse> {
         updated_at: item.updated_at,
         category_name: item.categories?.name,
         category_start_price: item.categories?.start_price,
-        // ⬇️ gambar pertama (sort_order terkecil) dari kategori
         category_image: sortedImages[0]?.image_url ?? null,
         package_title: item.categories_package?.name,
         package_name_id: item.categories_package?.package_name?.id,
         package_name: item.categories_package?.package_name,
         package_price: item.categories_package?.price,
         package_description: item.categories_package?.description,
-        item_total: (item.categories_package?.price || 0) * item.quantity
+        item_total: (item.categories_package?.price || 0) * item.quantity,
+        // ── brief ──
+        discord: item.discord,
+        purpose: item.purpose,
+        project_overview: item.project_overview,
+        has_references: item.has_references,
+        references_link: item.references_link,
+        platform: item.platform ?? [],
+        usage_type: item.usage_type,
+        additional_notes: item.additional_notes,
       };
     });
 
@@ -96,32 +109,23 @@ export async function getCartItems(userId: string): Promise<ICartResponse> {
 }
 
 // ============================================
-// ADD TO CART (atau update quantity jika sudah ada)
+// ADD TO CART — tiap request punya brief sendiri, selalu insert baris baru
 // ============================================
 export async function addToCart(payload: IAddToCartRequest): Promise<ICartActionResponse> {
-  const { user_id, categories_id, package_id, quantity } = payload;
+  const {
+    user_id, categories_id, package_id, quantity,
+    discord, purpose, project_overview, has_references,
+    references_link, platform, usage_type, additional_notes,
+  } = payload;
 
-  const { data: existing } = await supabase
-    .from('carts')
-    .select('id, quantity')
-    .eq('user_id', user_id)
-    .eq('categories_id', categories_id)
-    .eq('package_id', package_id)
-    .maybeSingle();
-
-  if (existing) {
-    const { error } = await supabase
-      .from('carts')
-      .update({
-        quantity: existing.quantity + quantity,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', existing.id);
-
-    if (error) return { success: false, message: error.message };
-
-    revalidatePath('/cart');
-    return { success: true, action: 'updated', message: 'Cart updated' };
+  if (!discord?.trim() || !purpose?.trim() || !project_overview?.trim() || !usage_type) {
+    return { success: false, message: 'Please complete the request details' };
+  }
+  if (!platform?.length) {
+    return { success: false, message: 'Select at least one platform' };
+  }
+  if (has_references === 'yes' && !references_link?.trim()) {
+    return { success: false, message: 'Add your reference link' };
   }
 
   const { error } = await supabase.from('carts').insert([{
@@ -129,6 +133,14 @@ export async function addToCart(payload: IAddToCartRequest): Promise<ICartAction
     categories_id,
     package_id,
     quantity,
+    discord: discord.trim(),
+    purpose: purpose.trim(),
+    project_overview: project_overview.trim(),
+    has_references,
+    references_link: has_references === 'yes' ? references_link?.trim() : null,
+    platform,
+    usage_type,
+    additional_notes: additional_notes?.trim() || null,
   }]);
 
   if (error) return { success: false, message: error.message };
@@ -136,7 +148,6 @@ export async function addToCart(payload: IAddToCartRequest): Promise<ICartAction
   revalidatePath('/cart');
   return { success: true, action: 'added', message: 'Added to cart' };
 }
-
 
 // ============================================
 // UPDATE QUANTITY
@@ -149,16 +160,11 @@ export async function updateCartQuantity(cartId: string, quantity: number, userI
 
     const { error } = await supabase
       .from('carts')
-      .update({
-        quantity,
-        updated_at: new Date().toISOString()
-      })
+      .update({ quantity, updated_at: new Date().toISOString() })
       .eq('id', cartId)
-      .eq('user_id', userId); // Security: pastikan user hanya update cart sendiri
+      .eq('user_id', userId);
 
-    if (error) {
-      return { success: false, message: error.message };
-    }
+    if (error) return { success: false, message: error.message };
 
     revalidatePath('/cart');
     return { success: true, message: 'Quantity updated', action: 'updated' };
@@ -177,11 +183,9 @@ export async function removeFromCart(cartId: string, userId: string): Promise<IC
       .from('carts')
       .delete()
       .eq('id', cartId)
-      .eq('user_id', userId); // Security: pastikan user hanya hapus cart sendiri
+      .eq('user_id', userId);
 
-    if (error) {
-      return { success: false, message: error.message };
-    }
+    if (error) return { success: false, message: error.message };
 
     revalidatePath('/cart');
     return { success: true, message: 'Item removed from cart', action: 'removed' };
@@ -210,11 +214,7 @@ export async function getCartSummary(userId: string): Promise<ICartSummaryRespon
     const error = result.error;
 
     if (error) {
-      return {
-        success: false,
-        message: error.message,
-        data: { total_items: 0, subtotal: 0 }
-      };
+      return { success: false, message: error.message, data: { total_items: 0, subtotal: 0 } };
     }
 
     const rows = data || [];
@@ -223,33 +223,24 @@ export async function getCartSummary(userId: string): Promise<ICartSummaryRespon
       subtotal: rows.reduce((sum: number, item: any) => {
         const price = item.categories_package?.price || 0;
         return sum + (price * (item.quantity || 0));
-      }, 0)
+      }, 0),
     };
 
     return { success: true, data: summary };
   } catch (error: any) {
     console.error('Error in getCartSummary:', error);
-    return {
-      success: false,
-      message: error.message,
-      data: { total_items: 0, subtotal: 0 }
-    };
+    return { success: false, message: error.message, data: { total_items: 0, subtotal: 0 } };
   }
 }
 
 // ============================================
-// CLEAR CART (setelah checkout)
+// CLEAR CART
 // ============================================
 export async function clearCart(userId: string): Promise<ICartActionResponse> {
   try {
-    const { error } = await supabase
-      .from('carts')
-      .delete()
-      .eq('user_id', userId);
+    const { error } = await supabase.from('carts').delete().eq('user_id', userId);
 
-    if (error) {
-      return { success: false, message: error.message };
-    }
+    if (error) return { success: false, message: error.message };
 
     revalidatePath('/cart');
     return { success: true, message: 'Cart cleared', action: 'cleared' };
@@ -260,21 +251,16 @@ export async function clearCart(userId: string): Promise<ICartActionResponse> {
 }
 
 // ============================================
-// GET CART COUNT (untuk badge di navbar)
+// GET CART COUNT (badge navbar)
 // ============================================
 export async function getCartCount(userId: string): Promise<ICartCountResponse> {
   try {
-    const result = await supabase
-      .from('carts')
-      .select('quantity')
-      .eq('user_id', userId);
+    const result = await supabase.from('carts').select('quantity').eq('user_id', userId);
 
     const data = result.data as any[] | null;
     const error = result.error;
 
-    if (error) {
-      return { success: false, message: error.message, count: 0 };
-    }
+    if (error) return { success: false, message: error.message, count: 0 };
 
     const rows = data || [];
     const count = rows.reduce((sum, item: any) => sum + (item.quantity || 0), 0);

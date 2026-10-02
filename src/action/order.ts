@@ -3,30 +3,130 @@
 import { createClient, getAuthenticatedUser, isAdmin } from "@/config/supabase-server";
 import { revalidatePath } from 'next/cache';
 
+
+
+// ── 1) CheckoutData: buang field brief ──────────────────────────────
 interface CheckoutData {
   user_id: string;
-  discord: string;
-  purpose: string;
-  project_overview: string;
-  references_link: string;
-  platform: string[];
-  usage_type: string;
-  additional_notes: string;
   total: number;
   voucher_id?: string;
   cart_items: Array<{
     cart_id: string;
     categories_id: string;
-    package_id: string;      // FK -> categories_package.id
-    package_name_id: number; // FK -> package_name.id
+    package_id: string;
+    package_name_id: number;
     quantity: number;
     price: number;
     total: number;
     category_name: string;
-    package_title: string; // e.g. "Paket A" (categories_package.name)
+    package_title: string;
   }>;
 }
 
+// ── 2) processCheckout: ambil brief dari carts (server-side) ────────
+// Ganti step "1. Verify cart items" dengan ini:
+//
+//   const cartIds = cart_items.map(item => item.cart_id);
+//   const { data: existingCarts, error: verifyError } = await supabase
+//     .from('carts')
+//     .select('id, discord, purpose, project_overview, has_references, references_link, platform, usage_type, additional_notes')
+//     .eq('user_id', checkoutData.user_id)
+//     .in('id', cartIds);
+//   ... (validasi jumlah sama seperti sebelumnya) ...
+//
+//   const briefByCartId = new Map(existingCarts.map((c) => [c.id, c]));
+//
+//   const incomplete = existingCarts.find(
+//     (c) => !c.discord || !c.purpose || !c.project_overview || !c.usage_type
+//   );
+//   if (incomplete) {
+//     return { success: false, message: 'Some cart items are missing request details' };
+//   }
+//
+// Step "4. orderPayload": HAPUS discord, purpose, project_overview,
+// references_link, platform, usage_type, additional_notes.
+// Sisakan: user_id, code_order, total, status, voucher_id.
+//
+// Step "5. orderItems": ganti map-nya menjadi:
+//
+//   const orderItems = cart_items.map(item => {
+//     const brief = briefByCartId.get(item.cart_id)!;
+//     return {
+//       order_id: order.id,
+//       categories_id: item.categories_id,
+//       package_id: item.package_id,
+//       package_name_id: item.package_name_id,
+//       category_name: item.category_name,
+//       package_title: item.package_title,
+//       quantity: item.quantity,
+//       price: item.price,
+//       total: item.total,
+//       discord: brief.discord,
+//       purpose: brief.purpose,
+//       project_overview: brief.project_overview,
+//       has_references: brief.has_references,
+//       references_link: brief.references_link,
+//       platform: brief.platform,
+//       usage_type: brief.usage_type,
+//       additional_notes: brief.additional_notes,
+//     };
+//   });
+//
+// Query getOrderWithItems / getUserOrders: order_items(...) sudah pakai
+// field eksplisit -> tambahkan kolom brief di daftar select-nya
+// (atau ganti jadi `*`).
+
+// ── 3) updateOrder (edit brief oleh user) sekarang per order item ───
+export async function updateOrderItemBrief(
+  orderItemId: string,
+  updateData: {
+    discord: string;
+    purpose: string;
+    project_overview: string;
+    has_references: 'yes' | 'no';
+    references_link?: string | null;
+    platform: string[];
+    usage_type: string;
+    additional_notes?: string | null;
+  }
+) {
+  try {
+    const user = await getAuthenticatedUser();
+    const supabase = await createClient();
+
+    const { data: item, error: checkError } = await supabase
+      .from('order_items')
+      .select('id, orders!inner(id, user_id, status)')
+      .eq('id', orderItemId)
+      .single();
+
+    const order = (item as any)?.orders;
+    if (checkError || !item || !order || order.user_id !== user.id) {
+      return { success: false, message: 'Order item not found' };
+    }
+    if (order.status === 'completed' || order.status === 'cancelled') {
+      return { success: false, message: 'Cannot edit completed or cancelled orders' };
+    }
+
+    const { data, error } = await supabase
+      .from('order_items')
+      .update({
+        ...updateData,
+        references_link: updateData.has_references === 'yes' ? updateData.references_link : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', orderItemId)
+      .select()
+      .single();
+
+    if (error) return { success: false, message: error.message };
+
+    revalidatePath('/myorder');
+    return { success: true, message: 'Request details updated', data };
+  } catch (error: any) {
+    return { success: false, message: error.message || 'Failed to update' };
+  }
+}
 // ============================================
 export async function processCheckout(checkoutData: CheckoutData) {
   try {
@@ -47,11 +147,13 @@ export async function processCheckout(checkoutData: CheckoutData) {
       orderData_has_voucher: 'voucher_id' in orderData
     });
 
+
+
     // 1. Verify cart items exist and belong to user
     const cartIds = cart_items.map(item => item.cart_id);
     const { data: existingCarts, error: verifyError } = await supabase
       .from('carts')
-      .select('id')
+      .select('id, discord, purpose, project_overview, has_references, references_link, platform, usage_type, additional_notes')
       .eq('user_id', checkoutData.user_id)
       .in('id', cartIds);
 
@@ -61,6 +163,14 @@ export async function processCheckout(checkoutData: CheckoutData) {
         success: false,
         message: 'Failed to verify cart items'
       };
+    }
+    const briefByCartId = new Map(existingCarts.map((c) => [c.id, c]));
+
+    const incomplete = existingCarts.find(
+      (c) => !c.discord || !c.purpose || !c.project_overview || !c.usage_type
+    );
+    if (incomplete) {
+      return { success: false, message: 'Some cart items are missing request details' };
     }
 
     if (!existingCarts || existingCarts.length !== cartIds.length) {
@@ -145,13 +255,6 @@ export async function processCheckout(checkoutData: CheckoutData) {
     const orderPayload = {
       user_id: orderData.user_id,
       code_order: orderRef,
-      discord: orderData.discord,
-      purpose: orderData.purpose,
-      project_overview: orderData.project_overview,
-      references_link: orderData.references_link,
-      platform: orderData.platform,
-      usage_type: orderData.usage_type,
-      additional_notes: orderData.additional_notes,
       total: orderData.total,
       status: 'pending' as const,
       voucher_id: voucher_id || null
@@ -185,17 +288,29 @@ export async function processCheckout(checkoutData: CheckoutData) {
     }
 
     // 5. Create order items in separate table
-    const orderItems = cart_items.map(item => ({
+ 
+  const orderItems = cart_items.map(item => {
+    const brief = briefByCartId.get(item.cart_id)!;
+    return {
       order_id: order.id,
       categories_id: item.categories_id,
-      package_id: item.package_id,           // categories_package.id
-      package_name_id: item.package_name_id, // package_name.id
+      package_id: item.package_id,
+      package_name_id: item.package_name_id,
       category_name: item.category_name,
       package_title: item.package_title,
       quantity: item.quantity,
       price: item.price,
-      total: item.total
-    }));
+      total: item.total,
+      discord: brief.discord,
+      purpose: brief.purpose,
+      project_overview: brief.project_overview,
+      has_references: brief.has_references,
+      references_link: brief.references_link,
+      platform: brief.platform,
+      usage_type: brief.usage_type,
+      additional_notes: brief.additional_notes,
+    };
+  });
 
     const { error: itemsError } = await supabase
       .from('order_items')
@@ -333,6 +448,14 @@ export async function getOrderWithItems(orderId: string, userId: string) {
           package_id,
           package_name_id,
           categories_id,
+          discord,
+          purpose,
+          project_overview,
+          has_references,
+          references_link,
+          platform,
+          usage_type,
+          additional_notes,
           package_name:package_name_id ( id, name )
         ),
         vouchers (
@@ -387,6 +510,15 @@ export async function getUserOrders(userId: string) {
           package_title,
           package_id,
           package_name_id,
+          categories_id,
+          discord,
+          purpose,
+          project_overview,
+          has_references,
+          references_link,
+          platform,
+          usage_type,
+          additional_notes,
           package_name:package_name_id ( id, name )
         ),
         vouchers (
@@ -579,7 +711,7 @@ export async function updateOrderStatus(
     const supabase = await createClient();
 
     // Validate dan normalize status
-    const validStatuses = ['pending', 'processing', 'completed', 'cancelled'];
+    const validStatuses = ['pending', 'processing', 'completed', 'cancelled','revision'];
     const normalizedStatus = updateData.status?.trim().toLowerCase();
 
     if (!normalizedStatus || !validStatuses.includes(normalizedStatus)) {

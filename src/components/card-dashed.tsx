@@ -360,8 +360,8 @@ export function CardTicket({
             <div className="absolute inset-[-2.3px] border-primary clip-border border-[3.5px] rounded-[15px] md:rounded-[20px] z-10"></div>
 
             <div className="pill-accent w-[70%] top-[-2px] h-[3px] right-[8.5%]"></div>
-            <div className="pill-accent w-[10%] top-[-2px] h-[3px] left-[8.5%]"></div>
-            <div className="pill-accent w-[79%] bottom-[-2px] h-[3px] left-[8.5%]"></div>
+            <div className="pill-accent w-[10%] top-[-2px] h-[3px] left-[10.5%]"></div>
+            <div className="pill-accent w-[80.5%] bottom-[-2px] h-[3px] left-[8.5%]"></div>
             <div className="pill-accent h-[42%] top-[20%] w-[3px] right-[-2px]"></div>
             <div className="pill-accent h-[42%] bottom-[20%] w-[3px] left-[-2px]"></div>
 
