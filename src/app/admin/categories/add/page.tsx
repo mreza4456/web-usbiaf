@@ -44,9 +44,9 @@ export default function AddCategoryPage() {
             if (includes && includes.length > 0) {
                 const validIncludes = includes.filter((inc: any) => inc.include_name?.trim())
 
-                const includePromises = validIncludes.map((inc: any) =>
-                    addInclude(createdCategory.id, inc.include_name)
-                )
+            const includePromises = validIncludes.map((inc: any) =>
+    addInclude(createdCategory.id, inc.include_name, inc.description || "")
+)
 
                 const includeResults = await Promise.all(includePromises)
                 const failedInclude = includeResults.find(res => !res.success)

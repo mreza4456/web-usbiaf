@@ -10,8 +10,7 @@ function CardDashed({
     className?: string
 }) {
     return (
-        <div className={`relative  ${className}`}>
-            <img src="images/SVG/border-image.svg " className='absolute scale-[1.02] rotate-[180deg] z-1' alt="" />
+        <div className={`relative border-primary border-[2px] rounded-[35px] ${className}`}>
 
             {children}
         </div>
@@ -206,20 +205,20 @@ export function CardSecondary({
     return (
         <div
             onClick={onClick}
-            className={`relative cursor-pointer ${className}`}
+            className={` group relative  ${className}`}
         >
-            <div className="absolute inset-[-2px] border-primary clip-border border-[3px] rounded-[15px] md:rounded-[20px] z-10"></div>
+            <div className="absolute inset-[-2px] border-primary transition-transform duration-150 ease-out  group-active:translate-y-1  group-active:translate-x-1  clip-border border-[3px] rounded-[15px] md:rounded-[20px] z-10"></div>
 
-            <div className="pill-accent w-[70%] top-[-2px] h-[3px] right-[8.5%]"></div>
-            <div className="pill-accent w-[10%] top-[-2px] h-[3px] left-[8.5%]"></div>
-            <div className="pill-accent w-[79%] bottom-[-2px] h-[3px] left-[8.5%]"></div>
-            <div className="pill-accent h-[42%] top-[20%] w-[3px] right-[-2px]"></div>
-            <div className="pill-accent h-[42%] bottom-[20%] w-[3px] left-[-2px]"></div>
+            <div className="pill-accent transition-transform duration-150 ease-out  group-active:translate-y-1  group-active:translate-x-1 w-[70%] top-[-2px] h-[3px] right-[8.5%]"></div>
+            <div className="pill-accent transition-transform duration-150 ease-out  group-active:translate-y-1  group-active:translate-x-1 w-[10%] top-[-2px] h-[3px] left-[8.5%]"></div>
+            <div className="pill-accent transition-transform duration-150 ease-out  group-active:translate-y-1  group-active:translate-x-1 w-[79%] bottom-[-2px] h-[3px] left-[8.5%]"></div>
+            <div className="pill-accent transition-transform duration-150 ease-out  group-active:translate-y-1  group-active:translate-x-1 h-[42%] top-[20%] w-[3px] right-[-2px]"></div>
+            <div className="pill-accent transition-transform duration-150 ease-out  group-active:translate-y-1  group-active:translate-x-1 h-[42%] bottom-[20%] w-[3px] left-[-2px]"></div>
 
-            <div className="relative bg-white h-full z-2 rounded-[15px] md:rounded-[20px]">
-                <div className="absolute border-primary border-[3px] -right-2 -bottom-2 top-0 left-0 rounded-[20px] md:rounded-[25px] bg-muted -z-10"></div>
+            <div className="card-hover relative bg-white h-full z-2 rounded-[15px] md:rounded-[20px]">
+                <div className="absolute border-primary border-[3px] -right-2 transition-all -bottom-2 top-0 left-0 rounded-[20px] group-active:hidden transition-transform duration-500 ease-out group-active:-bottom-0 hover-secondary md:rounded-[25px] bg-muted -z-10"></div>
 
-                <div className="bg-white rounded-[15px] overflow-hidden md:rounded-[20px]">
+                <div className="relative bg-white rounded-[15px] md:rounded-[20px] overflow-hidden transition-transform duration-150 ease-out  group-active:translate-y-1  group-active:translate-x-1">
                     {children}
                 </div>
             </div>

@@ -408,53 +408,28 @@ export default function ServiceDetailDialog({
     <>
       {tab === 'description' && (
         <div>
-          <div className="grid grid-cols-2 gap-3 mb-5">
-            <div className='flex gap-2 border-primary border-1 py-3 px-5 rounded-xl justify-between items-center'>
-              <img src="/icon/SVG/handicon.svg" className='w-7' alt="" />
-              <div>
-              <h1>Custom Proposal</h1>
-              <p className='text-[8px]'>Request - proposal - commit (pay)</p>
+          {feature.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 mb-5">
 
-              </div>
-              <IconCircleCheckFilled className='w-4'/>
-            </div>
-            <div className='flex gap-2 border-primary border-1 p-3 rounded-xl justify-between'>
-              <img src="/icon/SVG/handicon.svg" className='w-7' alt="" />
-              <div>
-              <h1>Custom Proposal</h1>
-              <p className='text-[8px]'>Request - proposal - commit (pay)</p>
+              {feature.map((f, i) => (
 
-              </div>
-              <IconCircleCheckFilled className='w-4'/>
-            </div>
-            <div className='flex gap-2 border-primary border-1 p-3 rounded-xl justify-between'>
-              <img src="/icon/SVG/handicon.svg" className='w-7' alt="" />
-              <div>
-              <h1>Custom Proposal</h1>
-              <p className='text-[8px]'>Request - proposal - commit (pay)</p>
 
-              </div>
-              <IconCircleCheckFilled className='w-4'/>
-            </div>
-            <div className='flex gap-2 border-primary border-1 p-3 rounded-xl justify-between'>
-              <img src="/icon/SVG/handicon.svg" className='w-7' alt="" />
-              <div>
-              <h1>Custom Proposal</h1>
-              <p className='text-[8px]'>Request - proposal - commit (pay)</p>
+                <div key={i} className='flex gap-2 border-primary border-1 p-3 relative rounded-xl justify-start'>
+                  <img src="/icon/SVG/handicon.svg" className='w-7' alt="" />
+                  <div>
+                    <h1 className='text-sm text-primary'>     {f.include_name}</h1>
+                    <p className='text-[8px] text-primary '>     {f.description}</p>
 
-              </div>
-              <IconCircleCheckFilled className='w-4'/>
-            </div>
-            <div className='flex gap-2 border-primary border-1 p-3 rounded-xl justify-between'>
-              <img src="/icon/SVG/handicon.svg" className='w-7' alt="" />
-              <div>
-              <h1>Custom Proposal</h1>
-              <p className='text-[8px]'>Request - proposal - commit (pay)</p>
+                  </div>
+                  {/* <IconCircleCheckFilled className='w-3 absolute top-1 right-2' /> */}
+                </div>
 
-              </div>
-              <IconCircleCheckFilled className='w-4'/>
+              ))}
+
+
+
             </div>
-          </div>
+          )}
           <div className="space-y-5 rounded-2xl border-2 border-primary/40 p-4">
             {category.description && (
               <div
@@ -471,19 +446,7 @@ export default function ServiceDetailDialog({
                 />
               </div>
             )}
-            {feature.length > 0 && (
-              <div>
-                <p className="mb-2 text-sm font-semibold text-primary">What's included</p>
-                <ul className="space-y-1.5">
-                  {feature.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-                      {f.include_name}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+
           </div>
         </div>
       )}
@@ -531,8 +494,8 @@ export default function ServiceDetailDialog({
 
   // ─── Kolom kanan, step 2: form brief ───────────────────────────────────────
   const briefBody = category && (
-    <div className="space-y-5">
-      <div>
+    <div className="space-y-5 overflow-y">
+      <div className='briefheader'>
         <button
           type="button"
           onClick={() => setStep('detail')}

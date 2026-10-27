@@ -438,22 +438,26 @@ export default function CartPage() {
                                 <h3 className="text-base font-bold text-gray-900 mb-1 truncate text-arial">
                                   {item.category_name}
                                 </h3>
-                                <Badge className="bg-purple-100 text-purple-700 text-xs mb-1">
+                                <div className="flex">
+                                   <Badge className="bg-purple-100 text-purple-700 text-xs mb-1">
                                   {item.package_name?.name ?? 'Package'}
                                 </Badge>
+                                  <Button
+                                onClick={() => setBriefItem(item)}
+                             
+                                size="sm"
+                                className="h-7 gap-1 px-2 text-xs text-primary text-fredoka"
+                              >
+                            
+                                Detail
+                                {!hasBrief(item) && <span className="h-2 w-2 rounded-full bg-amber-500" />}
+                              </Button>
+                                </div>
+                               
                                 <p className="text-xs text-primary truncate">{item.package_title}</p>
                               </div>
                               <div className="flex flex-col items-end gap-1">
-                                <Button
-                                  onClick={() => setBriefItem(item)}
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 gap-1 px-2 text-xs text-primary text-fredoka"
-                                >
-                                  <FileText className="w-4 h-4" />
-                                  Detail
-                                  {!hasBrief(item) && <span className="h-2 w-2 rounded-full bg-amber-500" />}
-                                </Button>
+                               
                                 <Button
                                   onClick={() => handleRemoveItem(item.id!)}
                                   disabled={isUpdating}
@@ -537,6 +541,17 @@ export default function CartPage() {
                                   <Badge className="bg-purple-100 text-fredoka text-purple-700 text-xs">
                                     {item.package_name.name}
                                   </Badge>
+                                
+                                  <Button
+                                onClick={() => setBriefItem(item)}
+                             
+                                size="sm"
+                                className="h-7 gap-1 px-2 text-xs text-primary bg-transparent  hover:bg-transparent cursor-pointer text-fredoka text-secondary"
+                              >
+                            
+                                See Detail
+                                {!hasBrief(item) && <span className="h-2 w-2 rounded-full bg-amber-500" />}
+                              </Button>
                                 </div>
                               </div>
                             </div>
@@ -567,16 +582,7 @@ export default function CartPage() {
                               </div>
                             </div>
                             <div className="flex flex-col items-end gap-1">
-                              <Button
-                                onClick={() => setBriefItem(item)}
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 gap-1 px-2 text-xs text-primary text-fredoka"
-                              >
-                                <FileText className="w-4 h-4" />
-                                Detail
-                                {!hasBrief(item) && <span className="h-2 w-2 rounded-full bg-amber-500" />}
-                              </Button>
+                              
                               <Button
                                 onClick={() => handleRemoveItem(item.id!)}
                                 disabled={isUpdating}

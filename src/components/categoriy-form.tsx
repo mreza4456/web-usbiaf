@@ -34,6 +34,8 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { getAllClasses as getAllClassOptions } from "@/action/class" // action multi-class, beda dari getAllClasses di action/badge
 import { ICategory, IPackageCategories, IImageCategories, IPackageName, IIncludes, IBadge, IClass, IClassService } from "@/interface"
+import { description } from "./chart-area-interactive"
+import { Label } from "recharts"
 
 const packageSchema = z.object({
     id: z.union([z.string(), z.number()]).optional(),
@@ -55,6 +57,7 @@ const imageSchema = z.object({
 const includeSchema = z.object({
     id: z.union([z.string(), z.number()]).optional(),
     include_name: z.string().min(1, "Nama include tidak boleh kosong"),
+    description: z.string().min(1, "Dekripsi include tidak boleh kosong"),
 })
 const categorySchema = z.object({
     name: z.string().min(2, "Minimal 2 karakter"),
@@ -75,6 +78,34 @@ const categorySchema = z.object({
     // BARU: multi class
     classIds: z.array(z.union([z.string(), z.number()])).min(1, "Minimal pilih 1 class"),
 })
+
+const FEATURE_TEMPLATES = [
+    {
+        key: "custom-proposal",
+        include_name: "Custom Proposal",
+        description: "Request - proposal - commit (pay)",
+    },
+    {
+        key: "delivery-time",
+        include_name: "< 5 days Average Delivery Time",
+        description: "Final delivery between 3-4 days",
+    },
+    {
+        key: "open-communication",
+        include_name: "Open Communication",
+        description: "WIP updates + revisions available",
+    },
+    {
+        key: "custom-service",
+        include_name: "Custom Service",
+        description: "Customly made from scratch",
+    },
+    {
+        key: "after-sales",
+        include_name: "After Sales Guarantee", // di screenshot tertulis "Guarentee"
+        description: "Unlimited revisions",
+    },
+]
 
 type CategoryFormValues = z.infer<typeof categorySchema>
 
@@ -127,6 +158,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
             includes: initialData?.includes?.map(inc => ({
                 id: inc.id,
                 include_name: inc.include_name,
+                description:inc.description
             })) || [],
             packages: initialData?.packages?.map(pkg => ({
                 id: pkg.id,
@@ -180,7 +212,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
         if (res.success) setPackageNames(res.data)
     }, [])
 
-        React.useEffect(() => {
+    React.useEffect(() => {
         loadPackageNames()
         loadClasses()
         loadClassOptions() // BARU
@@ -361,9 +393,45 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
     }
 
     const addInclude = () => {
-        appendInclude({ include_name: "" })
+        appendInclude({ include_name: "", description: "" })
+    }
+const [templateValue, setTemplateValue] = React.useState("")
+
+const watchedIncludes = form.watch("includes") || []
+
+const isTemplateUsed = (name: string) =>
+    watchedIncludes.some(
+        (inc) => inc.include_name?.trim().toLowerCase() === name.trim().toLowerCase()
+    )
+
+const addFromTemplate = (key: string) => {
+    if (key === "__all__") {
+        // tambahkan semua template yang belum ada
+        const toAdd = FEATURE_TEMPLATES
+            .filter((t) => !isTemplateUsed(t.include_name))
+            .map((t) => ({
+                include_name: t.include_name,
+                description: t.description,
+            }))
+
+        if (toAdd.length === 0) {
+            toast.info("Semua template sudah ditambahkan")
+            return
+        }
+        appendInclude(toAdd)
+        toast.success(`${toAdd.length} feature dari template ditambahkan`)
+        return
     }
 
+    const tpl = FEATURE_TEMPLATES.find((t) => t.key === key)
+    if (!tpl) return
+
+    appendInclude({
+        include_name: tpl.include_name,
+        description: tpl.description,
+    })
+    toast.success(`Template "${tpl.include_name}" ditambahkan`)
+}
     const addPackage = () => {
         appendPackage({
             name: "",
@@ -372,7 +440,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
             description: "",
         })
     }
-        const toggleClassId = (classId: number | string) => {
+    const toggleClassId = (classId: number | string) => {
         const current = form.getValues("classIds") || []
         const exists = current.some((id) => String(id) === String(classId))
 
@@ -493,11 +561,10 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                                     return (
                                                         <label
                                                             key={c.id}
-                                                            className={`flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer text-sm transition-colors ${
-                                                                selected
-                                                                    ? "bg-slate-800 text-white border-slate-800"
-                                                                    : "bg-white text-slate-700 border-gray-300 hover:bg-gray-50"
-                                                            }`}
+                                                            className={`flex items-center gap-2 px-3 py-2 rounded-md border cursor-pointer text-sm transition-colors ${selected
+                                                                ? "bg-slate-800 text-white border-slate-800"
+                                                                : "bg-white text-slate-700 border-gray-300 hover:bg-gray-50"
+                                                                }`}
                                                         >
                                                             <Checkbox
                                                                 checked={selected}
@@ -808,20 +875,50 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                 {/* Includes Section - card biasa, tidak pakai modal */}
                 <Card className="bg-white col-span-2">
                     <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
-                            Features
-                        </CardTitle>
-                        <Button
-                            type="button"
-                            size="sm"
-                            className="px-3 bg-slate-800 hover:bg-slate-700"
-                            onClick={addInclude}
+    <CardTitle className="flex items-center gap-2">
+        Features
+    </CardTitle>
+    <div className="flex items-center gap-2">
+        <Select
+            value={templateValue}
+            onValueChange={(val) => {
+                addFromTemplate(val)
+                setTemplateValue("") // reset supaya bisa pilih template yang sama/lain lagi
+            }}
+        >
+            <SelectTrigger className="w-[220px]">
+                <ListChecks className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Pilih Fitur" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectGroup>
+                    <SelectLabel>Template Features</SelectLabel>
+                    <SelectItem value="__all__">+ Tambah semua template</SelectItem>
+                    {FEATURE_TEMPLATES.map((t) => (
+                        <SelectItem
+                            key={t.key}
+                            value={t.key}
+                            disabled={isTemplateUsed(t.include_name)}
                         >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Features
-                        </Button>
-                    </CardHeader>
-                    <CardContent className="space-y-3 grid grid-cols-3 gap-5">
+                            {t.include_name}
+                        </SelectItem>
+                    ))}
+                </SelectGroup>
+            </SelectContent>
+        </Select>
+
+        <Button
+            type="button"
+            size="sm"
+            className="px-3 bg-slate-800 hover:bg-slate-700"
+            onClick={addInclude}
+        >
+            <Plus className="h-4 w-4 mr-1" />
+            Add Custom
+        </Button>
+    </div>
+</CardHeader>
+                    <CardContent className="space-y-3 grid grid-cols-2 gap-5">
                         {includeFields.length === 0 ? (
                             <p className="text-sm text-muted-foreground text-center py-8">
                                 Belum ada Feature. Klik "Add Feature" untuk menambahkan.
@@ -829,6 +926,7 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                         ) : (
                             includeFields.map((field, index) => (
                                 <div key={field.id} className=" w-full  ">
+
                                     <FormField
                                         control={form.control}
                                         name={`includes.${index}.id`}
@@ -839,11 +937,13 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                         )}
                                     />
                                     <div className="relative">
-                                        <FormField
+<Card className="p-3 bg-white">
+ <FormField
                                             control={form.control}
                                             name={`includes.${index}.include_name`}
                                             render={({ field }) => (
-                                                <FormItem className="flex-1">
+                                                <FormItem className="flex-1 mb-3">
+                                                    <FormLabel>Features Name *</FormLabel>
                                                     <FormControl>
                                                         <Input placeholder="Masukan Features "  {...field} />
                                                     </FormControl>
@@ -851,6 +951,28 @@ export function CategoryForm({ initialData, onSubmit, isSubmitting }: CategoryFo
                                                 </FormItem>
                                             )}
                                         />
+
+                                        <FormField
+                                            control={form.control}
+                                            name={`includes.${index}.description`}
+                                            render={({ field }) => (
+                                                <FormItem className="flex-1">
+                                                    <FormLabel>Features Description *</FormLabel>
+                                                    <FormControl>
+
+                                                        <Textarea
+                                                            placeholder="Masukkan deskripsi paket"
+                                                            {...field}
+                                                            
+                                                        />
+
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+</Card>
+                                       
                                         <Button
                                             type="button"
                                             variant="ghost"

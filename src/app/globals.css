@@ -730,3 +730,7 @@ h1 {
 .shadow-deleted{
  box-shadow: 5px 5px 0px #EF4444;
 }
+
+.card-hover:has(.hover-primary:hover) .hover-secondary {
+  display: none;
+}

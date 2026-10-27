@@ -219,8 +219,8 @@ export interface IPackageCategories {
 
   categories?: ICategory;
   package?: IPackageName;
-
 }
+
 export interface IPackageName {
   id: string;
   name: string;
@@ -232,7 +232,7 @@ export interface IIncludes {
   include_name: string;
   categories_id: string;
   created_at?: string;
-
+  description:string;
   categories: ICategory
 }
 

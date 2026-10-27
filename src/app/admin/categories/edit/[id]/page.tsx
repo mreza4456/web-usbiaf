@@ -114,15 +114,14 @@ export default function EditCategoryPage() {
             for (const incId of includesToDelete) {
                 await deleteInclude(incId)
             }
-
-            const includePromises = submittedIncludes
-                .filter((inc: any) => inc.include_name?.trim())
-                .map((inc: any) => {
-                    if (inc.id) {
-                        return updateInclude(inc.id, inc.include_name)
-                    }
-                    return addInclude(params.id as string, inc.include_name)
-                })
+const includePromises = submittedIncludes
+    .filter((inc: any) => inc.include_name?.trim())
+    .map((inc: any) => {
+        if (inc.id) {
+            return updateInclude(inc.id, inc.include_name, inc.description || "")
+        }
+        return addInclude(params.id as string, inc.include_name, inc.description || "")
+    })
 
             const includeResults = await Promise.all(includePromises)
             const failedInclude = includeResults.find((res) => !res.success)
@@ -237,6 +236,7 @@ export default function EditCategoryPage() {
                             ...category,
                             images: images,
                             packages: packages,
+                             includes: includes,
                             classServices: classServices // BARU
                         }}
                         onSubmit={handleSubmit}

@@ -2,6 +2,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { IIncludes } from "@/interface";
+import { description } from '@/components/chart-area-interactive';
 
 // Create Supabase client dengan cookie support
 const createClient = async () => {
@@ -54,24 +55,40 @@ const isAdmin = async (userId: string) => {
    Semua select join ke categories supaya include.categories terisi
    ========================================================== */
 
-export const addInclude = async (categoriesId: string, includeName: string) => {
+export const addInclude = async (
+  categoriesId: string,
+  includeName: string,
+  description: string = ""
+) => {
   try {
     const user = await getAuthenticatedUser();
     const adminCheck = await isAdmin(user.id);
 
     if (!adminCheck) {
-      return { success: false, message: "Akses ditolak. Hanya admin yang bisa menambah include.", data: null };
+      return {
+        success: false,
+        message: "Akses ditolak. Hanya admin yang bisa menambah include.",
+        data: null,
+      };
     }
 
     if (!includeName.trim()) {
-      return { success: false, message: "Nama include tidak boleh kosong", data: null };
+      return {
+        success: false,
+        message: "Nama include tidak boleh kosong",
+        data: null,
+      };
     }
 
     const supabase = await createClient();
 
     const { data, error } = await supabase
       .from("categories_include")
-      .insert([{ include_name: includeName.trim(), categories_id: categoriesId }])
+      .insert({
+        include_name: includeName.trim(),
+        description: description.trim(),
+        categories_id: categoriesId,
+      })
       .select(`
         *,
         categories (*)
@@ -80,17 +97,32 @@ export const addInclude = async (categoriesId: string, includeName: string) => {
 
     if (error) {
       console.error("addInclude error:", error);
-      return { success: false, message: error.message, data: null };
+
+      return {
+        success: false,
+        message: error.message,
+        data: null,
+      };
     }
 
-    return { success: true, message: "Include berhasil ditambahkan", data: data as IIncludes };
+    return {
+      success: true,
+      message: "Include berhasil ditambahkan",
+      data: data as IIncludes,
+    };
   } catch (error: any) {
     console.error("addInclude catch error:", error);
-    return { success: false, message: error.message || "Terjadi kesalahan", data: null };
+
+    return {
+      success: false,
+      message: error.message || "Terjadi kesalahan",
+      data: null,
+    };
   }
 };
 
-export const updateInclude = async (id: string, includeName: string) => {
+
+export const updateInclude = async (id: string, includeName: string ,   description: string = "") => {
   try {
     const user = await getAuthenticatedUser();
     const adminCheck = await isAdmin(user.id);
@@ -107,7 +139,7 @@ export const updateInclude = async (id: string, includeName: string) => {
 
     const { data, error } = await supabase
       .from("categories_include")
-      .update({ include_name: includeName.trim() })
+      .update({ include_name: includeName.trim() ,description: description.trim()})
       .eq("id", id)
       .select(`
         *,
