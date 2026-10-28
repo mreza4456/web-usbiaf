@@ -43,7 +43,9 @@ export default function ProfilePage() {
   const router = useRouter();
 
   // Cek apakah cache tersedia untuk user ini
-  const isCacheHit = profilePageCache?.userId === user?.id;
+  // !!profilePageCache memastikan cache tidak null sebelum membandingkan userId,
+  // sehingga saat prerendering (user = null, cache = null) isCacheHit tetap false.
+  const isCacheHit = !!profilePageCache && profilePageCache.userId === user?.id;
 
   const [userData, setUserData] = useState<IUser | null>(isCacheHit ? profilePageCache!.userData : null);
   const [orders, setOrders] = useState<IOrder[]>(isCacheHit ? profilePageCache!.orders : []);

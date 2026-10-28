@@ -56,7 +56,7 @@ const STAGE_CONFIG: Record<string, { label: string; step: number; total: number 
 export default function UserOrdersPage() {
     const user = useAuthStore((s) => s.user);
 
-    const isCacheHit = orderPageCache?.userId === user?.id;
+    const isCacheHit = !!orderPageCache && orderPageCache.userId === user?.id;
 
     const [orders, setOrders] = useState<IOrderWithItems[]>(isCacheHit ? orderPageCache!.orders : []);
     const [loading, setLoading] = useState(!isCacheHit);

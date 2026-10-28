@@ -21,7 +21,7 @@ let voucherPageCache: IVoucherPageCache | null = null;
 export default function VoucherPage() {
     const user = useAuthStore((s) => s.user);
 
-    const isCacheHit = voucherPageCache?.userId === user?.id;
+    const isCacheHit = !!voucherPageCache && voucherPageCache.userId === user?.id;
 
     const [vouchers, setVouchers] = useState<IVoucher[]>(isCacheHit ? voucherPageCache!.vouchers : []);
     const [copiedCode, setCopiedCode] = useState('');
