@@ -13,6 +13,10 @@ import { Card } from "@/components/ui/card";
 // Sesuai desain: hanya 2 tab. "Completed" sudah mencakup COMPLETED + CLAIMED.
 type TabFilter = "ongoing" | "completed";
 
+// Cache in-memory selama sesi SPA — mencegah skeleton muncul lagi
+// saat user kembali ke halaman missions setelah navigasi.
+let missionPageCache: IMissionWithProgress[] | null = null;
+
 const TABS: { key: TabFilter; label: string }[] = [
     { key: "ongoing", label: "On Going" },
     { key: "completed", label: "Completed" },
@@ -22,8 +26,8 @@ const MAX_STEPS = 5;
 ;
 
 export default function MissionsPage() {
-    const [missions, setMissions] = useState<IMissionWithProgress[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [missions, setMissions] = useState<IMissionWithProgress[]>(missionPageCache ?? []);
+    const [loading, setLoading] = useState(!missionPageCache);
     const [unauthorized, setUnauthorized] = useState(false);
     const [activeTab, setActiveTab] = useState<TabFilter>("ongoing");
     const [search, setSearch] = useState("");
@@ -43,6 +47,7 @@ export default function MissionsPage() {
             }
 
             setUnauthorized(false);
+            missionPageCache = response.data;
             setMissions(response.data);
         } catch (error: any) {
             console.error("❌ Error:", error);
@@ -53,7 +58,8 @@ export default function MissionsPage() {
     }, []);
 
     useEffect(() => {
-        fetchMissions();
+        if (!missionPageCache) fetchMissions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchMissions]);
 
     const getTab = useCallback((mission: IMissionWithProgress): TabFilter => {
@@ -114,6 +120,8 @@ export default function MissionsPage() {
                 toast.success("Reward berhasil diklaim!");
             }
             setSelected(null);
+            // Invalidasi cache agar status misi terupdate
+            missionPageCache = null;
             fetchMissions();
         } catch (error: any) {
             toast.error(error.message || "Gagal klaim reward");

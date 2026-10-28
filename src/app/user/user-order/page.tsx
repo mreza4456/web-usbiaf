@@ -34,6 +34,14 @@ import { IOrderWithItems } from '@/interface';
 type StatusFilter = 'all' | 'pending' | 'processing' | 'completed' | 'cancelled';
 type ViewMode = 'board' | 'status';
 
+// Cache in-memory selama sesi SPA — mencegah skeleton muncul lagi
+// saat user kembali ke halaman orders setelah navigasi.
+interface IOrderPageCache {
+    userId: string;
+    orders: IOrderWithItems[];
+}
+let orderPageCache: IOrderPageCache | null = null;
+
 // Konfigurasi tahapan pipeline untuk progress bar di Board View.
 // Kalau nanti tabel order punya kolom stage sendiri (mis. `stage_label`,
 // `stage_step`), tinggal baca dari situ — fallback di bawah dipakai
@@ -47,8 +55,11 @@ const STAGE_CONFIG: Record<string, { label: string; step: number; total: number 
 
 export default function UserOrdersPage() {
     const user = useAuthStore((s) => s.user);
-    const [orders, setOrders] = useState<IOrderWithItems[]>([]);
-    const [loading, setLoading] = useState(true);
+
+    const isCacheHit = orderPageCache?.userId === user?.id;
+
+    const [orders, setOrders] = useState<IOrderWithItems[]>(isCacheHit ? orderPageCache!.orders : []);
+    const [loading, setLoading] = useState(!isCacheHit);
     const [selectedOrder, setSelectedOrder] = useState<IOrderWithItems | null>(null);
     const [commentOpen, setCommentOpen] = useState(false);
     const [submittingComment, setSubmittingComment] = useState(false);
@@ -76,7 +87,10 @@ export default function UserOrdersPage() {
                 throw new Error(response?.message || 'Failed to fetch orders');
             }
 
-            setOrders(response.data as IOrderWithItems[]);
+            const fetchedOrders = response.data as IOrderWithItems[];
+            setOrders(fetchedOrders);
+            // Tulis cache
+            orderPageCache = { userId: user.id, orders: fetchedOrders };
         } catch (error: any) {
             console.error('❌ Error:', error);
             toast.error(error.message || 'Failed to load orders');
@@ -86,7 +100,8 @@ export default function UserOrdersPage() {
     }, [user?.id]);
 
     useEffect(() => {
-        fetchOrders();
+        if (!isCacheHit) fetchOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchOrders]);
 
     // Filter pencarian: cari berdasarkan kode order atau nama kategori item
@@ -199,6 +214,8 @@ export default function UserOrdersPage() {
             if (!response.success) throw new Error(response.message);
 
             toast.success('Order cancelled successfully');
+            // Invalidasi cache agar data terbaru diambil
+            orderPageCache = null;
             fetchOrders();
             setOpen(false);
             setSelectedOrder(null);

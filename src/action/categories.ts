@@ -551,12 +551,8 @@ export const getActiveCategories = async (filters: any) => {
       qry = qry.ilike("genre", `%${filters.genre}%`);
     }
 
-    // BARU: filter by class_id, karena sekarang multi class via junction table
-    if (filters.classId) {
-      const { data: catIds } = await qry;
-      // fallback filter dilakukan di bawah jika query builder tidak mendukung filter nested langsung
-    }
-
+    // filter by class_id dilakukan secara manual di bawah setelah fetch,
+    // karena filter nested relation via .eq tidak reliable di postgrest
     const { data, error } = await qry;
 
     if (error) {

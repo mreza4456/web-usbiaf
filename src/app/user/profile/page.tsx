@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -29,59 +29,75 @@ import Image from 'next/image';
 import { stat } from 'fs';
 import CheckinButton from '@/components/checkinbutton';
 
+// Cache in-memory selama sesi SPA — mencegah skeleton muncul lagi
+// saat user kembali ke halaman profil setelah navigasi.
+interface IProfilePageCache {
+  userId: string;
+  userData: IUser;
+  orders: IOrder[];
+}
+let profilePageCache: IProfilePageCache | null = null;
+
 export default function ProfilePage() {
   const user = useAuthStore((s) => s.user);
   const router = useRouter();
 
-  const [userData, setUserData] = useState<IUser | null>(null);
-  const [orders, setOrders] = useState<IOrder[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Cek apakah cache tersedia untuk user ini
+  const isCacheHit = profilePageCache?.userId === user?.id;
+
+  const [userData, setUserData] = useState<IUser | null>(isCacheHit ? profilePageCache!.userData : null);
+  const [orders, setOrders] = useState<IOrder[]>(isCacheHit ? profilePageCache!.orders : []);
+  const [loading, setLoading] = useState(!isCacheHit);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   const [editForm, setEditForm] = useState({
-    full_name: '',
-    email: '',
-    avatar_url: ''
+    full_name: isCacheHit ? profilePageCache!.userData.full_name || '' : '',
+    email: isCacheHit ? profilePageCache!.userData.email || '' : '',
+    avatar_url: isCacheHit ? profilePageCache!.userData.avatar_url || '' : ''
   });
 
   useEffect(() => {
-
-    if (user?.id) {
-      loadUserData();
-      loadUserOrders();
+    if (user?.id && !isCacheHit) {
+      loadAll();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  const loadUserData = async () => {
+  const loadAll = async () => {
     if (!user?.id) return;
-
+    setLoading(true);
     try {
-      const result = await getUsersById(user.id);
-      if (result.success && result.data) {
-        setUserData(result.data);
+      const [userResult, ordersResult] = await Promise.all([
+        getUsersById(user.id),
+        getAllOrdersWithItems(),
+      ]);
+
+      let fetchedUser: IUser | null = null;
+      if (userResult.success && userResult.data) {
+        fetchedUser = userResult.data;
+        setUserData(fetchedUser);
         setEditForm({
-          full_name: result.data.full_name || '',
-          email: result.data.email || '',
-          avatar_url: result.data.avatar_url || ''
+          full_name: fetchedUser.full_name || '',
+          email: fetchedUser.email || '',
+          avatar_url: fetchedUser.avatar_url || ''
         });
       }
-    } catch (error) {
-      console.error('Error loading user data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  const loadUserOrders = async () => {
-    try {
-      const result = await getAllOrdersWithItems();
-      if (result.success && result.data) {
-        const userOrders = result.data.filter(order => order.user_id === user?.id);
-        setOrders(userOrders);
+      let fetchedOrders: IOrder[] = [];
+      if (ordersResult.success && ordersResult.data) {
+        fetchedOrders = ordersResult.data.filter(order => order.user_id === user.id);
+        setOrders(fetchedOrders);
+      }
+
+      // Tulis cache
+      if (fetchedUser) {
+        profilePageCache = { userId: user.id, userData: fetchedUser, orders: fetchedOrders };
       }
     } catch (error) {
-      console.error('Error loading orders:', error);
+      console.error('Error loading profile data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,6 +110,8 @@ export default function ProfilePage() {
       if (result.success) {
         setUserData(result.data);
         setIsEditing(false);
+        // Invalidasi cache agar data terbaru diambil saat kunjungan berikutnya
+        profilePageCache = null;
       }
     } catch (error) {
       console.error('Error updating profile:', error);

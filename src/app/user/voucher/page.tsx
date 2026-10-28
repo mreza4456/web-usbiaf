@@ -10,20 +10,32 @@ import { redirect } from 'next/dist/server/api-utils';
 import { useRouter } from 'next/navigation';
 import VoucherEventsList from '@/components/voucher-events-list';
 
+// Cache in-memory selama sesi SPA — mencegah skeleton muncul lagi
+// saat user kembali ke halaman voucher setelah navigasi.
+interface IVoucherPageCache {
+    userId: string;
+    vouchers: IVoucher[];
+}
+let voucherPageCache: IVoucherPageCache | null = null;
+
 export default function VoucherPage() {
-    const [vouchers, setVouchers] = useState<IVoucher[]>([]);
+    const user = useAuthStore((s) => s.user);
+
+    const isCacheHit = voucherPageCache?.userId === user?.id;
+
+    const [vouchers, setVouchers] = useState<IVoucher[]>(isCacheHit ? voucherPageCache!.vouchers : []);
     const [copiedCode, setCopiedCode] = useState('');
     const [activeTab, setActiveTab] = useState('available');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const router = useRouter();
-    const [isLoadingVouchers, setIsLoadingVouchers] = React.useState(false)
-    const user = useAuthStore((s) => s.user);
+    const [isLoadingVouchers, setIsLoadingVouchers] = React.useState(!isCacheHit);
 
     React.useEffect(() => {
-        if (user?.id) {
+        if (user?.id && !isCacheHit) {
             fetchVouchers()
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id])
 
     const fetchVouchers = async () => {
@@ -40,7 +52,9 @@ export default function VoucherPage() {
             if (error) {
                 console.error("Error fetching vouchers:", error)
             } else {
-                setVouchers(data || [])
+                const fetched = data || [];
+                setVouchers(fetched)
+                voucherPageCache = { userId: user.id, vouchers: fetched };
             }
         } catch (err) {
             console.error("Unexpected error:", err)

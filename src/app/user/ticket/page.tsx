@@ -13,6 +13,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 
 type TabFilter = "open" | "in_progress" | "resolved";
 
+// Cache in-memory selama sesi SPA — mencegah skeleton muncul lagi
+// saat user kembali ke halaman tickets setelah navigasi.
+let ticketPageCache: ITicket[] | null = null;
+
 const TABS: { key: TabFilter; label: string }[] = [
     { key: "open", label: "Open" },
     { key: "in_progress", label: "In Progress" },
@@ -23,8 +27,8 @@ const TABS: { key: TabFilter; label: string }[] = [
 const ROW_COLS = "grid-cols-[2fr_1fr_1fr_auto]";
 
 export default function MyTicketsPage() {
-    const [tickets, setTickets] = useState<ITicket[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [tickets, setTickets] = useState<ITicket[]>(ticketPageCache ?? []);
+    const [loading, setLoading] = useState(!ticketPageCache);
     const [unauthorized, setUnauthorized] = useState(false);
     const [search, setSearch] = useState("");
     const [activeTab, setActiveTab] = useState<TabFilter>("open");
@@ -42,7 +46,9 @@ export default function MyTicketsPage() {
             }
 
             setUnauthorized(false);
-            setTickets(response.data as ITicket[]);
+            const fetchedTickets = response.data as ITicket[];
+            setTickets(fetchedTickets);
+            ticketPageCache = fetchedTickets;
         } catch (error: any) {
             console.error("❌ Error:", error);
             toast.error(error.message || "Failed to load tickets");
@@ -52,7 +58,8 @@ export default function MyTicketsPage() {
     }, []);
 
     useEffect(() => {
-        fetchTickets();
+        if (!ticketPageCache) fetchTickets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchTickets]);
 
     // Kelompokkan status jadi 3 tab: open, in_progress, resolved (resolved & closed digabung)

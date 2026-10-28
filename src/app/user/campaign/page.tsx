@@ -32,9 +32,13 @@ const RIBBON_COLORS: Record<string, string> = {
     SKEB: "bg-purple-200 text-primary border-primary/40",
 };
 
+// Cache in-memory selama sesi SPA — mencegah skeleton muncul lagi
+// saat user kembali ke halaman campaign setelah navigasi.
+let campaignPageCache: ICampaign[] | null = null;
+
 export default function CampaignListPage() {
-    const [campaigns, setCampaigns] = useState<ICampaign[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [campaigns, setCampaigns] = useState<ICampaign[]>(campaignPageCache ?? []);
+    const [loading, setLoading] = useState(!campaignPageCache);
     const [search, setSearch] = useState("");
     const [category, setCategory] = useState<string>("all");
     const [activeTab, setActiveTab] = useState<TabFilter>("active");
@@ -49,7 +53,9 @@ export default function CampaignListPage() {
                 throw new Error(response?.message || "Failed to fetch campaigns");
             }
 
-            setCampaigns(response.data as ICampaign[]);
+            const fetchedCampaigns = response.data as ICampaign[];
+            setCampaigns(fetchedCampaigns);
+            campaignPageCache = fetchedCampaigns;
         } catch (error: any) {
             console.error("❌ Error:", error);
             toast.error(error.message || "Failed to load campaigns");
@@ -59,7 +65,8 @@ export default function CampaignListPage() {
     }, []);
 
     useEffect(() => {
-        fetchCampaigns();
+        if (!campaignPageCache) fetchCampaigns();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchCampaigns]);
 
     // Hitung status campaign dari kolom date & expired
